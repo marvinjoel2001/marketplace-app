@@ -1,0 +1,110 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { ArrowRight, Sparkles } from 'lucide-react';
+
+export function HeroBanner() {
+  return (
+    <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-[#F1F3FE] via-[#FAF8FF] to-[#FFF4F2] border border-slate-100 p-8 sm:p-12 lg:p-14 mb-12 shadow-xs">
+      {/* Background Soft Glow Auras */}
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-orange-100/40 rounded-full blur-2xl pointer-events-none"></div>
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Left Column: Headline, Description, Shop Now CTA & Social Proof */}
+        <div className="lg:col-span-6 space-y-6">
+          {/* Tag: New Arrival */}
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200/70 text-orange-600 text-xs font-bold shadow-2xs">
+            <span className="text-orange-500">✦</span>
+            <span>New Arrival</span>
+          </div>
+
+          {/* Big Headline */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.08]">
+            Roco Wireless <br />
+            Headphones
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-base text-slate-500 font-medium max-w-md leading-relaxed">
+            Experience premium sound quality with deep bass and all-day comfort. Disponible con entrega express OpenDSP en toda Bolivia.
+          </p>
+
+          {/* CTA & Social Proof Row */}
+          <div className="pt-2 flex flex-wrap items-center gap-5 sm:gap-7">
+            <Link
+              href="/product/chompa-oversize-beige-talla-m"
+              className="inline-flex items-center space-x-2.5 px-7 py-3.5 bg-[#4F46E5] hover:bg-[#4338CA] text-white font-bold text-sm rounded-full shadow-lg shadow-indigo-500/25 transition-all hover:scale-102 active:scale-98"
+            >
+              <span>Shop Now</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            {/* Social Proof: Overlapping Avatars + 1,200+ Happy Customers */}
+            <div className="flex items-center space-x-3">
+              <div className="flex -space-x-2 overflow-hidden">
+                <img
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"
+                  alt="Customer 1"
+                />
+                <img
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100"
+                  alt="Customer 2"
+                />
+                <img
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100"
+                  alt="Customer 3"
+                />
+              </div>
+              <div className="text-xs">
+                <span className="font-extrabold text-slate-900 block leading-tight">1,200+</span>
+                <span className="text-slate-500 font-medium leading-tight">Happy Customers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Floating Headphones with Price Tag & Secondary Smartwatch */}
+        <div className="lg:col-span-6 relative flex items-center justify-center min-h-[340px] sm:min-h-[420px]">
+          {/* Subtle background circle behind headphones */}
+          <div className="absolute w-72 h-72 sm:w-88 sm:h-88 rounded-full bg-white/60 backdrop-blur-xs border border-white/80 shadow-inner"></div>
+
+          {/* Floating Price Pill Tag */}
+          <div className="absolute top-4 sm:top-8 right-12 sm:right-24 z-20 bg-white rounded-full px-4 py-2 shadow-lg border border-slate-100 flex flex-col items-center animate-bounce duration-1000">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Only</span>
+            <span className="text-sm font-black text-[#4F46E5]">$89.00</span>
+          </div>
+
+          {/* Main Hero Product Image: Wireless Headphones */}
+          <div className="relative z-10 w-64 sm:w-84 md:w-96 transform hover:scale-105 transition-transform duration-500 animate-float-gentle">
+            <img
+              src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=85"
+              alt="Roco Wireless Headphones"
+              className="w-full h-auto object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)]"
+            />
+          </div>
+
+          {/* Floating Secondary Smartwatch in bottom right */}
+          <div className="absolute -bottom-2 right-2 sm:right-6 z-15 w-24 sm:w-28 bg-white/70 backdrop-blur-md rounded-2xl p-2 border border-white shadow-md transform rotate-6 hover:rotate-0 transition-transform hidden sm:block">
+            <img
+              src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop&q=80"
+              alt="Smartwatch"
+              className="w-full h-auto object-contain drop-shadow-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Slide Navigation Dots (bottom center) */}
+      <div className="relative z-10 flex items-center justify-center space-x-1.5 mt-4 sm:mt-6">
+        <button className="w-5 h-1.5 rounded-full bg-[#4F46E5] transition-all" aria-label="Slide 1"></button>
+        <button className="w-1.5 h-1.5 rounded-full bg-slate-300 hover:bg-slate-400 transition-all" aria-label="Slide 2"></button>
+        <button className="w-1.5 h-1.5 rounded-full bg-slate-300 hover:bg-slate-400 transition-all" aria-label="Slide 3"></button>
+      </div>
+    </div>
+  );
+}
