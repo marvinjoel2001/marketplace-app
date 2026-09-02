@@ -82,9 +82,9 @@ export function HeroBanner() {
           {/* Main Hero Product Image: Wireless Headphones */}
           <div className="relative z-10 w-64 sm:w-84 md:w-96 transform hover:scale-105 transition-transform duration-500 animate-float-gentle">
             <img
-              src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=85"
+              src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=85"
               alt="Roco Wireless Headphones"
-              className="w-full h-auto object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)]"
+              className="w-full h-auto object-contain drop-shadow-[0_25px_35px_rgba(79,70,229,0.18)] rounded-3xl"
             />
           </div>
 

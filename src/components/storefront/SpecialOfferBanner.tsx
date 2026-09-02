@@ -111,7 +111,7 @@ export function SpecialOfferBanner() {
             {/* White Headphones Image */}
             <div className="w-48 sm:w-60 transform hover:scale-105 transition-transform duration-300 drop-shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&auto=format&fit=crop&q=85"
+                src="https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=85"
                 alt="Enhance Your Music Experience"
                 className="w-full h-auto object-contain rounded-2xl"
               />
