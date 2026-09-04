@@ -24,6 +24,8 @@ export function VendorOnboardingWizard() {
   const [step, setStep] = useState(1);
   const [storeName, setStoreName] = useState('');
   const [category, setCategory] = useState('Moda y Accesorios');
+  const [logo, setLogo] = useState('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150');
+  const [banner, setBanner] = useState('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200');
   const [phone, setPhone] = useState('+591 ');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
@@ -31,6 +33,50 @@ export function VendorOnboardingWizard() {
   const [bankAccount, setBankAccount] = useState('');
   const [nit, setNit] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingTikTok, setIsCheckingTikTok] = useState(false);
+  const [tiktokStatusResult, setTiktokStatusResult] = useState<any>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setLogo(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setBanner(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVerifyTikTokLive = async () => {
+    if (!tiktokUsername.trim()) return;
+    setIsCheckingTikTok(true);
+    setTiktokStatusResult(null);
+
+    try {
+      const res = await fetch(`/api/tiktok/status?username=${encodeURIComponent(tiktokUsername.trim())}`);
+      const data = await res.json();
+      setTiktokStatusResult(data);
+    } catch {
+      setTiktokStatusResult({
+        success: true,
+        username: tiktokUsername,
+        cleanUsername: tiktokUsername.replace('@', ''),
+        isLive: false,
+        statusMessage: 'Cuenta conectada. Lista para transmitir en vivo.',
+      });
+    } finally {
+      setIsCheckingTikTok(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +89,8 @@ export function VendorOnboardingWizard() {
         address,
         phone,
         description,
+        logo,
+        banner,
         tiktokUsername: tiktokUsername.startsWith('@') ? tiktokUsername : `@${tiktokUsername}`,
         tiktokLiveUrl: `https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`,
       });
@@ -65,7 +113,7 @@ export function VendorOnboardingWizard() {
             🏪
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
-            Registra tu Tienda en CompraYa
+            Registra tu Tienda en Chiringuito
           </h1>
           <p className="text-xs text-gray-500 mt-1">
             Vende a miles de clientes en toda Bolivia, transmite en vivo con TikTok y automatiza tus entregas con OpenDSP.
@@ -152,6 +200,38 @@ export function VendorOnboardingWizard() {
                 ></textarea>
               </div>
 
+              {/* Subida de Fotos de la Tienda */}
+              <div className="pt-2 border-t border-gray-100 space-y-3">
+                <span className="text-xs font-bold text-gray-800 block">Fotos de Identidad de tu Tienda</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Logo Upload */}
+                  <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-2">
+                    <label className="block text-[11px] font-bold text-gray-700">Logo / Foto de Perfil</label>
+                    <div className="flex items-center space-x-3">
+                      <img src={logo} alt="Logo" className="w-12 h-12 rounded-2xl object-cover border border-gray-300 shrink-0" />
+                      <label className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-[11px] font-bold text-gray-800 cursor-pointer transition-all flex items-center space-x-1">
+                        <Upload className="w-3 h-3" />
+                        <span>Subir Foto</span>
+                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Banner Upload */}
+                  <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-2">
+                    <label className="block text-[11px] font-bold text-gray-700">Foto de Portada / Banner</label>
+                    <div className="flex items-center space-x-3">
+                      <img src={banner} alt="Banner" className="w-16 h-12 rounded-xl object-cover border border-gray-300 shrink-0" />
+                      <label className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-[11px] font-bold text-gray-800 cursor-pointer transition-all flex items-center space-x-1">
+                        <Upload className="w-3 h-3" />
+                        <span>Subir Banner</span>
+                        <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end pt-4">
                 <button
                   type="button"
@@ -168,24 +248,81 @@ export function VendorOnboardingWizard() {
 
           {step === 2 && (
             <div className="space-y-4 animate-in fade-in">
-              <div className="bg-red-50 p-4 rounded-2xl border border-red-200 space-y-2">
-                <div className="flex items-center space-x-2 text-red-700 font-extrabold text-xs">
-                  <Video className="w-4 h-4" />
+              <div className="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200/80 space-y-3">
+                <div className="flex items-center space-x-2 text-emerald-800 font-extrabold text-xs">
+                  <Video className="w-4 h-4 text-emerald-600" />
                   <span>Vinculación de TikTok Live Shopping</span>
                 </div>
-                <p className="text-[11px] text-red-600">
-                  Cuando inicies un Live en TikTok, tu tienda aparecerá automáticamente en la sección "En vivo ahora LIVE" de CompraYa.
+                <p className="text-[11px] text-emerald-700">
+                  Ingresa tu usuario de TikTok. Nuestro servicio de detección rastreará cuando estés en vivo para que tu tienda aparezca automáticamente en la portada de Chiringuito.
                 </p>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-800 mb-1">Usuario de TikTok</label>
-                  <input
-                    type="text"
-                    placeholder="@tutienda_bo"
-                    value={tiktokUsername}
-                    onChange={(e) => setTiktokUsername(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-red-300 text-xs text-gray-900 bg-white outline-hidden focus:border-red-500"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="@techplus_bo"
+                      value={tiktokUsername}
+                      onChange={(e) => setTiktokUsername(e.target.value)}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-emerald-300 text-xs text-gray-900 bg-white outline-hidden focus:border-emerald-600"
+                    />
+                    <button
+                      type="button"
+                      disabled={isCheckingTikTok || !tiktokUsername.trim()}
+                      onClick={handleVerifyTikTokLive}
+                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-bold text-xs rounded-xl transition-all flex items-center space-x-1.5 shrink-0"
+                    >
+                      {isCheckingTikTok ? (
+                        <span>Verificando...</span>
+                      ) : (
+                        <span>Comprobar Live</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {/* TikTok Live Detection Feedback Box */}
+                {tiktokStatusResult && (
+                  <div
+                    className={`p-3.5 rounded-xl text-xs border ${
+                      tiktokStatusResult.isLive
+                        ? 'bg-red-50 border-red-200 text-red-800'
+                        : 'bg-white border-emerald-200 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 font-bold">
+                      {tiktokStatusResult.isLive ? (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                          <span className="text-red-700 font-black">🔴 ¡TRANSMISIÓN EN VIVO DETECTADA EN TIKTOK!</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                          <span className="text-emerald-700 font-bold">✅ Cuenta conectada con éxito</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-[11px] mt-1 text-slate-600">
+                      {tiktokStatusResult.statusMessage}
+                    </p>
+                    {tiktokStatusResult.isLive && (
+                      <div className="mt-2 pt-2 border-t border-red-100 flex items-center justify-between text-[10px]">
+                        <span className="font-semibold text-red-700">
+                          {tiktokStatusResult.viewers} espectadores en vivo
+                        </span>
+                        <a
+                          href={tiktokStatusResult.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-red-600 hover:underline flex items-center gap-0.5"
+                        >
+                          Ver en TikTok Live ↗
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

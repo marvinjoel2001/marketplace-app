@@ -5,7 +5,7 @@ import { VendorInventoryDashboard } from '@/components/vendor/VendorInventoryDas
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Gestión de Inventario — Panel del Vendedor CompraYa',
+  title: 'Gestión de Inventario — Panel del Vendedor Chiringuito',
 };
 
 export default async function VendorInventoryPage() {

@@ -17,6 +17,7 @@ import {
   X,
   CheckCircle2,
   Scale,
+  Camera,
 } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 import { marketplaceApi } from '@/lib/api';
@@ -97,7 +98,7 @@ export function VendorInventoryDashboard({
       setTitle('');
       setPrice('');
       setImageUrl('');
-      alert('¡Producto publicado con éxito en el catálogo de CompraYa!');
+      alert('¡Producto publicado con éxito en el catálogo de Chiringuito!');
     } catch (err: any) {
       console.error(err);
       alert('¡Producto publicado con éxito en modo local!');
@@ -123,18 +124,34 @@ export function VendorInventoryDashboard({
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/vendor/profile"
+            className="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-xs"
+          >
+            <Camera className="w-3.5 h-3.5 text-slate-700" />
+            <span>Perfil & Fotos</span>
+          </Link>
+
+          <Link
+            href="/vendor/orders"
+            className="px-4 py-2.5 rounded-full bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-xs"
+          >
+            <Truck className="w-3.5 h-3.5 text-blue-600" />
+            <span>Ventas OpenDSP</span>
+          </Link>
+
           <Link
             href="/vendor/live"
-            className="px-5 py-2.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-extrabold text-xs flex items-center space-x-1.5 transition-all shadow-xs"
+            className="px-4 py-2.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-xs"
           >
             <Video className="w-3.5 h-3.5" />
-            <span>Transmitir en TikTok Live</span>
+            <span>TikTok Live</span>
           </Link>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-5 py-2.5 rounded-full bg-black hover:bg-gray-800 text-white font-extrabold text-xs flex items-center space-x-1.5 transition-all shadow-md active:scale-95"
+            className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Añadir Producto</span>
@@ -178,7 +195,7 @@ export function VendorInventoryDashboard({
             </div>
           </div>
           <p className="text-2xl font-black text-gray-900 mt-2">{offers.length} Items</p>
-          <span className="text-[10px] text-gray-500 mt-1 block">En catálogo CompraYa</span>
+          <span className="text-[10px] text-gray-500 mt-1 block">En catálogo Chiringuito</span>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-gray-200/70 shadow-2xs">

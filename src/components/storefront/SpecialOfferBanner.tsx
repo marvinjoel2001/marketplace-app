@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function SpecialOfferBanner() {
+  const { language, t } = useLanguage();
+
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState({
     days: 16,
@@ -27,20 +30,29 @@ export function SpecialOfferBanner() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-[#F5F3FF] via-[#ECE8FE] to-[#F3F4F6] border border-slate-100 p-8 sm:p-12 mb-14 shadow-xs">
+    <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-[#F4F9F5] via-[#FAFCFA] to-[#F1F7F3] border border-emerald-100/70 p-8 sm:p-12 mb-14 shadow-xs">
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Column: Heading, Countdown & CTA */}
         <div className="lg:col-span-6 space-y-6">
           {/* Pill Tag */}
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-purple-100/80 text-purple-700 text-xs font-bold border border-purple-200/50">
-            <span className="text-purple-600">✦</span>
-            <span>Special Offer</span>
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200/70">
+            <span className="text-emerald-600">✦</span>
+            <span>{t('special_offer', 'Oferta Especial')}</span>
           </div>
 
           {/* Heading */}
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-[1.15]">
-            Enhance Your <br />
-            Music Experience
+            {language === 'es' ? (
+              <>
+                Mejora Tu <br />
+                Experiencia Musical
+              </>
+            ) : (
+              <>
+                Enhance Your <br />
+                Music Experience
+              </>
+            )}
           </h2>
 
           {/* Countdown timer with 4 white rounded boxes */}
@@ -49,28 +61,28 @@ export function SpecialOfferBanner() {
               <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
                 {String(timeLeft.days).padStart(2, '0')}
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold mt-1">Days</span>
+              <span className="text-[10px] text-slate-400 font-semibold mt-1">{t('countdown_days', 'Días')}</span>
             </div>
 
             <div className="w-14 sm:w-16 py-2.5 bg-white rounded-2xl border border-slate-100 shadow-2xs flex flex-col items-center">
               <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
                 {String(timeLeft.hours).padStart(2, '0')}
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold mt-1">Hours</span>
+              <span className="text-[10px] text-slate-400 font-semibold mt-1">{t('countdown_hours', 'Horas')}</span>
             </div>
 
             <div className="w-14 sm:w-16 py-2.5 bg-white rounded-2xl border border-slate-100 shadow-2xs flex flex-col items-center">
               <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
                 {String(timeLeft.mins).padStart(2, '0')}
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold mt-1">Mins</span>
+              <span className="text-[10px] text-slate-400 font-semibold mt-1">{t('countdown_mins', 'Min')}</span>
             </div>
 
             <div className="w-14 sm:w-16 py-2.5 bg-white rounded-2xl border border-slate-100 shadow-2xs flex flex-col items-center">
               <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
                 {String(timeLeft.secs).padStart(2, '0')}
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold mt-1">Secs</span>
+              <span className="text-[10px] text-slate-400 font-semibold mt-1">{t('countdown_secs', 'Seg')}</span>
             </div>
           </div>
 
@@ -78,38 +90,20 @@ export function SpecialOfferBanner() {
           <div className="pt-2">
             <Link
               href="/?flashSale=true"
-              className="inline-flex items-center space-x-2 px-7 py-3.5 bg-[#4F46E5] hover:bg-[#4338CA] text-white font-bold text-xs sm:text-sm rounded-full shadow-md shadow-indigo-500/20 transition-all hover:scale-102 active:scale-98"
+              className="inline-flex items-center space-x-2 px-7 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-full shadow-md shadow-emerald-600/20 transition-all hover:scale-102 active:scale-98"
             >
-              <span>Check it Out</span>
+              <span>{t('check_it_out', 'Aprovechar Oferta')}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
 
-        {/* Right Column: Centered White Headphones with Lilac Aura & Soundwaves */}
+        {/* Right Column: Centered White Headphones */}
         <div className="lg:col-span-6 relative flex items-center justify-center min-h-[280px] sm:min-h-[340px]">
-          {/* Subtle soundwave graphic behind */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-            <svg className="w-full h-32 text-indigo-300" viewBox="0 0 400 100" fill="none">
-              <path
-                d="M10 50 Q 50 10, 90 50 T 170 50 T 250 50 T 330 50 T 390 50"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeDasharray="4 4"
-              />
-              <path
-                d="M10 50 Q 50 90, 90 50 T 170 50 T 250 50 T 330 50 T 390 50"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeDasharray="2 3"
-              />
-            </svg>
-          </div>
-
-          {/* Glowing Lilac Circular Aura */}
-          <div className="w-56 h-56 sm:w-72 sm:h-72 rounded-full bg-gradient-to-tr from-[#C4B5FD] to-[#DDD6FE] flex items-center justify-center shadow-lg">
+          {/* Glowing Circular Aura */}
+          <div className="w-56 h-56 sm:w-72 sm:h-72 rounded-full bg-gradient-to-tr from-emerald-100 to-green-50 flex items-center justify-center shadow-md">
             {/* White Headphones Image */}
-            <div className="w-48 sm:w-60 transform hover:scale-105 transition-transform duration-300 drop-shadow-2xl">
+            <div className="w-48 sm:w-60 transform hover:scale-105 transition-transform duration-300 drop-shadow-xl">
               <img
                 src="https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=85"
                 alt="Enhance Your Music Experience"

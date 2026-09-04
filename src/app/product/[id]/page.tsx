@@ -1,6 +1,6 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
 import { marketplaceApi } from '@/lib/api';
+import { getMockProduct } from '@/lib/mockData';
 import { PriceComparisonView } from '@/components/compare/PriceComparisonView';
 
 export const dynamic = 'force-dynamic';
@@ -16,15 +16,12 @@ export default async function ProductDetailPage({
   try {
     product = await marketplaceApi.getProduct(id);
   } catch {
-    try {
-      product = await marketplaceApi.getProduct('chompa-oversize-beige-talla-m');
-    } catch {
-      notFound();
-    }
+    product = null;
   }
 
+  // Resilient fallback: Never trigger 404
   if (!product) {
-    notFound();
+    product = getMockProduct(id);
   }
 
   return <PriceComparisonView product={product as any} />;

@@ -107,6 +107,7 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
   const { addToCart } = useCart();
   const { trackLiveInteraction } = usePersonalization();
   const [activeTab, setActiveTab] = useState<'inicio' | 'productos' | 'en-vivo' | 'opiniones'>('en-vivo');
+  const [streamMode, setStreamMode] = useState<'interactive' | 'webview'>('interactive');
   const [isFollowing, setIsFollowing] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChat);
@@ -246,17 +247,17 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
 
             {/* Big TikTok Live Button */}
             <a
-              href="https://www.tiktok.com"
+              href={store.tiktokLiveUrl || `https://www.tiktok.com/@${(store.tiktokUsername || 'techplus_bo').replace('@', '')}/live`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-extrabold text-sm rounded-full flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all transform hover:scale-102"
+              className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-full flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all transform hover:scale-102"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-1.01-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
               </svg>
               <span>Ver TikTok en vivo</span>
-              <span className="text-blue-200">|</span>
-              <span>Entrar al LIVE</span>
+              <span className="text-emerald-200">|</span>
+              <span>Abrir en TikTok</span>
             </a>
           </div>
         </div>
@@ -282,7 +283,7 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
           <button
             onClick={() => setActiveTab('en-vivo')}
             className={`pb-2 transition-colors flex items-center space-x-1.5 ${
-              activeTab === 'en-vivo' ? 'text-red-600 border-b-2 border-red-600' : 'hover:text-red-600'
+              activeTab === 'en-vivo' ? 'text-emerald-700 border-b-2 border-emerald-600' : 'hover:text-emerald-700'
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
@@ -299,46 +300,104 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
         </div>
       </div>
 
-      {/* Main Live Experience Layout (Left: Live Stream & Chat, Right: Live Products) */}
+      {/* Mode Switcher: Interactive Stream vs WebView Embed */}
+      <div className="flex items-center space-x-3">
+        <button
+          type="button"
+          onClick={() => setStreamMode('interactive')}
+          className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
+            streamMode === 'interactive'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+          }`}
+        >
+          <span>⚡ Modo Interactivo Chiringuito</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setStreamMode('webview')}
+          className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
+            streamMode === 'webview'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+          }`}
+        >
+          <span>📱 Vista WebView TikTok Live</span>
+        </button>
+      </div>
+
+      {/* Main Live Experience Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Live Video Stream & Realtime Chat Overlay */}
+        {/* Left 2 Cols: Live Video Stream / WebView */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="relative rounded-3xl overflow-hidden bg-slate-950 aspect-[16/10] sm:aspect-[16/9] shadow-xl border border-gray-800">
-            {/* Simulated Live Video Background */}
-            <div className="absolute inset-0">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&auto=format&fit=crop&q=80"
-                alt="Presentadora en vivo mostrando iPhone"
-                className="w-full h-full object-cover object-center filter brightness-95"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40"></div>
-            </div>
-
-            {/* Top Bar inside Stream */}
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-600 text-white font-black text-xs uppercase shadow-md animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-white"></span>
-                  <span>LIVE</span>
+          {streamMode === 'webview' ? (
+            /* WebView Mode: Embeds the actual TikTok Live Room page / player */
+            <div className="relative rounded-3xl overflow-hidden bg-black aspect-[16/10] sm:aspect-[16/9] shadow-xl border border-gray-800 flex flex-col">
+              <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                  <span className="font-bold text-white">WebView TikTok Live</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">@{store.tiktokUsername || store.slug}</span>
                 </div>
-                <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-semibold">
-                  <Radio className="w-3.5 h-3.5 text-red-400" />
-                  <span>{liveStream?.viewerCount || 1240} espectadores</span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 transition-colors"
+                <a
+                  href={store.tiktokLiveUrl || `https://www.tiktok.com/@${(store.tiktokUsername || 'techplus_bo').replace('@', '')}/live`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
                 >
-                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </button>
-                <button className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 transition-colors">
-                  <Maximize className="w-4 h-4" />
-                </button>
+                  <span>Abrir en TikTok App</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <div className="flex-1 relative w-full h-full bg-slate-950 flex items-center justify-center">
+                <iframe
+                  src={store.tiktokLiveUrl || `https://www.tiktok.com/@${(store.tiktokUsername || 'techplus_bo').replace('@', '')}/live`}
+                  title={`TikTok Live - ${store.name}`}
+                  className="w-full h-full border-0 min-h-[420px]"
+                  allow="autoplay; camera; microphone; fullscreen; clipboard-write; encrypted-media"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                />
               </div>
             </div>
+          ) : (
+            /* Interactive Stream Player */
+            <div className="relative rounded-3xl overflow-hidden bg-slate-950 aspect-[16/10] sm:aspect-[16/9] shadow-xl border border-gray-800">
+              {/* Simulated Live Video Background */}
+              <div className="absolute inset-0">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&auto=format&fit=crop&q=80"
+                  alt="Presentadora en vivo mostrando iPhone"
+                  className="w-full h-full object-cover object-center filter brightness-95"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40"></div>
+              </div>
+
+              {/* Top Bar inside Stream */}
+              <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-600 text-white font-black text-xs uppercase shadow-md animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-white"></span>
+                    <span>LIVE</span>
+                  </div>
+                  <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-semibold">
+                    <Radio className="w-3.5 h-3.5 text-red-400" />
+                    <span>{liveStream?.viewerCount || 1240} espectadores</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 transition-colors"
+                  >
+                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+                  <button className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 transition-colors">
+                    <Maximize className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
             {/* Streamer Branding Overlay */}
             <div className="absolute top-16 right-6 hidden sm:block text-right z-10 pointer-events-none opacity-80">
@@ -427,7 +486,8 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
               </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Right Col: Productos en vivo */}
         <div className="space-y-4">

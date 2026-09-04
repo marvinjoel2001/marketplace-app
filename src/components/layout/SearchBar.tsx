@@ -216,19 +216,20 @@ export function SearchBar() {
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Search Input Capsule (Matching image design: Search products... 🔍) */}
-      <form onSubmit={handleSubmit} className="flex items-center">
+    <div ref={containerRef} className="relative w-full">
+      {/* Search Input Capsule (Fluid & Proportional) */}
+      <form onSubmit={handleSubmit} className="w-full flex items-center">
         <div
-          className={`relative flex items-center w-48 sm:w-60 lg:w-68 rounded-full border px-3.5 py-1.5 transition-all duration-200 ${
+          className={`relative flex items-center w-full rounded-full border px-4 py-2 transition-all duration-200 ${
             isFocused
-              ? 'bg-white border-indigo-600 ring-3 ring-indigo-100/70 shadow-sm w-72'
-              : 'bg-slate-50/80 hover:bg-white border-slate-200 hover:border-slate-300'
+              ? 'bg-white border-emerald-600 ring-3 ring-emerald-100 shadow-xs'
+              : 'bg-slate-50/90 hover:bg-white border-slate-200/90 hover:border-slate-300'
           }`}
         >
+          <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder="Buscar productos, marcas o tiendas en Bolivia..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
@@ -242,18 +243,11 @@ export function SearchBar() {
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute right-7 p-0.5 text-slate-400 hover:text-slate-700"
+              className="absolute right-3 p-0.5 text-slate-400 hover:text-slate-700"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           ) : null}
-          <button
-            type="submit"
-            aria-label="Buscar"
-            className="absolute right-2.5 p-1 text-slate-400 hover:text-indigo-600 transition-colors"
-          >
-            <Search className="w-3.5 h-3.5" />
-          </button>
         </div>
       </form>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { marketplaceApi } from '@/lib/api';
 import { HeroBanner } from '@/components/storefront/HeroBanner';
+import { LiveShoppingBar } from '@/components/storefront/LiveShoppingBar';
 import { BrowseByCategory } from '@/components/storefront/BrowseByCategory';
 import { SpecialOfferBanner } from '@/components/storefront/SpecialOfferBanner';
 import { PersonalizedStorefrontFeed } from '@/components/storefront/PersonalizedStorefrontFeed';
@@ -26,7 +27,7 @@ export default async function HomePage({
       q: searchQuery,
     });
   } catch (error) {
-    console.error('Error loading products from NestJS backend:', error);
+    console.error('Error loading products:', error);
   }
 
   const isFiltering = !!(searchQuery || categorySlug || isFlashSale);
@@ -39,22 +40,31 @@ export default async function HomePage({
           {/* 1. Hero Banner: Roco Wireless Headphones */}
           <HeroBanner />
 
-          {/* 2. Category Row: 7 Cards */}
+          {/* 2. TikTok Live Shopping Section: Tiendas en Vivo */}
+          <div id="tiendas" className="scroll-mt-20">
+            <LiveShoppingBar />
+          </div>
+
+          {/* 3. Category Row: 7 Cards */}
           <BrowseByCategory />
 
-          {/* 3. Mid-Page Special Offer: Enhance Your Music Experience */}
+          {/* 4. Mid-Page Special Offer: Enhance Your Music Experience */}
           <SpecialOfferBanner />
 
-          {/* 4. Best Sellers & Behavioral Re-ranked Feed */}
-          <PersonalizedStorefrontFeed
-            initialProducts={products}
-            searchQuery={searchQuery}
-            categorySlug={categorySlug}
-            isFlashSale={isFlashSale}
-          />
+          {/* 5. Best Sellers & Behavioral Re-ranked Feed */}
+          <div id="catalogo" className="scroll-mt-20">
+            <PersonalizedStorefrontFeed
+              initialProducts={products}
+              searchQuery={searchQuery}
+              categorySlug={categorySlug}
+              isFlashSale={isFlashSale}
+            />
+          </div>
 
-          {/* 5. Bottom Trust Badges Bar */}
-          <TrustBadgesBar />
+          {/* 6. Bottom Trust Badges Bar */}
+          <div id="envios" className="scroll-mt-20">
+            <TrustBadgesBar />
+          </div>
         </>
       ) : (
         /* If filtering by search, category or flash sale, show filtered results */
@@ -74,14 +84,21 @@ export default async function HomePage({
             </div>
           </div>
 
-          <PersonalizedStorefrontFeed
-            initialProducts={products}
-            searchQuery={searchQuery}
-            categorySlug={categorySlug}
-            isFlashSale={isFlashSale}
-          />
+          {/* Mini live shopping banner even during filter */}
+          <LiveShoppingBar />
 
-          <TrustBadgesBar />
+          <div id="catalogo" className="scroll-mt-20">
+            <PersonalizedStorefrontFeed
+              initialProducts={products}
+              searchQuery={searchQuery}
+              categorySlug={categorySlug}
+              isFlashSale={isFlashSale}
+            />
+          </div>
+
+          <div id="envios" className="scroll-mt-20">
+            <TrustBadgesBar />
+          </div>
         </div>
       )}
     </div>

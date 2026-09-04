@@ -24,10 +24,12 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatBs } from '@/lib/utils';
 import { marketplaceApi } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function CheckoutFlow() {
   const { cart, subtotal, shippingFee, totalAmount, clearCart, savedCity } = useCart();
   const { user, isAuthenticated, isProfileComplete, openAuthModal } = useAuth();
+  const { language, t } = useLanguage();
   const router = useRouter();
 
   const [paymentMethod, setPaymentMethod] = useState<'QR' | 'CARD' | 'WALLET'>('QR');
@@ -161,46 +163,50 @@ export function CheckoutFlow() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <nav className="flex items-center space-x-2 text-xs text-gray-500">
-        <Link href="/" className="hover:text-black">Inicio</Link>
+        <Link href="/" className="hover:text-black">{t('nav_home', 'Inicio')}</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <Link href="/cart" className="hover:text-black">Carrito</Link>
+        <Link href="/cart" className="hover:text-black">{t('cart_drawer_title', 'Carrito')}</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-gray-900 font-bold">Checkout</span>
+        <span className="text-gray-900 font-bold">{t('checkout_page_title', 'Checkout')}</span>
       </nav>
 
       {/* Guest Mode Conversion Banner */}
       {!isAuthenticated && (
-        <div className="bg-amber-50 border-2 border-amber-400/80 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-400 flex items-center justify-center text-xl shadow-xs shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-xs shrink-0">
               🔐
             </div>
             <div>
               <h4 className="text-sm font-black text-gray-950">
-                Punto de Conversión: Inicia sesión en un clic para finalizar
+                {language === 'es'
+                  ? 'Punto de Conversión: Inicia sesión en un clic para finalizar'
+                  : 'Fast Checkout: Sign in with 1-click to complete your order'}
               </h4>
               <p className="text-xs text-gray-700 font-medium mt-0.5">
-                Navegaste como invitado. Ahora vincula tu cuenta de TikTok, Google o Facebook para coordinar el repartidor por WhatsApp.
+                {language === 'es'
+                  ? 'Navegaste como invitado. Vincula tu cuenta de TikTok, Google o correo para coordinar la entrega express por WhatsApp.'
+                  : 'Browsing as guest. Link your TikTok, Google or email account to track your OpenDSP express driver.'}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => openAuthModal()}
-            className="px-6 py-2.5 bg-black hover:bg-gray-900 text-white font-black text-xs rounded-full shadow-md transition-all shrink-0 active:scale-95"
+            className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs rounded-full shadow-md transition-all shrink-0 active:scale-95"
           >
-            Iniciar Sesión
+            {t('nav_login', 'Iniciar Sesión')}
           </button>
         </div>
       )}
 
-      {/* Main Checkout Columns (Matching bottom-right mockup) */}
+      {/* Main Checkout Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Col 1: Resumen de tu pedido */}
         <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold text-gray-900 mb-4 pb-2 border-b border-gray-100">
-              Resumen de tu pedido
+              {t('checkout_summary_title', 'Resumen del Pedido')}
             </h3>
 
             <div className="space-y-3">
@@ -217,10 +223,14 @@ export function CheckoutFlow() {
                     <h4 className="text-xs font-bold text-gray-900 line-clamp-2 leading-tight">
                       {item.productTitle}
                     </h4>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Vendido por: {item.storeName}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {language === 'es' ? 'Vendido por' : 'Sold by'}: {item.storeName}
+                    </p>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-xs font-black text-gray-900">{formatBs(item.unitPrice)}</span>
-                      <span className="text-[10px] text-gray-500 font-semibold">Cant: {item.quantity}</span>
+                      <span className="text-[10px] text-gray-500 font-semibold">
+                        {language === 'es' ? 'Cant' : 'Qty'}: {item.quantity}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -231,18 +241,18 @@ export function CheckoutFlow() {
           {/* Pricing Totals */}
           <div className="border-t border-gray-100 pt-3 mt-4 space-y-2 text-xs">
             <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
+              <span>{t('cart_subtotal', 'Subtotal')}</span>
               <span className="font-semibold text-gray-900">{formatBs(currentSubtotal)}</span>
             </div>
-            <div className="flex justify-between text-green-700 font-semibold">
+            <div className="flex justify-between text-emerald-700 font-semibold">
               <span className="flex items-center">
-                <Truck className="w-3.5 h-3.5 mr-1" /> Envío OpenDSP
+                <Truck className="w-3.5 h-3.5 mr-1" /> {t('cart_shipping', 'Envío OpenDSP Express')}
               </span>
-              <span>{currentShipping === 0 ? 'Gratis' : formatBs(currentShipping)}</span>
+              <span>{currentShipping === 0 ? t('cart_free_shipping', '¡Gratis!') : formatBs(currentShipping)}</span>
             </div>
             <div className="border-t border-gray-200 pt-2 flex justify-between items-baseline font-black text-gray-900">
-              <span className="text-sm">Total a pagar</span>
-              <span className="text-lg text-black">{formatBs(currentTotal)}</span>
+              <span className="text-sm">{t('cart_total', 'Total a pagar')}</span>
+              <span className="text-lg text-emerald-800 font-black">{formatBs(currentTotal)}</span>
             </div>
           </div>
         </div>
@@ -251,7 +261,7 @@ export function CheckoutFlow() {
         <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold text-gray-900 mb-4 pb-2 border-b border-gray-100">
-              Método de pago
+              {t('checkout_payment_step', '2. Método de Pago')}
             </h3>
 
             <div className="space-y-2.5">
@@ -336,22 +346,26 @@ export function CheckoutFlow() {
         <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-              <h3 className="text-sm font-extrabold text-gray-900">Dirección de entrega</h3>
-              <span className="text-xs font-bold text-amber-600 cursor-pointer hover:underline">
-                Cambiar
+              <h3 className="text-sm font-extrabold text-gray-900">
+                {t('checkout_delivery_step', '1. Dirección de Entrega')}
+              </h3>
+              <span className="text-xs font-bold text-emerald-700 cursor-pointer hover:underline">
+                {language === 'es' ? 'Cambiar' : 'Change'}
               </span>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs font-extrabold text-gray-900">{customerAddress}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Referencia: {addressReference}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    {language === 'es' ? 'Referencia' : 'Reference'}: {addressReference}
+                  </p>
                 </div>
               </div>
 
-              {/* Map Illustration with Pin (Matching mockup) */}
+              {/* Map Illustration with Pin */}
               <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-[#E8ECEF] aspect-[4/3] flex items-center justify-center shadow-inner">
                 {/* Simulated Street Grid */}
                 <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]"></div>
@@ -361,7 +375,7 @@ export function CheckoutFlow() {
                   <path
                     d="M 30,120 Q 80,40 160,50"
                     fill="none"
-                    stroke="#3b82f6"
+                    stroke="#10b981"
                     strokeWidth="3"
                     strokeDasharray="4,4"
                   />
@@ -369,23 +383,25 @@ export function CheckoutFlow() {
 
                 {/* Pin on Map */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg ring-4 ring-blue-200 animate-bounce">
+                  <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg ring-4 ring-emerald-200 animate-bounce">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <span className="text-[9px] font-bold bg-white text-gray-800 px-2 py-0.5 rounded-full shadow-xs mt-1">
-                    Punto de Entrega
+                    {language === 'es' ? 'Punto de Entrega' : 'Delivery Point'}
                   </span>
                 </div>
 
-                <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs text-[10px] font-bold text-blue-600 px-2 py-0.5 rounded-md cursor-pointer hover:bg-white shadow-2xs">
-                  Ver en mapa
+                <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs text-[10px] font-bold text-emerald-700 px-2 py-0.5 rounded-md cursor-pointer hover:bg-white shadow-2xs">
+                  {language === 'es' ? 'Ver en mapa' : 'View on map'}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 text-[10px] text-gray-500">
-            Entrega gestionada con geolocalización satelital OpenDSP.
+            {language === 'es'
+              ? 'Entrega gestionada con geolocalización satelital OpenDSP.'
+              : 'Delivery managed with OpenDSP satellite geolocation.'}
           </div>
         </div>
 
@@ -393,26 +409,33 @@ export function CheckoutFlow() {
         <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold text-gray-900 mb-4 pb-2 border-b border-gray-100">
-              Seguimiento de tu pedido
+              {language === 'es' ? 'Seguimiento de tu pedido' : 'Order Tracking'}
             </h3>
 
             {/* Status & ETA */}
             <div className="space-y-3 mb-4">
               <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping"></span>
-                <span className="text-xs font-extrabold text-green-700">Tu pedido va en camino</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                <span className="text-xs font-extrabold text-emerald-700">
+                  {language === 'es' ? 'Tu pedido va en camino' : 'Your order is on the way'}
+                </span>
               </div>
               <p className="text-xs font-bold text-gray-800">
-                Llegada estimada: <span className="text-amber-600">15 - 25 min</span>
+                {language === 'es' ? 'Llegada estimada' : 'Estimated arrival'}:{' '}
+                <span className="text-emerald-600 font-extrabold">15 - 25 min</span>
               </p>
 
               {/* Rider Route Graphic */}
-              <div className="relative rounded-2xl overflow-hidden bg-slate-50 border border-gray-200 aspect-[16/9] flex items-center justify-center p-2">
+              <div className="relative rounded-2xl overflow-hidden bg-emerald-50/50 border border-emerald-100 aspect-[16/9] flex items-center justify-center p-2">
                 <div className="flex items-center space-x-2">
                   <span className="text-2xl animate-pulse">🛵</span>
                   <div className="text-left">
-                    <p className="text-[11px] font-bold text-gray-800">Motorizado OpenDSP</p>
-                    <p className="text-[9px] text-gray-500">En ruta directa hacia tu dirección</p>
+                    <p className="text-[11px] font-bold text-gray-800">
+                      {language === 'es' ? 'Motorizado OpenDSP' : 'OpenDSP Courier'}
+                    </p>
+                    <p className="text-[9px] text-gray-500">
+                      {language === 'es' ? 'En ruta directa hacia tu dirección' : 'Direct route to your location'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -427,7 +450,9 @@ export function CheckoutFlow() {
                   />
                   <div>
                     <h5 className="text-xs font-bold text-gray-900">Carlos Mendoza</h5>
-                    <p className="text-[10px] text-gray-500">Tu repartidor • ★ 4.9</p>
+                    <p className="text-[10px] text-gray-500">
+                      {language === 'es' ? 'Tu repartidor' : 'Your driver'} • ★ 4.9
+                    </p>
                   </div>
                 </div>
                 <a
@@ -446,23 +471,14 @@ export function CheckoutFlow() {
             <button
               disabled={isProcessing}
               onClick={handleCheckoutAction}
-              className="w-full py-4 bg-amber-400 hover:bg-amber-500 disabled:bg-gray-200 text-black font-black text-sm rounded-full flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-black text-sm rounded-full flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95"
             >
               {isProcessing ? (
-                <span>Despachando a OpenDSP...</span>
-              ) : !isAuthenticated ? (
-                <>
-                  <span>Iniciar Sesión para Pagar</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              ) : !isProfileComplete ? (
-                <>
-                  <span>Completar Datos de Entrega</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
+                <span>{t('checkout_processing', 'Procesando despacho OpenDSP...')}</span>
               ) : (
                 <>
-                  <span>Pagar y Despachar con OpenDSP</span>
+                  <ShieldCheck className="w-4 h-4 text-white" />
+                  <span>{t('checkout_confirm_btn', 'Confirmar y Pagar Pedido')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

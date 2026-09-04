@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Star, ArrowRight, Scale, ShoppingBag } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProductItem {
   id: string;
@@ -33,6 +34,7 @@ interface ProductItem {
 }
 
 export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) {
+  const { language, t } = useLanguage();
   // Demo catalog products if DB has fewer than 8 to match the 4x2 grid from the image
   const demoFallbackProducts: ProductItem[] = [
     {
@@ -175,26 +177,6 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
         },
       ],
     },
-    {
-      id: 'demo-8',
-      title: 'Wireless Gamepad Pro Navy',
-      slug: 'wireless-gamepad',
-      description: 'Low-latency Bluetooth 5.0 controller compatible with PC, iOS, Android and Switch.',
-      basePrice: 245,
-      rating: 4.8,
-      reviewCount: 87,
-      images: JSON.stringify(['https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=500']),
-      offers: [
-        {
-          id: 'off-8',
-          price: 245,
-          shippingCost: 0,
-          estimatedDelivery: 'OpenDSP Hoy',
-          isRecommended: true,
-          store: { id: 's-8', name: 'PlayBolivia', slug: 'playbolivia', isOfficial: true, rating: 4.9 },
-        },
-      ],
-    },
   ];
 
   // Combine real DB products first, filling up to 8 with high-converting showcase products
@@ -205,12 +187,12 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
       {/* Section Header: Our Collection -> Explore Our Best Sellers */}
       <div className="flex items-end justify-between mb-4">
         <div>
-          <div className="flex items-center space-x-1.5 text-xs font-bold text-[#4F46E5] uppercase tracking-wider mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5]"></span>
-            <span>Our Collection</span>
+          <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            <span>{language === 'es' ? 'Nuestra Selección' : 'Our Collection'}</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            Explore Our Best Sellers
+            {language === 'es' ? 'Explora los Más Vendidos' : 'Explore Our Best Sellers'}
           </h2>
         </div>
 
@@ -219,7 +201,7 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
           href="/#catalogo"
           className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors shadow-2xs"
         >
-          <span>View All Products</span>
+          <span>{language === 'es' ? 'Ver Todos los Productos' : 'View All Products'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -242,7 +224,15 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
 
           // Assign badges matching the reference image layout
           const badges = ['Best Seller', '20% OFF', 'New', '15% OFF', 'New', 'Best Seller', '10% OFF', 'New'];
-          const badgeType = badges[idx % badges.length];
+          const rawBadge = badges[idx % badges.length];
+          const badgeType =
+            language === 'es'
+              ? rawBadge === 'Best Seller'
+                ? 'Más Vendido'
+                : rawBadge === 'New'
+                ? 'Nuevo'
+                : rawBadge
+              : rawBadge;
 
           return (
             <div

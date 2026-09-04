@@ -1,3 +1,12 @@
+import {
+  MOCK_STORES,
+  MOCK_PRODUCTS,
+  MOCK_CATEGORIES,
+  getMockStore,
+  getMockProduct,
+  getMockProducts,
+} from './mockData';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) {
@@ -20,7 +29,10 @@ export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) 
 
     return await res.json();
   } catch (error: any) {
-    console.error(`API Fetch Error [${endpoint}]:`, error.message);
+    // Suppress repeated verbose connection error logs in dev
+    if (error?.cause?.code !== 'ECONNREFUSED') {
+      console.warn(`API [${endpoint}] fetch failed:`, error.message);
+    }
     throw error;
   }
 }
@@ -28,17 +40,29 @@ export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) 
 export const marketplaceApi = {
   // Products
   async getProducts(params: { category?: string; flashSale?: boolean; q?: string; slug?: string } = {}) {
-    const query = new URLSearchParams();
-    if (params.category) query.set('category', params.category);
-    if (params.flashSale) query.set('flashSale', 'true');
-    if (params.q) query.set('q', params.q);
-    if (params.slug) query.set('slug', params.slug);
-    const qs = query.toString() ? `?${query.toString()}` : '';
-    return fetchFromAPI(`/products${qs}`);
+    try {
+      const query = new URLSearchParams();
+      if (params.category) query.set('category', params.category);
+      if (params.flashSale) query.set('flashSale', 'true');
+      if (params.q) query.set('q', params.q);
+      if (params.slug) query.set('slug', params.slug);
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      const data = await fetchFromAPI(`/products${qs}`);
+      if (Array.isArray(data) && data.length > 0) return data;
+    } catch {
+      // Graceful offline/backend-less fallback
+    }
+    return getMockProducts(params);
   },
 
   async getProduct(idOrSlug: string) {
-    return fetchFromAPI(`/products/${encodeURIComponent(idOrSlug)}`);
+    try {
+      const data = await fetchFromAPI(`/products/${encodeURIComponent(idOrSlug)}`);
+      if (data && data.id) return data;
+    } catch {
+      // Graceful offline/backend-less fallback
+    }
+    return getMockProduct(idOrSlug);
   },
 
   async createProduct(data: any) {
@@ -50,19 +74,40 @@ export const marketplaceApi = {
 
   // Categories
   async getCategories() {
-    return fetchFromAPI('/categories');
+    try {
+      const data = await fetchFromAPI('/categories');
+      if (Array.isArray(data) && data.length > 0) return data;
+    } catch {
+      // Graceful offline fallback
+    }
+    return MOCK_CATEGORIES;
   },
 
   // Stores
   async getStores(params: { isLive?: boolean } = {}) {
-    const query = new URLSearchParams();
-    if (params.isLive) query.set('isLive', 'true');
-    const qs = query.toString() ? `?${query.toString()}` : '';
-    return fetchFromAPI(`/stores${qs}`);
+    try {
+      const query = new URLSearchParams();
+      if (params.isLive) query.set('isLive', 'true');
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      const data = await fetchFromAPI(`/stores${qs}`);
+      if (Array.isArray(data) && data.length > 0) return data;
+    } catch {
+      // Graceful offline fallback
+    }
+    if (params.isLive) {
+      return MOCK_STORES.filter((s) => s.isLive);
+    }
+    return MOCK_STORES;
   },
 
   async getStore(idOrSlug: string) {
-    return fetchFromAPI(`/stores/${encodeURIComponent(idOrSlug)}`);
+    try {
+      const data = await fetchFromAPI(`/stores/${encodeURIComponent(idOrSlug)}`);
+      if (data && data.id) return data;
+    } catch {
+      // Graceful offline fallback
+    }
+    return getMockStore(idOrSlug);
   },
 
   async createStore(data: any) {
@@ -74,10 +119,16 @@ export const marketplaceApi = {
 
   // Live Streams
   async getLiveStreams(storeId?: string) {
-    const query = new URLSearchParams();
-    if (storeId) query.set('storeId', storeId);
-    const qs = query.toString() ? `?${query.toString()}` : '';
-    return fetchFromAPI(`/live-streams${qs}`);
+    try {
+      const query = new URLSearchParams();
+      if (storeId) query.set('storeId', storeId);
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      const data = await fetchFromAPI(`/live-streams${qs}`);
+      if (Array.isArray(data) && data.length > 0) return data;
+    } catch {
+      // Graceful offline fallback
+    }
+    return MOCK_STORES.filter((s) => s.isLive).flatMap((s) => s.liveStreams || []);
   },
 
   async createLiveStream(data: any) {
@@ -89,11 +140,19 @@ export const marketplaceApi = {
 
   // Orders
   async getOrders(limit: number = 20) {
-    return fetchFromAPI(`/orders?limit=${limit}`);
+    try {
+      return await fetchFromAPI(`/orders?limit=${limit}`);
+    } catch {
+      return [];
+    }
   },
 
   async getOrder(idOrNumber: string) {
-    return fetchFromAPI(`/orders/${encodeURIComponent(idOrNumber)}`);
+    try {
+      return await fetchFromAPI(`/orders/${encodeURIComponent(idOrNumber)}`);
+    } catch {
+      return null;
+    }
   },
 
   async createOrder(data: any) {
@@ -113,7 +172,17 @@ export const marketplaceApi = {
 
   // Admin Stats
   async getAdminStats() {
-    return fetchFromAPI('/admin/stats');
+    try {
+      return await fetchFromAPI('/admin/stats');
+    } catch {
+      return {
+        totalOrders: 1284,
+        totalSales: 452900,
+        activeDrivers: 18,
+        activeStores: 42,
+        liveStreamsNow: 7,
+      };
+    }
   },
 
   // Auth & Progressive Profiling

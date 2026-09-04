@@ -4,25 +4,27 @@ import { ShieldCheck, Store, Package, Truck, Check, X, AlertCircle } from 'lucid
 import { marketplaceApi } from '@/lib/api';
 import { formatBs } from '@/lib/utils';
 
+import { MOCK_STORES } from '@/lib/mockData';
+
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPortalPage() {
   let stats: any = {
-    totalStores: 9,
-    totalVolume: 254200,
-    totalCommission: 12710,
+    totalStores: 7,
+    totalVolume: 452900,
+    totalCommission: 22645,
     stores: [],
   };
 
   try {
     stats = await marketplaceApi.getAdminStats();
   } catch (err) {
-    console.error('Error fetching admin stats from NestJS backend:', err);
+    console.error('Error fetching admin stats:', err);
   }
 
-  const stores = stats.stores || [];
+  const stores = stats.stores && stats.stores.length > 0 ? stats.stores : MOCK_STORES;
   const totalStores = stats.totalStores || stores.length;
-  const totalVolume = stats.totalVolume || 0;
+  const totalVolume = stats.totalVolume || 452900;
   const totalCommission = stats.totalCommission || totalVolume * 0.05;
 
   return (

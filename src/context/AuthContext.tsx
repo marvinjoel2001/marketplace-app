@@ -18,15 +18,23 @@ export interface UserProfile {
   interestProfile?: string;
 }
 
+export interface ProviderConfigInfo {
+  google: { enabled: boolean; clientId: string };
+  tiktok: { enabled: boolean; clientKey: string };
+  facebook: { enabled: boolean; appId: string };
+}
+
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isProfileComplete: boolean;
   isAuthModalOpen: boolean;
   authModalStep: 'login' | 'enrich';
+  providersConfig: ProviderConfigInfo | null;
   openAuthModal: (options?: { onComplete?: () => void; initialStep?: 'login' | 'enrich' }) => void;
   closeAuthModal: () => void;
   socialLogin: (provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK') => Promise<void>;
+  emailLogin: (identifier: string, password?: string) => Promise<void>;
   enrichProfile: (data: {
     phone: string;
     city?: string;
@@ -40,24 +48,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = 'compraya_auth_user';
+const USER_STORAGE_KEY = 'chiringuito_auth_user';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalStep, setAuthModalStep] = useState<'login' | 'enrich'>('login');
   const [onCompleteCallback, setOnCompleteCallback] = useState<(() => void) | null>(null);
+  const [providersConfig, setProvidersConfig] = useState<ProviderConfigInfo | null>(null);
 
-  // Cargar usuario persistido al montar
+  // Cargar usuario persistido y estado de proveedores al montar
   useEffect(() => {
     try {
       const stored = localStorage.getItem(USER_STORAGE_KEY);
       if (stored) {
         setUser(JSON.parse(stored));
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
+
+    // Consultar proveedores activos según las variables de entorno
+    fetch('/api/auth/providers')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.providers) {
+          setProvidersConfig(data.providers);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const openAuthModal = useCallback(
@@ -78,13 +95,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOnCompleteCallback(null);
   }, []);
 
-  // Login Social en 1 Clic con Migración de Carrito e Intereses
+  // Login Social en 1 Clic con soporte para variables de entorno reales o modo desarrollo
   const socialLogin = async (provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK') => {
-    // Generar datos contextuales de demo realistas según el proveedor
+    const isGoogleEnabled = providersConfig?.google.enabled;
+    const isTikTokEnabled = providersConfig?.tiktok.enabled;
+
+    // Si las variables de entorno de producción están configuradas, redireccionar al OAuth real
+    if (provider === 'GOOGLE' && isGoogleEnabled) {
+      window.location.href = `/api/auth/oauth/google?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+    if (provider === 'TIKTOK' && isTikTokEnabled) {
+      window.location.href = `/api/auth/oauth/tiktok?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    // Perfiles estructurados de demostración / desarrollo seguro
     const mockProfiles = {
       TIKTOK: {
-        email: 'marvin.tiktok@bolivia.bo',
-        name: 'Marvin TikTok Fan',
+        email: 'marvin.tiktok@chiringuito.bo',
+        name: 'Marvin TikTok Live',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       },
       GOOGLE: {
@@ -101,7 +131,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const targetProfile = mockProfiles[provider];
 
-    // Obtener carrito local e intereses para sincronizarlos (Migración Anónimo -> Autenticado)
     let localInterest = '';
     let localCart = '';
     let localVisitorId = '';
@@ -109,26 +138,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localInterest = localStorage.getItem('compraya_interest_profile') || '';
       localCart = localStorage.getItem('compraya_cart') || '';
       localVisitorId = localStorage.getItem('compraya_visitor_id') || '';
-    } catch {
-      // ignore
-    }
+    } catch {}
 
     try {
-      const response = await marketplaceApi.socialLogin({
-        email: targetProfile.email,
-        name: targetProfile.name,
-        avatar: targetProfile.avatar,
-        provider,
-        visitorId: localVisitorId,
-        interestProfile: localInterest,
-        cart: localCart,
+      // Llamar al endpoint interno de Next.js
+      const res = await fetch('/api/auth/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: targetProfile.email,
+          name: targetProfile.name,
+          avatar: targetProfile.avatar,
+          provider,
+          visitorId: localVisitorId,
+          interestProfile: localInterest,
+          cart: localCart,
+        }),
       });
+
+      const response = await res.json();
+      if (!res.ok) throw new Error(response.error || 'Error al autenticar');
 
       const loggedUser = response.user;
       setUser(loggedUser);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
+      } catch {}
 
-      // Si el usuario no tiene teléfono y dirección (enriquecimiento obligatorio), avanzar al paso 2
       if (!response.isProfileComplete) {
         setAuthModalStep('enrich');
       } else {
@@ -139,6 +175,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error('Error en social login:', error);
+      throw error;
+    }
+  };
+
+  // Login Directo con Correo o Teléfono / WhatsApp
+  const emailLogin = async (identifier: string, password?: string) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al autenticar');
+
+      const loggedUser = data.user;
+      setUser(loggedUser);
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
+      } catch {}
+
+      if (!data.isProfileComplete) {
+        setAuthModalStep('enrich');
+      } else {
+        closeAuthModal();
+        if (onCompleteCallback) {
+          onCompleteCallback();
+        }
+      }
+    } catch (error: any) {
+      console.error('Error en email login:', error);
       throw error;
     }
   };
@@ -155,14 +223,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     try {
-      const response = await marketplaceApi.enrichProfile({
-        userId: user.id,
-        ...data,
+      const res = await fetch('/api/auth/enrich-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          ...data,
+        }),
       });
 
-      const updatedUser = response.user;
+      const response = await res.json();
+      const updatedUser = {
+        ...user,
+        ...data,
+      };
+
       setUser(updatedUser);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      } catch {}
 
       closeAuthModal();
       if (onCompleteCallback) {
@@ -178,9 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     try {
       localStorage.removeItem(USER_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
   const isAuthenticated = Boolean(user);
@@ -194,9 +271,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isProfileComplete,
         isAuthModalOpen,
         authModalStep,
+        providersConfig,
         openAuthModal,
         closeAuthModal,
         socialLogin,
+        emailLogin,
         enrichProfile,
         logout,
       }}
