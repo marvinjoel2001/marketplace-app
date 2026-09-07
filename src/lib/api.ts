@@ -170,6 +170,48 @@ export const marketplaceApi = {
     });
   },
 
+  async getDSPTracking(token: string) {
+    try {
+      return await fetchFromAPI(`/dsp/track/${encodeURIComponent(token)}`);
+    } catch {
+      return null;
+    }
+  },
+
+  // Caja y Arqueo (Cash Register)
+  async openCashShift(data: { storeId: string; cashierName: string; initialCash: number; notes?: string }) {
+    return fetchFromAPI('/cash-register/shifts/open', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getCurrentCashShift(storeId: string) {
+    return fetchFromAPI(`/cash-register/shifts/current/${encodeURIComponent(storeId)}`);
+  },
+
+  async addCashMovement(shiftId: string, data: { type: string; amount: number; description: string; referenceId?: string }) {
+    return fetchFromAPI(`/cash-register/shifts/${encodeURIComponent(shiftId)}/movements`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async closeCashShift(shiftId: string, data: { actualCash: number; notes?: string }) {
+    return fetchFromAPI(`/cash-register/shifts/${encodeURIComponent(shiftId)}/close`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Subida de Imágenes (Media Upload)
+  async uploadImage(data: { base64Data: string; fileName?: string; folder?: string }) {
+    return fetchFromAPI('/upload/image', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   // Admin Stats
   async getAdminStats() {
     try {

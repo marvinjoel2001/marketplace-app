@@ -1,0 +1,755 @@
+[
+  {
+    "id": "TC001",
+    "title": "Complete checkout with delivery details and payment selection",
+    "description": "This test verifies that a shopper can enter delivery information, choose a payment method, and place an order successfully.",
+    "category": "Shopping Cart and Quantity Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /cart"
+      },
+      {
+        "type": "action",
+        "description": "Continue to checkout"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required delivery information"
+      },
+      {
+        "type": "action",
+        "description": "Select a QR Simple or Card payment option"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an order confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order was created"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "View live delivery progress and courier contact details",
+    "description": "This test verifies that a shopper can open order tracking and see delivery progress, courier location visibility, and driver contact access.",
+    "category": "Tracking Journey",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /order/track/1"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify delivery progress steps are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the courier marker is visible on the map"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a driver phone link is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Create an order with delivery details and card payment",
+    "description": "This test verifies that a shopper can complete checkout by entering delivery information, choosing card payment, and creating an order successfully.",
+    "category": "Order Checkout",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /checkout"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer name field with Alex Rivera"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone field with 70000001"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the delivery address field with Zona Equipetrol, Santa Cruz"
+      },
+      {
+        "type": "action",
+        "description": "Select card payment"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a tracking view is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Select a variant and add the product to the cart from the product page",
+    "description": "This test verifies that a shopper can choose a variant on the product page and add the selected item to the cart.",
+    "category": "Product Details and Variant Selection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a product card in the catalog"
+      },
+      {
+        "type": "action",
+        "description": "Select an available variant option"
+      },
+      {
+        "type": "action",
+        "description": "Add the product to the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the cart reflects the added product"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected variant is preserved in the cart"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Create an order with delivery details and QR Simple payment",
+    "description": "This test verifies that a shopper can complete checkout by entering delivery information, choosing QR Simple payment, and creating an order successfully.",
+    "category": "Order Checkout",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /checkout"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer name field with Maria Gomez"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone field with 70000002"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the delivery address field with Zona Sopocachi, La Paz"
+      },
+      {
+        "type": "action",
+        "description": "Select QR Simple payment"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a tracking view is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Adjust cart quantities and remove an item",
+    "description": "This test verifies that a shopper can change item quantities in the cart, see totals update, and remove the last item from the cart.",
+    "category": "Shopping Cart and Quantity Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /cart"
+      },
+      {
+        "type": "action",
+        "description": "Increase the quantity of an item in the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the cart subtotal updates"
+      },
+      {
+        "type": "action",
+        "description": "Decrease the quantity of the same item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the cart subtotal updates again"
+      },
+      {
+        "type": "action",
+        "description": "Remove the item from the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the cart is empty"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Add a new product to inventory",
+    "description": "This test verifies that a vendor can open the add-product flow, enter required product details, save the product, and see it appear in inventory.",
+    "category": "Vendor Inventory Management and Product Creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "action",
+        "description": "Open the add-product modal"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the product title field with Golden Rice"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the price field with 35"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the stock field with 12"
+      },
+      {
+        "type": "action",
+        "description": "Save the product"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new product appears in the inventory table"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the add-product modal is closed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Review live delivery progress and courier contact",
+    "description": "This test verifies that a shopper can open live tracking for an active order, review delivery progress, and see the courier contact details.",
+    "category": "OpenDSP Live Delivery Tracking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /order/track/[id]"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify delivery progress updates are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the courier contact card is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Browse and filter the catalog by category and search",
+    "description": "This test verifies that a shopper can narrow the home catalog by category and search and then restore the full product grid.",
+    "category": "Catalog Search and Filtering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click the category pill for Technology"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product grid updates to matching items"
+      },
+      {
+        "type": "action",
+        "description": "Type a search term into the catalog search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the catalog updates to matching results"
+      },
+      {
+        "type": "action",
+        "description": "Clear the search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the full product catalog is restored"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Show checkout validation for missing delivery details",
+    "description": "This test verifies that checkout blocks submission and shows validation messages when required delivery fields are left empty.",
+    "category": "Order Checkout",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /checkout"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation messages are visible for the missing required fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is not created"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Add a new inventory item and see it appear in the table",
+    "description": "This test verifies that a vendor can create a new product from the inventory modal and see it added to the inventory list.",
+    "category": "Vendor Inventory Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "action",
+        "description": "Open the add product modal"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required product fields"
+      },
+      {
+        "type": "action",
+        "description": "Save the new product"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new product appears in the inventory table"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory table remains accessible after saving"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "See the courier marker on the live map",
+    "description": "This test verifies that the tracking page shows the courier location on the map for an active order.",
+    "category": "OpenDSP Live Delivery Tracking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /order/track/[id]"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the courier marker is displayed on the map"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify live tracking information is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Submit checkout with minimal valid delivery information",
+    "description": "This test verifies that a shopper can complete checkout using only the required delivery fields and one valid payment choice.",
+    "category": "Order Checkout",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /checkout"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer name field with Diego Flores"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone field with 70000004"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the delivery address field with Calle 21, Santa Cruz"
+      },
+      {
+        "type": "action",
+        "description": "Select card payment"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the checkout flow completes"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Search the vendor inventory for matching products",
+    "description": "This test verifies that a vendor can search the inventory table and see the list filter to matching products.",
+    "category": "Vendor Inventory Management and Product Creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the inventory search field with rice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching inventory items are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify non-matching items are hidden"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Continue from cart to checkout",
+    "description": "This test verifies that a shopper can move from the cart to the checkout page after reviewing their items.",
+    "category": "Shopping Cart and Quantity Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /cart"
+      },
+      {
+        "type": "action",
+        "description": "Continue to checkout"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the checkout page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify delivery and payment fields are available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Review the admin overview metrics",
+    "description": "An administrator can open the admin area and see the business overview and store management metrics needed to assess the marketplace.",
+    "category": "Admin Overview",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard overview is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify business metrics are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Require a payment method before confirming checkout",
+    "description": "This test verifies that a shopper cannot complete checkout without selecting a payment method and sees a validation response.",
+    "category": "Order Checkout",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /checkout"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer name field with Carla Mendez"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone field with 70000003"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the delivery address field with Avenida Busch, Cochabamba"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a payment selection validation message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order is not created"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Review the vendor inventory table",
+    "description": "This test verifies that a vendor can open the inventory dashboard and review existing products and stock information.",
+    "category": "Vendor Inventory Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory table is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product and stock information is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Inspect admin GMV and store performance information",
+    "description": "This test verifies that an administrator can view revenue and store performance summaries on the admin page.",
+    "category": "Admin",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify GMV metrics are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify store performance information is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC020",
+    "title": "Show required-field validation when adding a product",
+    "description": "This test verifies that the add-product form blocks submission and shows validation messages when required fields are missing.",
+    "category": "Vendor Inventory Management and Product Creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "action",
+        "description": "Open the add-product modal"
+      },
+      {
+        "type": "action",
+        "description": "Save the product"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify required-field validation messages are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product is not added"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC021",
+    "title": "Inspect store management information",
+    "description": "An administrator can review store management information on the admin page to understand platform operations.",
+    "category": "Admin Overview",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify store management information is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC022",
+    "title": "Filter inventory after adding a product",
+    "description": "This test verifies that a vendor can create a product and then use inventory search to find the newly added item.",
+    "category": "Vendor Inventory Management and Product Creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "action",
+        "description": "Open the add-product modal"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the product title field with Quinoa Premium"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the price field with 28"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the stock field with 7"
+      },
+      {
+        "type": "action",
+        "description": "Save the product"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the inventory search field with Quinoa Premium"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the newly created product is shown in the filtered inventory list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify only matching items are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC023",
+    "title": "Open a product from the catalog and review its details",
+    "description": "This test verifies that a shopper can open a product detail page from the catalog and see the product information needed before buying.",
+    "category": "Product Details and Variant Selection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click a product card in the catalog"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify product images and pricing details are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC024",
+    "title": "Show validation when required inventory fields are missing",
+    "description": "This test verifies that the add product flow prevents saving until required vendor inventory fields are completed.",
+    "category": "Vendor Inventory Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /vendor/inventory"
+      },
+      {
+        "type": "action",
+        "description": "Open the add product modal"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form without completing required fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify field validation errors are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product is not added to the inventory"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC025",
+    "title": "Open the driver phone link from tracking",
+    "description": "This test verifies that a shopper can use the driver phone link from the tracking page to initiate contact details access.",
+    "category": "OpenDSP Live Delivery Tracking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /order/track/[id]"
+      },
+      {
+        "type": "action",
+        "description": "Click the driver phone link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the driver contact card remains visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the phone link is available"
+      }
+    ],
+    "priority": "Low"
+  }
+]

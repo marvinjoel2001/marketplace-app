@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Headphones,
   CheckCircle2,
+  AlertCircle,
   ChevronRight,
   Phone,
   ArrowRight,
@@ -32,24 +33,28 @@ export function CheckoutFlow() {
   const { language, t } = useLanguage();
   const router = useRouter();
 
-  const [paymentMethod, setPaymentMethod] = useState<'QR' | 'CARD' | 'WALLET'>('QR');
-  const [customerName, setCustomerName] = useState(user?.name || 'Cliente Invitado');
-  const [customerPhone, setCustomerPhone] = useState(user?.phone || '+591 77098765');
+  const [paymentMethod, setPaymentMethod] = useState<'QR' | 'CARD' | 'WALLET' | ''>('QR');
+  const [customerName, setCustomerName] = useState(user?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
   const [customerAddress, setCustomerAddress] = useState(
-    user?.address ? `${user.address}, ${user.city || savedCity}` : `Av. San Martín, Calle 5 Oeste, ${savedCity}`
+    user?.address ? `${user.address}, ${user.city || savedCity}` : ''
   );
-  const [addressReference, setAddressReference] = useState(user?.addressReference || 'Frente al restaurante La Casona');
+  const [addressReference, setAddressReference] = useState(user?.addressReference || '');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [orderCreated, setOrderCreated] = useState<any>(null);
 
+  // Validation state
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [generalError, setGeneralError] = useState('');
+
   // Sync with user profile when logged in
   React.useEffect(() => {
     if (user) {
-      if (user.name) setCustomerName(user.name);
-      if (user.phone) setCustomerPhone(user.phone);
-      if (user.address) setCustomerAddress(`${user.address}, ${user.city || savedCity}`);
-      if (user.addressReference) setAddressReference(user.addressReference);
+      if (user.name && !customerName) setCustomerName(user.name);
+      if (user.phone && !customerPhone) setCustomerPhone(user.phone);
+      if (user.address && !customerAddress) setCustomerAddress(`${user.address}, ${user.city || savedCity}`);
+      if (user.addressReference && !addressReference) setAddressReference(user.addressReference);
     }
   }, [user, savedCity]);
 
@@ -137,24 +142,29 @@ export function CheckoutFlow() {
   };
 
   const handleCheckoutAction = () => {
-    if (!isAuthenticated) {
-      openAuthModal({
-        onComplete: () => {
-          handleConfirmOrder();
-        },
-      });
+    const newErrors: { [key: string]: string } = {};
+
+    if (!customerName || !customerName.trim()) {
+      newErrors.customerName = 'El nombre del cliente es obligatorio';
+    }
+    if (!customerPhone || !customerPhone.trim()) {
+      newErrors.customerPhone = 'El número de teléfono o WhatsApp es obligatorio';
+    }
+    if (!customerAddress || !customerAddress.trim()) {
+      newErrors.customerAddress = 'La dirección de entrega es obligatoria';
+    }
+    if (!paymentMethod) {
+      newErrors.paymentMethod = 'Debes seleccionar un método de pago antes de confirmar el pedido';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setGeneralError('Por favor completa todos los campos requeridos de entrega y método de pago.');
       return;
     }
 
-    if (!isProfileComplete) {
-      openAuthModal({
-        initialStep: 'enrich',
-        onComplete: () => {
-          handleConfirmOrder();
-        },
-      });
-      return;
-    }
+    setErrors({});
+    setGeneralError('');
 
     handleConfirmOrder();
   };
@@ -265,9 +275,13 @@ export function CheckoutFlow() {
             </h3>
 
             <div className="space-y-2.5">
-              {/* QR Option (Active by default) */}
-              <label
-                onClick={() => setPaymentMethod('QR')}
+              {/* QR Option */}
+              <div
+                data-testid="payment-method-qr"
+                onClick={() => {
+                  setPaymentMethod('QR');
+                  if (errors.paymentMethod) setErrors((prev) => ({ ...prev, paymentMethod: '' }));
+                }}
                 className={`flex items-start p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'QR'
                     ? 'border-black bg-amber-50/20 shadow-xs ring-2 ring-black/5'
@@ -279,21 +293,25 @@ export function CheckoutFlow() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900">Pagar con QR</span>
+                    <span className="text-xs font-bold text-gray-900">Pagar con QR Simple</span>
                     {paymentMethod === 'QR' && <CheckCircle2 className="w-4 h-4 text-black" />}
                   </div>
                   <p className="text-[10px] text-gray-500 mt-0.5">
                     Escanea y paga desde tu banco (BNB, BCP, Banco Unión, Ganadero, etc.)
                   </p>
                 </div>
-              </label>
+              </div>
 
               {/* Card Option */}
-              <label
-                onClick={() => setPaymentMethod('CARD')}
+              <div
+                data-testid="payment-method-card"
+                onClick={() => {
+                  setPaymentMethod('CARD');
+                  if (errors.paymentMethod) setErrors((prev) => ({ ...prev, paymentMethod: '' }));
+                }}
                 className={`flex items-start p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'CARD'
-                    ? 'border-black bg-amber-50/20 shadow-xs'
+                    ? 'border-black bg-amber-50/20 shadow-xs ring-2 ring-black/5'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -302,19 +320,23 @@ export function CheckoutFlow() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900">Tarjeta de débito/crédito</span>
+                    <span className="text-xs font-bold text-gray-900">Tarjeta de débito / crédito</span>
                     {paymentMethod === 'CARD' && <CheckCircle2 className="w-4 h-4 text-black" />}
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5">Visa, Mastercard y más</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">Visa, Mastercard y tarjetas bolivianas</p>
                 </div>
-              </label>
+              </div>
 
               {/* Wallet Option */}
-              <label
-                onClick={() => setPaymentMethod('WALLET')}
+              <div
+                data-testid="payment-method-wallet"
+                onClick={() => {
+                  setPaymentMethod('WALLET');
+                  if (errors.paymentMethod) setErrors((prev) => ({ ...prev, paymentMethod: '' }));
+                }}
                 className={`flex items-start p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'WALLET'
-                    ? 'border-black bg-amber-50/20 shadow-xs'
+                    ? 'border-black bg-amber-50/20 shadow-xs ring-2 ring-black/5'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -328,7 +350,15 @@ export function CheckoutFlow() {
                   </div>
                   <p className="text-[10px] text-gray-500 mt-0.5">Tigo Money, BNB Móvil, etc.</p>
                 </div>
-              </label>
+              </div>
+
+              {/* Payment selection validation error */}
+              {errors.paymentMethod && (
+                <p role="alert" className="text-red-600 text-[11px] font-semibold mt-2 flex items-center space-x-1 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{errors.paymentMethod}</span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -342,57 +372,133 @@ export function CheckoutFlow() {
           </div>
         </div>
 
-        {/* Col 3: Dirección de entrega & Mapa */}
+        {/* Col 3: Dirección de entrega & Mapa Interactivo */}
         <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
               <h3 className="text-sm font-extrabold text-gray-900">
                 {t('checkout_delivery_step', '1. Dirección de Entrega')}
               </h3>
-              <span className="text-xs font-bold text-emerald-700 cursor-pointer hover:underline">
-                {language === 'es' ? 'Cambiar' : 'Change'}
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                OpenDSP Express
               </span>
             </div>
 
+            {/* Editable Delivery Information Form */}
             <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-extrabold text-gray-900">{customerAddress}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
-                    {language === 'es' ? 'Referencia' : 'Reference'}: {addressReference}
+              <div>
+                <label htmlFor="customer-name" className="block text-xs font-bold text-gray-800 mb-1">
+                  Nombre Completo / Customer Name *
+                </label>
+                <input
+                  id="customer-name"
+                  name="customerName"
+                  data-testid="customer-name-input"
+                  type="text"
+                  placeholder="Ej: Alex Rivera o Maria Gomez"
+                  value={customerName}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    if (errors.customerName) setErrors((prev) => ({ ...prev, customerName: '' }));
+                  }}
+                  className={`w-full px-3 py-2 rounded-xl border ${
+                    errors.customerName ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                  } text-xs outline-hidden focus:border-emerald-500`}
+                  aria-invalid={Boolean(errors.customerName)}
+                />
+                {errors.customerName && (
+                  <p role="alert" className="text-red-600 text-[11px] font-semibold mt-1 flex items-center space-x-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{errors.customerName}</span>
                   </p>
-                </div>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="customer-phone" className="block text-xs font-bold text-gray-800 mb-1">
+                  Teléfono / WhatsApp / Phone *
+                </label>
+                <input
+                  id="customer-phone"
+                  name="customerPhone"
+                  data-testid="customer-phone-input"
+                  type="tel"
+                  placeholder="70000001"
+                  value={customerPhone}
+                  onChange={(e) => {
+                    setCustomerPhone(e.target.value);
+                    if (errors.customerPhone) setErrors((prev) => ({ ...prev, customerPhone: '' }));
+                  }}
+                  className={`w-full px-3 py-2 rounded-xl border ${
+                    errors.customerPhone ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                  } text-xs outline-hidden focus:border-emerald-500`}
+                  aria-invalid={Boolean(errors.customerPhone)}
+                />
+                {errors.customerPhone && (
+                  <p role="alert" className="text-red-600 text-[11px] font-semibold mt-1 flex items-center space-x-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{errors.customerPhone}</span>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="customer-address" className="block text-xs font-bold text-gray-800 mb-1">
+                  Dirección de Entrega / Delivery Address *
+                </label>
+                <input
+                  id="customer-address"
+                  name="customerAddress"
+                  data-testid="customer-address-input"
+                  type="text"
+                  placeholder="Zona Equipetrol, Santa Cruz"
+                  value={customerAddress}
+                  onChange={(e) => {
+                    setCustomerAddress(e.target.value);
+                    if (errors.customerAddress) setErrors((prev) => ({ ...prev, customerAddress: '' }));
+                  }}
+                  className={`w-full px-3 py-2 rounded-xl border ${
+                    errors.customerAddress ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                  } text-xs outline-hidden focus:border-emerald-500`}
+                  aria-invalid={Boolean(errors.customerAddress)}
+                />
+                {errors.customerAddress && (
+                  <p role="alert" className="text-red-600 text-[11px] font-semibold mt-1 flex items-center space-x-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{errors.customerAddress}</span>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="customer-reference" className="block text-xs font-bold text-gray-800 mb-1">
+                  Punto de Referencia (Opcional)
+                </label>
+                <input
+                  id="customer-reference"
+                  name="addressReference"
+                  data-testid="customer-reference-input"
+                  type="text"
+                  placeholder="Frente al restaurante La Casona"
+                  value={addressReference}
+                  onChange={(e) => setAddressReference(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs outline-hidden focus:border-emerald-500"
+                />
               </div>
 
               {/* Map Illustration with Pin */}
-              <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-[#E8ECEF] aspect-[4/3] flex items-center justify-center shadow-inner">
-                {/* Simulated Street Grid */}
+              <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-[#E8ECEF] aspect-[16/9] flex items-center justify-center shadow-inner mt-2">
                 <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]"></div>
-
-                {/* Animated Route Line */}
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 150">
-                  <path
-                    d="M 30,120 Q 80,40 160,50"
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="3"
-                    strokeDasharray="4,4"
-                  />
+                  <path d="M 30,120 Q 80,40 160,50" fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray="4,4" />
                 </svg>
-
-                {/* Pin on Map */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg ring-4 ring-emerald-200 animate-bounce">
-                    <MapPin className="w-4 h-4" />
+                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg ring-4 ring-emerald-200 animate-bounce">
+                    <MapPin className="w-3.5 h-3.5" />
                   </div>
                   <span className="text-[9px] font-bold bg-white text-gray-800 px-2 py-0.5 rounded-full shadow-xs mt-1">
-                    {language === 'es' ? 'Punto de Entrega' : 'Delivery Point'}
+                    Punto de Entrega
                   </span>
-                </div>
-
-                <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-xs text-[10px] font-bold text-emerald-700 px-2 py-0.5 rounded-md cursor-pointer hover:bg-white shadow-2xs">
-                  {language === 'es' ? 'Ver en mapa' : 'View on map'}
                 </div>
               </div>
             </div>
@@ -441,7 +547,7 @@ export function CheckoutFlow() {
               </div>
 
               {/* Driver Card */}
-              <div className="bg-gray-50 rounded-2xl p-3 border border-gray-200/70 flex items-center justify-between">
+              <div data-testid="courier-card" className="bg-gray-50 rounded-2xl p-3 border border-gray-200/70 flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
                   <img
                     src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"
@@ -457,6 +563,8 @@ export function CheckoutFlow() {
                 </div>
                 <a
                   href="tel:+59177012345"
+                  data-testid="driver-phone-link"
+                  aria-label="Llamar repartidor"
                   className="p-2 rounded-full bg-white text-gray-700 hover:text-black hover:bg-gray-100 border border-gray-200 transition-colors shadow-2xs"
                   title="Llamar repartidor"
                 >
@@ -468,9 +576,22 @@ export function CheckoutFlow() {
 
           {/* Action Button: Confirm Order with OpenDSP */}
           <div className="pt-2">
+            {/* General Validation Error Alert */}
+            {generalError && (
+              <div
+                role="alert"
+                className="mb-3 bg-red-50 border border-red-200 text-red-700 p-3 rounded-2xl text-xs font-bold flex items-center space-x-2 animate-in fade-in"
+              >
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{generalError}</span>
+              </div>
+            )}
+
             <button
               disabled={isProcessing}
               onClick={handleCheckoutAction}
+              data-testid="confirm-order-button"
+              aria-label="Confirmar y Pagar Pedido / Confirm order"
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white font-black text-sm rounded-full flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95"
             >
               {isProcessing ? (

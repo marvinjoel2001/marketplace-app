@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 
+import { marketplaceApi } from '@/lib/api';
+
 interface OrderTrackingProps {
   order: {
     id: string;
@@ -44,22 +46,101 @@ interface OrderTrackingProps {
   };
 }
 
-export function LiveTrackingView({ order }: OrderTrackingProps) {
-  const [currentStep, setCurrentStep] = useState(3); // 1: Confirmado, 2: Preparando, 3: En camino, 4: Entregado
-  const [etaMinutes, setEtaMinutes] = useState(order.dspEstimatedMinutes || 18);
+export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
+  const [order, setOrder] = useState(initialOrder);
+  const [currentStep, setCurrentStep] = useState(() => {
+    switch (initialOrder.status) {
+      case 'PENDING':
+      case 'CONFIRMED':
+        return 1;
+      case 'PREPARING':
+        return 2;
+      case 'DSP_DISPATCHED':
+      case 'IN_TRANSIT':
+        return 3;
+      case 'DELIVERED':
+        return 4;
+      default:
+        return 3;
+    }
+  });
+  const [etaMinutes, setEtaMinutes] = useState(initialOrder.dspEstimatedMinutes || 18);
   const [riderCoord, setRiderCoord] = useState({ x: 45, y: 55 });
+  const [driverInfo, setDriverInfo] = useState({
+    name: initialOrder.dspDriverName || 'Carlos Mendoza',
+    phone: initialOrder.dspDriverPhone || '+591 77012345',
+    rating: initialOrder.dspDriverRating || 4.9,
+    plate: '4829-KPL (Honda Navi Roja)',
+  });
 
-  // Simulate rider moving on map
+  // Polling de telemetría y estado en tiempo real cada 5 segundos
   useEffect(() => {
-    const interval = setInterval(() => {
+    let isMounted = true;
+
+    const pollLiveStatus = async () => {
+      try {
+        // 1. Consultar estado actualizado de la orden
+        const updated = await marketplaceApi.getOrder(order.orderNumber || order.id);
+        if (updated && isMounted) {
+          setOrder(updated);
+
+          if (updated.status === 'DELIVERED') {
+            setCurrentStep(4);
+            setEtaMinutes(0);
+          } else if (updated.status === 'IN_TRANSIT' || updated.status === 'DSP_DISPATCHED') {
+            setCurrentStep(3);
+          } else if (updated.status === 'PREPARING') {
+            setCurrentStep(2);
+          } else if (updated.status === 'CONFIRMED') {
+            setCurrentStep(1);
+          }
+
+          if (updated.dspDriverName) {
+            setDriverInfo((prev) => ({
+              ...prev,
+              name: updated.dspDriverName || prev.name,
+              phone: updated.dspDriverPhone || prev.phone,
+              rating: updated.dspDriverRating || prev.rating,
+            }));
+          }
+        }
+
+        // 2. Si hay tracking token de OpenDSP, consultar telemetría satelital en vivo
+        const token = order.dspTrackingToken || updated?.dspTrackingToken;
+        if (token && isMounted) {
+          const telemetry = await marketplaceApi.getDSPTracking(token);
+          if (telemetry?.driver && isMounted) {
+            setDriverInfo({
+              name: telemetry.driver.fullName || telemetry.driver.name || driverInfo.name,
+              phone: telemetry.driver.phone || driverInfo.phone,
+              rating: telemetry.driver.rating || driverInfo.rating,
+              plate: telemetry.driver.vehiclePlate || driverInfo.plate,
+            });
+          }
+        }
+      } catch {
+        // Fallback silencioso en caso de desconexión
+      }
+    };
+
+    const pollInterval = setInterval(pollLiveStatus, 5000);
+    pollLiveStatus();
+
+    // Animación suave de GPS en el mapa
+    const gpsInterval = setInterval(() => {
       setRiderCoord((prev) => ({
-        x: Math.min(80, prev.x + 2.5),
-        y: Math.max(30, prev.y - 1.5),
+        x: Math.min(80, prev.x + 1.5),
+        y: Math.max(30, prev.y - 1.0),
       }));
-      setEtaMinutes((prev) => Math.max(3, prev - 1));
+      setEtaMinutes((prev) => Math.max(2, prev - 1));
     }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+      clearInterval(gpsInterval);
+    };
+  }, [order.orderNumber, order.id, order.dspTrackingToken]);
 
   const steps = [
     { title: 'Pedido Confirmado', desc: 'Pago verificado con éxito', done: currentStep >= 1 },
@@ -175,7 +256,7 @@ export function LiveTrackingView({ order }: OrderTrackingProps) {
                 <span className="text-lg">🛵</span>
               </div>
               <span className="text-[9px] font-extrabold bg-black text-white px-2 py-0.5 rounded-full shadow-xs mt-1">
-                Carlos Mendoza (En ruta)
+                {driverInfo.name} ({currentStep === 4 ? 'Entregado' : 'En ruta'})
               </span>
             </div>
 
@@ -210,14 +291,14 @@ export function LiveTrackingView({ order }: OrderTrackingProps) {
             <div className="flex items-center space-x-3">
               <img
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
-                alt="Carlos Mendoza"
+                alt={driverInfo.name}
                 className="w-14 h-14 rounded-2xl object-cover border-2 border-gray-200 shadow-sm"
               />
               <div>
-                <h4 className="font-extrabold text-sm text-gray-900">{order.dspDriverName || 'Carlos Mendoza'}</h4>
+                <h4 className="font-extrabold text-sm text-gray-900">{driverInfo.name}</h4>
                 <p className="text-xs text-gray-500">Repartidor Oficial OpenDSP</p>
                 <div className="flex items-center text-amber-500 text-xs font-bold mt-1">
-                  <span>★ {order.dspDriverRating || 4.9}</span>
+                  <span>★ {driverInfo.rating}</span>
                   <span className="text-gray-400 font-normal ml-1">(1,420 entregas)</span>
                 </div>
               </div>
@@ -225,12 +306,12 @@ export function LiveTrackingView({ order }: OrderTrackingProps) {
 
             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs text-gray-700">
               <p className="font-semibold">Vehículo:</p>
-              <p className="text-gray-500">Motocicleta Honda Navi Roja • Placa: 4829-KPL</p>
+              <p className="text-gray-500">{driverInfo.plate}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <a
-                href={`tel:${order.dspDriverPhone || '+59177012345'}`}
+                href={`tel:${driverInfo.phone}`}
                 className="py-2.5 px-4 rounded-full bg-black hover:bg-gray-800 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-xs"
               >
                 <Phone className="w-3.5 h-3.5" />

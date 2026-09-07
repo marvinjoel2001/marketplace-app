@@ -230,6 +230,8 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
                   {['Beige', 'Negro', 'Gris'].map((c) => (
                     <button
                       key={c}
+                      data-testid="variant-color-option"
+                      aria-label={`Color ${c}`}
                       onClick={() => handleColorChange(c)}
                       className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-200 ${
                         selectedColor === c
@@ -252,6 +254,8 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
                   {['S', 'M', 'L', 'XL'].map((s) => (
                     <button
                       key={s}
+                      data-testid="variant-size-option"
+                      aria-label={`Talla ${s}`}
                       onClick={() => setSelectedSize(s)}
                       className={`w-10 h-10 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${
                         selectedSize === s
@@ -294,7 +298,7 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
                     shippingCost: primaryOffer?.shippingCost || 0,
                     estimatedDelivery: primaryOffer?.estimatedDelivery || 'Llega mañana con OpenDSP',
                   }}
-                  text="Comprar mejor oferta"
+                  text="Añadir al Carrito"
                   size="lg"
                 />
               </div>

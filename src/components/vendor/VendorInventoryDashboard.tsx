@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -16,6 +16,7 @@ import {
   TrendingUp,
   X,
   CheckCircle2,
+  AlertCircle,
   Scale,
   Camera,
 } from 'lucide-react';
@@ -50,10 +51,11 @@ export function VendorInventoryDashboard({
   const [offers, setOffers] = useState<ProductOfferItem[]>(initialOffers);
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
 
   // New product form states
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Electrónica y Tecnología');
+  const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('15');
   const [imageUrl, setImageUrl] = useState('');
@@ -62,47 +64,113 @@ export function VendorInventoryDashboard({
   const [warranty, setWarranty] = useState('6 meses');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredOffers = offers.filter((o) =>
-    o.product.title.toLowerCase().includes(search.toLowerCase())
-  );
+  // Validation & Error Handling
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successNotification, setSuccessNotification] = useState('');
+
+  // Fetch real categories from backend on mount
+  useEffect(() => {
+    let isMounted = true;
+    marketplaceApi.getCategories().then((cats) => {
+      if (isMounted && Array.isArray(cats) && cats.length > 0) {
+        setCategoriesList(cats);
+        if (!category) {
+          setCategory(cats[0].id);
+        }
+      }
+    }).catch((err) => {
+      console.warn('Could not fetch categories, using defaults:', err);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredOffers = offers.filter((o) => {
+    const term = search.toLowerCase();
+    const matchesTitle = o.product.title.toLowerCase().includes(term);
+    const matchesCategory = o.product.category?.name?.toLowerCase().includes(term);
+    return matchesTitle || matchesCategory;
+  });
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Client-side required-field validation
+    const newErrors: { [key: string]: string } = {};
+    if (!title || !title.trim()) {
+      newErrors.title = 'El título del producto es obligatorio';
+    }
+
+    const numPrice = parseFloat(price);
+    if (!price || !price.trim() || isNaN(numPrice) || numPrice <= 0) {
+      newErrors.price = 'El precio debe ser un número válido mayor a 0';
+    }
+
+    const numStock = parseInt(stock, 10);
+    if (stock === '' || stock === undefined || isNaN(numStock) || numStock < 0) {
+      newErrors.stock = 'El stock debe ser un número entero mayor o igual a 0';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setErrorMessage('Por favor completa todos los campos obligatorios del producto.');
+      return;
+    }
+
+    setErrors({});
+    setErrorMessage('');
     setIsSubmitting(true);
 
     try {
+      const selectedCategoryObj = categoriesList.find((c) => c.id === category || c.slug === category);
+      const categoryIdToSend = selectedCategoryObj?.id || category || 'cmtn858xp0000fa23a18m7u9h';
+
       const newProduct = await marketplaceApi.createProduct({
-        title,
-        categoryId: 'cmtkeznu00000ov0hzyj7ezom', // Categoría Moda o primera disponible
+        title: title.trim(),
+        categoryId: categoryIdToSend,
         storeId,
-        basePrice: parseFloat(price),
-        stock: parseInt(stock, 10),
-        images: imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
-        description,
-        color,
-        warranty,
+        basePrice: numPrice,
+        stock: numStock,
+        images: imageUrl.trim() || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
+        description: description.trim(),
+        color: color.trim(),
+        warranty: warranty.trim(),
         hasInvoice: true,
       });
 
-      const newOffer = newProduct.offers?.[0] || {
+      const newOffer: ProductOfferItem = newProduct.offers?.[0] || {
         id: `off_${Date.now()}`,
-        price: parseFloat(price),
-        stock: parseInt(stock, 10),
-        estimatedDelivery: 'Llega mañana con OpenDSP',
+        price: numPrice,
+        stock: numStock,
+        estimatedDelivery: 'Llega en 24-48 hrs con OpenDSP',
         isRecommended: true,
-        product: newProduct,
+        product: {
+          id: newProduct.id || `prod_${Date.now()}`,
+          title: newProduct.title || title.trim(),
+          slug: newProduct.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          basePrice: numPrice,
+          images: newProduct.images || JSON.stringify([imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500']),
+          category: newProduct.category || selectedCategoryObj || { name: 'Electrónica y Tecnología' },
+        },
       };
 
-      setOffers([newOffer, ...offers]);
+      setOffers((prev) => [newOffer, ...prev]);
       setIsAddModalOpen(false);
       setTitle('');
       setPrice('');
+      setStock('15');
       setImageUrl('');
-      alert('¡Producto publicado con éxito en el catálogo de Chiringuito!');
+      setDescription('');
+      setColor('');
+      setErrors({});
+      setErrorMessage('');
+      setSuccessNotification('¡Producto publicado con éxito en el catálogo de Chiringuito!');
+      setTimeout(() => setSuccessNotification(''), 4500);
     } catch (err: any) {
-      console.error(err);
-      alert('¡Producto publicado con éxito en modo local!');
-      setIsAddModalOpen(false);
+      console.error('Error al crear producto:', err);
+      setErrorMessage(err.message || 'Error al conectar con el servidor para publicar el producto.');
     } finally {
       setIsSubmitting(false);
     }
@@ -148,9 +216,14 @@ export function VendorInventoryDashboard({
             <Video className="w-3.5 h-3.5" />
             <span>TikTok Live</span>
           </Link>
-
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              setErrors({});
+              setErrorMessage('');
+              setIsAddModalOpen(true);
+            }}
+            data-testid="add-product-button"
+            aria-label="Añadir Producto / Add product"
             className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md active:scale-95"
           >
             <Plus className="w-4 h-4" />
@@ -159,7 +232,21 @@ export function VendorInventoryDashboard({
         </div>
       </div>
 
-      {/* 4 Metric Cards */}
+      {successNotification && (
+        <div
+          role="status"
+          className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs animate-in fade-in"
+        >
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successNotification}</span>
+          </div>
+          <button onClick={() => setSuccessNotification('')} className="text-emerald-600 hover:text-emerald-900">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-gray-200/70 shadow-2xs">
           <div className="flex items-center justify-between">
@@ -212,7 +299,6 @@ export function VendorInventoryDashboard({
         </div>
       </div>
 
-      {/* Inventory Table Container */}
       <div className="bg-white rounded-3xl p-6 border border-gray-200/70 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h3 className="font-extrabold text-base text-gray-900">Inventario y Precios</h3>
@@ -221,6 +307,9 @@ export function VendorInventoryDashboard({
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              name="inventorySearch"
+              data-testid="inventory-search-input"
+              aria-label="Buscar en inventario / Inventory search"
               placeholder="Buscar en inventario..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -229,7 +318,6 @@ export function VendorInventoryDashboard({
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto rounded-2xl border border-gray-100">
           <table className="w-full text-xs text-left">
             <thead className="bg-gray-50 text-gray-600 font-bold border-b border-gray-200">
@@ -238,84 +326,91 @@ export function VendorInventoryDashboard({
                 <th className="p-3.5">Categoría</th>
                 <th className="p-3.5">Precio de Venta</th>
                 <th className="p-3.5">Stock</th>
-                <th className="p-3.5">Despacho</th>
+                <th className="p-3.5">Estado</th>
                 <th className="p-3.5 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-gray-800">
-              {filteredOffers.map((o) => {
-                let img = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=200';
-                try {
-                  img = JSON.parse(o.product.images)[0];
-                } catch {
-                  img = o.product.images;
-                }
+            <tbody className="divide-y divide-gray-100">
+              {filteredOffers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-400 font-medium">
+                    No se encontraron productos en el inventario que coincidan con la búsqueda.
+                  </td>
+                </tr>
+              ) : (
+                filteredOffers.map((item) => {
+                  let parsedImages: string[] = [];
+                  try {
+                    parsedImages = JSON.parse(item.product.images);
+                  } catch {
+                    parsedImages = [item.product.images];
+                  }
 
-                return (
-                  <tr key={o.id} className="hover:bg-gray-50/70 transition-colors">
-                    <td className="p-3.5">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={img}
-                          alt={o.product.title}
-                          className="w-10 h-10 object-contain rounded-lg bg-gray-50 p-1 border border-gray-200 shrink-0"
-                        />
-                        <div>
-                          <p className="font-bold text-gray-900 line-clamp-1">{o.product.title}</p>
-                          <span className="text-[10px] text-gray-400">SKU: CY-{o.id.slice(-6)}</span>
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50/70 transition-colors">
+                      <td className="p-3.5">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={parsedImages[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100'}
+                            alt={item.product.title}
+                            className="w-10 h-10 rounded-xl object-contain bg-gray-50 border border-gray-100 p-1"
+                          />
+                          <div>
+                            <span className="font-bold text-gray-900 block line-clamp-1">
+                              {item.product.title}
+                            </span>
+                            <span className="text-[10px] text-gray-400">SKU: {item.id.slice(-6)}</span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-3.5 text-gray-600 font-medium">
-                      {o.product.category?.name || 'General'}
-                    </td>
-                    <td className="p-3.5 font-black text-gray-900 text-sm">
-                      {formatBs(o.price)}
-                    </td>
-                    <td className="p-3.5">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          o.stock > 10
-                            ? 'bg-green-100 text-green-800'
-                            : o.stock > 0
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {o.stock} unidades
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-green-700 font-semibold flex items-center mt-2.5">
-                      <Truck className="w-3.5 h-3.5 mr-1" />
-                      <span>{o.estimatedDelivery}</span>
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          href={`/compare/${o.product.slug}`}
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50"
-                          title="Ver en Comparador"
+                      </td>
+                      <td className="p-3.5 text-gray-600 font-medium">
+                        {item.product.category?.name || 'General'}
+                      </td>
+                      <td className="p-3.5 font-black text-gray-900">{formatBs(item.price)}</td>
+                      <td className="p-3.5">
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${
+                            item.stock > 5
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-amber-50 text-amber-700'
+                          }`}
                         >
-                          <Scale className="w-4 h-4" />
-                        </Link>
-                        <Link
-                          href={`/product/${o.product.slug}`}
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-black hover:bg-gray-100"
-                          title="Ver producto"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                          {item.stock} unids
+                        </span>
+                      </td>
+                      <td className="p-3.5">
+                        <span className="inline-flex items-center space-x-1 text-green-600 text-[10px] font-bold">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Activo en Catálogo</span>
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <Link
+                            href={`/product/${item.product.slug || item.product.id}`}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-colors"
+                            title="Ver en tienda"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          <button
+                            onClick={() => alert(`Editar precio/stock para: ${item.product.title}`)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Add Product Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border border-gray-100 my-8 animate-in fade-in zoom-in-95">
@@ -325,55 +420,145 @@ export function VendorInventoryDashboard({
                 <h3 className="font-extrabold text-lg text-gray-900">Añadir Nuevo Producto</h3>
               </div>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => {
+                  setErrors({});
+                  setErrorMessage('');
+                  setIsAddModalOpen(false);
+                }}
                 className="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="space-y-4 text-xs">
+            {errorMessage && (
+              <div
+                role="alert"
+                className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3.5 py-2.5 rounded-2xl flex items-center space-x-2 text-xs font-bold animate-in fade-in"
+              >
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateProduct} noValidate className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-gray-800 mb-1">Título del Producto *</label>
+                <label htmlFor="product-title" className="block font-bold text-gray-800 mb-1">
+                  Título del Producto *
+                </label>
                 <input
+                  id="product-title"
+                  name="title"
+                  data-testid="product-title-input"
                   type="text"
-                  required
-                  placeholder="Ej: Auriculares Bluetooth Pro con Cancelación de Ruido"
+                  placeholder="Ej: Golden Rice o Auriculares Bluetooth Pro"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 outline-hidden focus:border-amber-400"
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+                  }}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                    errors.title ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                  } outline-hidden focus:border-amber-400`}
+                  aria-invalid={Boolean(errors.title)}
                 />
+                {errors.title && (
+                  <p role="alert" className="text-red-600 text-[11px] font-semibold mt-1 flex items-center space-x-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>{errors.title}</span>
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-gray-800 mb-1">Precio en Bs. *</label>
+                  <label htmlFor="product-price" className="block font-bold text-gray-800 mb-1">
+                    Precio en Bs. *
+                  </label>
                   <input
+                    id="product-price"
+                    name="price"
+                    data-testid="product-price-input"
                     type="number"
-                    required
-                    placeholder="299"
+                    step="0.01"
+                    placeholder="35"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 outline-hidden focus:border-amber-400"
+                    onChange={(e) => {
+                      setPrice(e.target.value);
+                      if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
+                    }}
+                    className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                      errors.price ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                    } outline-hidden focus:border-amber-400`}
+                    aria-invalid={Boolean(errors.price)}
                   />
+                  {errors.price && (
+                    <p role="alert" className="text-red-600 text-[11px] font-semibold mt-1 flex items-center space-x-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>{errors.price}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-800 mb-1">Stock Disponible *</label>
+                  <label htmlFor="product-stock" className="block font-bold text-gray-800 mb-1">
+                    Stock Disponible *
+                  </label>
                   <input
+                    id="product-stock"
+                    name="stock"
+                    data-testid="product-stock-input"
                     type="number"
-                    required
-                    placeholder="20"
+                    placeholder="12"
                     value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 outline-hidden focus:border-amber-400"
+                    onChange={(e) => {
+                      setStock(e.target.value);
+                      if (errors.stock) setErrors((prev) => ({ ...prev, stock: '' }));
+                    }}
+                    className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                      errors.stock ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                    } outline-hidden focus:border-amber-400`}
+                    aria-invalid={Boolean(errors.stock)}
                   />
+                  {errors.stock && (
+                    <p role="alert" className="text-red-600 text-[11px] font-semibold mt-1 flex items-center space-x-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>{errors.stock}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-800 mb-1">URL de Imagen del Producto</label>
+                <label htmlFor="product-category" className="block font-bold text-gray-800 mb-1">
+                  Categoría
+                </label>
+                <select
+                  id="product-category"
+                  name="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 outline-hidden focus:border-amber-400 bg-white"
+                >
+                  {categoriesList.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                  {categoriesList.length === 0 && (
+                    <option value="cmtn858xp0000fa23a18m7u9h">Electrónica y Tecnología</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="product-image" className="block font-bold text-gray-800 mb-1">
+                  URL de Imagen del Producto
+                </label>
                 <input
+                  id="product-image"
+                  name="imageUrl"
                   type="url"
                   placeholder="https://images.unsplash.com/..."
                   value={imageUrl}
@@ -384,8 +569,12 @@ export function VendorInventoryDashboard({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-gray-800 mb-1">Color / Variante</label>
+                  <label htmlFor="product-color" className="block font-bold text-gray-800 mb-1">
+                    Color / Variante
+                  </label>
                   <input
+                    id="product-color"
+                    name="color"
                     type="text"
                     placeholder="Negro / Blanco / etc."
                     value={color}
@@ -395,8 +584,12 @@ export function VendorInventoryDashboard({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-800 mb-1">Garantía</label>
+                  <label htmlFor="product-warranty" className="block font-bold text-gray-800 mb-1">
+                    Garantía
+                  </label>
                   <input
+                    id="product-warranty"
+                    name="warranty"
                     type="text"
                     placeholder="6 meses"
                     value={warranty}
@@ -407,8 +600,12 @@ export function VendorInventoryDashboard({
               </div>
 
               <div>
-                <label className="block font-bold text-gray-800 mb-1">Descripción</label>
+                <label htmlFor="product-description" className="block font-bold text-gray-800 mb-1">
+                  Descripción
+                </label>
                 <textarea
+                  id="product-description"
+                  name="description"
                   rows={3}
                   placeholder="Especificaciones, características y contenido de la caja..."
                   value={description}
@@ -420,7 +617,11 @@ export function VendorInventoryDashboard({
               <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => {
+                    setErrors({});
+                    setErrorMessage('');
+                    setIsAddModalOpen(false);
+                  }}
                   className="px-5 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-full hover:bg-gray-50"
                 >
                   Cancelar
@@ -428,9 +629,11 @@ export function VendorInventoryDashboard({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white font-extrabold rounded-full transition-all"
+                  data-testid="save-product-button"
+                  aria-label="Guardar Producto / Save product"
+                  className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white font-extrabold rounded-full transition-all disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Guardando...' : 'Publicar Producto'}
+                  {isSubmitting ? 'Guardando...' : 'Guardar Producto'}
                 </button>
               </div>
             </form>
