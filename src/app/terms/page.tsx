@@ -30,11 +30,11 @@ export default function TermsPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Bienvenido a <strong>Chiringuito</strong> (operado legalmente por Chiringuito Bolivia S.R.L. en el ecosistema logístico OpenDSP). 
+            Bienvenido a <strong>Vitrina Market</strong> (operado legalmente por Vitrina Market Bolivia S.R.L. en el ecosistema logístico OpenDSP). 
             Estos Términos y Condiciones regulan el acceso y uso de nuestra plataforma de comercio electrónico, transmisiones de TikTok Live Shopping y servicios de entrega de última milla.
           </p>
           <p>
-            Chiringuito actúa como una plataforma tecnológica intermediaria que conecta a compradores con tiendas y vendedores autorizados en el territorio del Estado Plurinacional de Bolivia. Cada transacción se realiza bajo el estricto cumplimiento de la Ley N° 453 (Ley General de los Derechos de las Usuarias y los Usuarios y de las Consumidoras y los Consumidores).
+            Vitrina Market actúa como una plataforma tecnológica intermediaria que conecta a compradores con tiendas y vendedores autorizados en el territorio del Estado Plurinacional de Bolivia. Cada transacción se realiza bajo el estricto cumplimiento de la Ley N° 453 (Ley General de los Derechos de las Usuarias y los Usuarios y de las Consumidoras y los Consumidores).
           </p>
           <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 text-emerald-900 text-xs">
             <strong>Nota importante:</strong> Al crear una cuenta, realizar un pedido o interactuar en las transmisiones de TikTok Live Shopping, el usuario acepta de manera expresa y sin reservas las presentes condiciones de servicio.
@@ -44,11 +44,11 @@ export default function TermsPage() {
       contentEn: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Welcome to <strong>Chiringuito</strong> (legally operated by Chiringuito Bolivia S.R.L. in the OpenDSP delivery ecosystem). 
+            Welcome to <strong>Vitrina Market</strong> (legally operated by Vitrina Market Bolivia S.R.L. in the OpenDSP delivery ecosystem). 
             These Terms and Conditions govern access to and use of our e-commerce platform, TikTok Live Shopping broadcasts, and last-mile delivery services.
           </p>
           <p>
-            Chiringuito acts as an intermediary technology platform connecting buyers with verified merchants throughout the Plurinational State of Bolivia under Bolivian Consumer Protection Law No. 453.
+            Vitrina Market acts as an intermediary technology platform connecting buyers with verified merchants throughout the Plurinational State of Bolivia under Bolivian Consumer Protection Law No. 453.
           </p>
           <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 text-emerald-900 text-xs">
             <strong>Important note:</strong> By creating an account, placing an order, or engaging in TikTok Live Shopping streams, the user expressly accepts these terms without reservation.
@@ -64,7 +64,7 @@ export default function TermsPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Nuestra funcionalidad exclusiva de <strong>Live Shopping</strong> permite a tiendas verificadas transmitir en vivo demostraciones de productos a través de TikTok y sincronizar su catálogo en tiempo real con Chiringuito.
+            Nuestra funcionalidad exclusiva de <strong>Live Shopping</strong> permite a tiendas verificadas transmitir en vivo demostraciones de productos a través de TikTok y sincronizar su catálogo en tiempo real con Vitrina Market.
           </p>
           <ul className="list-disc pl-5 space-y-2 text-slate-600 text-xs sm:text-sm">
             <li><strong>Disponibilidad de Cupones en Vivo:</strong> Los cupones y precios flash mostrados durante un live son de stock limitado y válidos únicamente durante la duración de la transmisión o hasta agotar existencias reservadas.</li>
@@ -76,7 +76,7 @@ export default function TermsPage() {
       contentEn: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Our signature <strong>Live Shopping</strong> capability allows verified stores to broadcast live product demonstrations via TikTok and synchronize inventory in real time with Chiringuito.
+            Our signature <strong>Live Shopping</strong> capability allows verified stores to broadcast live product demonstrations via TikTok and synchronize inventory in real time with Vitrina Market.
           </p>
           <ul className="list-disc pl-5 space-y-2 text-slate-600 text-xs sm:text-sm">
             <li><strong>Live Coupon Availability:</strong> Flash prices and coupon codes displayed during live streams are limited in quantity and valid exclusively while the broadcast is active or until reserved inventory depletes.</li>
@@ -94,7 +94,7 @@ export default function TermsPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Todos los precios publicados en Chiringuito están expresados en <strong>Bolivianos (Bs.)</strong> e incluyen obligatoriamente el Impuesto al Valor Agregado (IVA - 13%) según la normativa tributaria del Servicio de Impuestos Nacionales (SIN).
+            Todos los precios publicados en Vitrina Market están expresados en <strong>Bolivianos (Bs.)</strong> e incluyen obligatoriamente el Impuesto al Valor Agregado (IVA - 13%) según la normativa tributaria del Servicio de Impuestos Nacionales (SIN).
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
@@ -115,7 +115,7 @@ export default function TermsPage() {
       contentEn: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            All prices on Chiringuito are stated in <strong>Bolivianos (Bs.)</strong> and legally include the 13% Value Added Tax (IVA) in accordance with the Bolivian National Tax Service (SIN).
+            All prices on Vitrina Market are stated in <strong>Bolivianos (Bs.)</strong> and legally include the 13% Value Added Tax (IVA) in accordance with the Bolivian National Tax Service (SIN).
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
@@ -147,7 +147,7 @@ export default function TermsPage() {
           <ul className="list-disc pl-5 space-y-2 text-slate-600 text-xs sm:text-sm">
             <li><strong>Tiempos de Entrega:</strong> Entregas express urbanas en Santa Cruz, La Paz y Cochabamba se realizan entre 15 a 45 minutos para productos con badge "OpenDSP Hoy". Envíos interdepartamentales toman entre 24 a 48 horas hábiles.</li>
             <li><strong>Geolocalización Satelital:</strong> El comprador puede visualizar en vivo la ruta del motorizado desde el panel de rastreo satelital.</li>
-            <li><strong>Envíos Gratuitos:</strong> Compras mayores a Bs. 150 califican automáticamente para despacho gratuito cubierto por Chiringuito y OpenDSP.</li>
+            <li><strong>Envíos Gratuitos:</strong> Compras mayores a Bs. 150 califican automáticamente para despacho gratuito cubierto por Vitrina Market y OpenDSP.</li>
           </ul>
         </div>
       ),
@@ -172,7 +172,7 @@ export default function TermsPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Todos los productos comercializados en Chiringuito cuentan con una <strong>Garantía de Satisfacción de 7 días</strong> a partir de la fecha de entrega certificada por OpenDSP.
+            Todos los productos comercializados en Vitrina Market cuentan con una <strong>Garantía de Satisfacción de 7 días</strong> a partir de la fecha de entrega certificada por OpenDSP.
           </p>
           <p>
             Si el producto recibido presenta fallas de fábrica, discrepancias con la descripción o daños durante el transporte, el comprador tiene derecho a solicitar:
@@ -187,7 +187,7 @@ export default function TermsPage() {
       contentEn: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            All products sold on Chiringuito come with a mandatory <strong>7-Day Satisfaction Warranty</strong> starting from the certified delivery timestamp by OpenDSP.
+            All products sold on Vitrina Market come with a mandatory <strong>7-Day Satisfaction Warranty</strong> starting from the certified delivery timestamp by OpenDSP.
           </p>
           <p>
             If the delivered product suffers from manufacturing defects, description discrepancy, or transit damage, the buyer may claim:

@@ -37,9 +37,9 @@ const faqs: FAQItem[] = [
     questionEs: '¿Cómo funcionan los envíos express de última milla con OpenDSP?',
     questionEn: 'How do last-mile express deliveries with OpenDSP work?',
     answerEs:
-      'Chiringuito está directamente integrado con la red de despachos inteligentes OpenDSP. Cuando confirmas tu orden, el sistema asigna automáticamente al conductor más cercano. Puedes ver la ruta en tiempo real, el nombre del chofer, placas de la motocicleta y tiempo estimado de llegada vía GPS satelital.',
+      'Vitrina Market está directamente integrado con la red de despachos inteligentes OpenDSP. Cuando confirmas tu orden, el sistema asigna automáticamente al conductor más cercano. Puedes ver la ruta en tiempo real, el nombre del chofer, placas de la motocicleta y tiempo estimado de llegada vía GPS satelital.',
     answerEn:
-      'Chiringuito is directly integrated with the OpenDSP intelligent dispatch network. When you confirm your order, the system automatically assigns the nearest driver. You can track their route in real time, view driver details, license plate, and estimated arrival time via satellite GPS.',
+      'Vitrina Market is directly integrated with the OpenDSP intelligent dispatch network. When you confirm your order, the system automatically assigns the nearest driver. You can track their route in real time, view driver details, license plate, and estimated arrival time via satellite GPS.',
   },
   {
     id: 'f-2',
@@ -54,8 +54,8 @@ const faqs: FAQItem[] = [
   {
     id: 'f-3',
     category: 'payments',
-    questionEs: '¿Qué métodos de pago son aceptados en Chiringuito?',
-    questionEn: 'What payment methods are accepted on Chiringuito?',
+    questionEs: '¿Qué métodos de pago son aceptados en Vitrina Market?',
+    questionEn: 'What payment methods are accepted on Vitrina Market?',
     answerEs:
       'Aceptamos código QR Simple (interoperable con Banco Unión, BCP, BNB, Banco Mercantil Santa Cruz, Banco FIE, Banco Sol y todas las entidades de ASOBAN), tarjetas de débito/crédito Visa y Mastercard, y billeteras móviles como Tigo Money.',
     answerEn:
@@ -67,9 +67,9 @@ const faqs: FAQItem[] = [
     questionEs: '¿Emiten factura legal y recibo oficial de compra?',
     questionEn: 'Do you provide official legal invoices and tax receipts?',
     answerEs:
-      'Sí. Todas las tiendas oficiales y vendedores verificados en Chiringuito emiten factura computarizada o electrónica con validez tributaria del SIN (Servicio de Impuestos Nacionales). Puedes ingresar tu NIT/CI y Razón Social en el checkout.',
+      'Sí. Todas las tiendas oficiales y vendedores verificados en Vitrina Market emiten factura computarizada o electrónica con validez tributaria del SIN (Servicio de Impuestos Nacionales). Puedes ingresar tu NIT/CI y Razón Social en el checkout.',
     answerEn:
-      'Yes. All official stores and verified sellers on Chiringuito provide computerized or electronic invoices valid with the Bolivian National Tax Service (SIN). You can enter your NIT/CI and Company Name during checkout.',
+      'Yes. All official stores and verified sellers on Vitrina Market provide computerized or electronic invoices valid with the Bolivian National Tax Service (SIN). You can enter your NIT/CI and Company Name during checkout.',
   },
   {
     id: 'f-5',
@@ -97,9 +97,9 @@ const faqs: FAQItem[] = [
     questionEs: '¿Cuál es la política de garantía y devoluciones?',
     questionEn: 'What is the warranty and return policy?',
     answerEs:
-      'Cuentas con la Garantía de Satisfacción Chiringuito: hasta 7 días calendario para solicitar cambio o devolución si el producto no coincide con la descripción, presenta defectos de fábrica o no es de tu agrado.',
+      'Cuentas con la Garantía de Satisfacción Vitrina Market: hasta 7 días calendario para solicitar cambio o devolución si el producto no coincide con la descripción, presenta defectos de fábrica o no es de tu agrado.',
     answerEn:
-      'You are covered by the Chiringuito Satisfaction Guarantee: up to 7 calendar days to request an exchange or full refund if the item does not match the description, has manufacturing defects, or does not meet your expectations.',
+      'You are covered by the Vitrina Market Satisfaction Guarantee: up to 7 calendar days to request an exchange or full refund if the item does not match the description, has manufacturing defects, or does not meet your expectations.',
   },
   {
     id: 'f-8',
@@ -125,7 +125,7 @@ export default function HelpPage() {
     { id: 'payments', labelEs: 'Pagos & Facturación', labelEn: 'Payments & Invoicing' },
     { id: 'live', labelEs: 'TikTok Live Shopping', labelEn: 'TikTok Live Shopping' },
     { id: 'returns', labelEs: 'Devoluciones & Garantía', labelEn: 'Returns & Warranty' },
-    { id: 'seller', labelEs: 'Vender en Chiringuito', labelEn: 'Selling on Chiringuito' },
+    { id: 'seller', labelEs: 'Vender en Vitrina Market', labelEn: 'Selling on Vitrina Market' },
   ];
 
   const filteredFaqs = faqs.filter((faq) => {
@@ -267,7 +267,7 @@ export default function HelpPage() {
           </div>
           <div>
             <h4 className="font-bold text-xs text-slate-900 group-hover:text-amber-600">
-              {language === 'es' ? 'Vender en Chiringuito' : 'Sell on Chiringuito'}
+              {language === 'es' ? 'Vender en Vitrina Market' : 'Sell on Vitrina Market'}
             </h4>
             <p className="text-[11px] text-slate-400 mt-0.5">
               {language === 'es' ? 'Registra tu tienda en minutos' : 'Register your store in minutes'}
@@ -323,7 +323,7 @@ export default function HelpPage() {
             className="px-5 py-3 rounded-full bg-slate-900 hover:bg-black text-white font-extrabold text-xs flex items-center space-x-2 shadow-sm transition-all"
           >
             <Phone className="w-4 h-4" />
-            <span>+591 3 800-CHIRINGUITO</span>
+            <span>+591 3 800-VITRINA</span>
           </a>
         </div>
       </div>

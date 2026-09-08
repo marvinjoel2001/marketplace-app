@@ -30,7 +30,7 @@ export function SpecialOfferBanner() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-[#F4F9F5] via-[#FAFCFA] to-[#F1F7F3] border border-emerald-100/70 p-8 sm:p-12 mb-14 shadow-xs">
+    <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-[#F4F9F5] via-[#FAFCFA] to-[#F1F7F3] border border-emerald-100/70 p-8 sm:p-12 mb-14 shadow-card hover:shadow-card-hover transition-all duration-300">
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Column: Heading, Countdown & CTA */}
         <div className="lg:col-span-6 space-y-6">

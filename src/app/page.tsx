@@ -1,7 +1,7 @@
 import React from 'react';
 import { marketplaceApi } from '@/lib/api';
 import { HeroBanner } from '@/components/storefront/HeroBanner';
-import { LiveShoppingBar } from '@/components/storefront/LiveShoppingBar';
+import { HomeHighlightSection } from '@/components/storefront/HomeHighlightSection';
 import { BrowseByCategory } from '@/components/storefront/BrowseByCategory';
 import { SpecialOfferBanner } from '@/components/storefront/SpecialOfferBanner';
 import { PersonalizedStorefrontFeed } from '@/components/storefront/PersonalizedStorefrontFeed';
@@ -34,24 +34,24 @@ export default async function HomePage({
 
   return (
     <div className="w-full">
-      {/* If not filtering, show full NovaTech Showcase */}
+      {/* If not filtering, show full Vitrina Market Experience */}
       {!isFiltering ? (
         <>
-          {/* 1. Hero Banner: Roco Wireless Headphones */}
+          {/* 1. Hero Banner Asimétrico: Roco Wireless Headphones & Happy User */}
           <HeroBanner />
 
-          {/* 2. TikTok Live Shopping Section: Tiendas en Vivo */}
+          {/* 2. Fila Doble: En Vivo Ahora (Tiendas Destacadas) + Nuestras Mejores Ofertas */}
           <div id="tiendas" className="scroll-mt-20">
-            <LiveShoppingBar />
+            <HomeHighlightSection />
           </div>
 
-          {/* 3. Category Row: 7 Cards */}
+          {/* 3. Categorías Principales (Cuadrícula de 8 tarjetas verde menta) */}
           <BrowseByCategory />
 
-          {/* 4. Mid-Page Special Offer: Enhance Your Music Experience */}
+          {/* 4. Mid-Page Special Offer: Banner de Promoción */}
           <SpecialOfferBanner />
 
-          {/* 5. Best Sellers & Behavioral Re-ranked Feed */}
+          {/* 5. Catálogo Completo y Recomendaciones Personalizadas */}
           <div id="catalogo" className="scroll-mt-20">
             <PersonalizedStorefrontFeed
               initialProducts={products}
@@ -61,7 +61,7 @@ export default async function HomePage({
             />
           </div>
 
-          {/* 6. Bottom Trust Badges Bar */}
+          {/* 6. Garantías y Envíos OpenDSP */}
           <div id="envios" className="scroll-mt-20">
             <TrustBadgesBar />
           </div>
@@ -69,7 +69,7 @@ export default async function HomePage({
       ) : (
         /* If filtering by search, category or flash sale, show filtered results */
         <div className="space-y-8">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center justify-between shadow-2xs">
+          <div className="bg-white p-6 rounded-3xl border border-slate-100/90 flex items-center justify-between shadow-card">
             <div>
               <h1 className="text-xl font-black text-slate-900">
                 {searchQuery
@@ -79,13 +79,15 @@ export default async function HomePage({
                   : '⚡ Ofertas Relámpago activas'}
               </h1>
               <p className="text-xs text-slate-500 mt-1">
-                Se encontraron {products.length} productos disponibles con envío express OpenDSP
+                Se encontraron {products.length} productos disponibles en Vitrina Market con despacho express OpenDSP
               </p>
             </div>
           </div>
 
-          {/* Mini live shopping banner even during filter */}
-          <LiveShoppingBar />
+          {/* Destacados en vivo también en modo búsqueda */}
+          <div id="tiendas" className="scroll-mt-20">
+            <HomeHighlightSection />
+          </div>
 
           <div id="catalogo" className="scroll-mt-20">
             <PersonalizedStorefrontFeed

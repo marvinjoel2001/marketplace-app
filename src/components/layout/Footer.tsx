@@ -61,9 +61,16 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-xs">
           <div className="col-span-2">
-            <div className="flex items-center space-x-2 mb-3">
+            <div className="flex items-center space-x-2.5 mb-3">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-white shrink-0 p-0.5 shadow-xs">
+                <img
+                  src="/pulpo-icon.png"
+                  alt="Vitrina Market Logo"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
               <span className="text-2xl font-black text-gray-900">
-                Chiringuito<span className="text-amber-500">.</span>
+                Vitrina Market<span className="text-emerald-600">.</span>
               </span>
             </div>
             <p className="text-xs text-gray-500 max-w-sm mb-4 leading-relaxed">
@@ -124,14 +131,14 @@ export function Footer() {
               <li><Link href="/privacy" className="hover:text-emerald-700">{t('footer_privacy', 'Política de Privacidad')}</Link></li>
               <li><Link href="/order/track/CY-894120-412" className="hover:text-emerald-700">Rastrear mi pedido</Link></li>
               <li><Link href="/admin" className="hover:text-emerald-700">{t('footer_admin_portal', 'Portal Administrativo')}</Link></li>
-              <li><a href="tel:+591380026677" className="hover:text-emerald-700">+591 3 800-CHIRINGUITO</a></li>
+              <li><a href="tel:+591380026677" className="hover:text-emerald-700">+591 3 800-VITRINA</a></li>
               <li><span className="text-gray-400">Santa Cruz, Bolivia</span></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-100 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400">
-          <p>{t('footer_copyright', '© 2026 Chiringuito Bolivia S.R.L. Todos los derechos reservados. Desarrollado para OpenDSP Delivery Ecosystem.')}</p>
+          <p>{t('footer_copyright', '© 2026 Vitrina Market Bolivia S.R.L. Todos los derechos reservados. Desarrollado para OpenDSP Delivery Ecosystem.')}</p>
           <div className="flex flex-wrap gap-4 mt-2 sm:mt-0">
             <Link href="/help" className="hover:text-emerald-700 hover:underline transition-colors">{t('footer_help_center', 'Ayuda / FAQ')}</Link>
             <Link href="/terms" className="hover:text-emerald-700 hover:underline transition-colors">{t('footer_terms', 'Términos y Condiciones')}</Link>

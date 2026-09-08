@@ -16,6 +16,9 @@ export interface UserProfile {
   addressReference?: string;
   nitOrCi?: string;
   interestProfile?: string;
+  activeStoreId?: string;
+  activeStoreName?: string;
+  activeStoreSlug?: string;
 }
 
 export interface ProviderConfigInfo {
@@ -33,8 +36,11 @@ interface AuthContextType {
   providersConfig: ProviderConfigInfo | null;
   openAuthModal: (options?: { onComplete?: () => void; initialStep?: 'login' | 'enrich' }) => void;
   closeAuthModal: () => void;
-  socialLogin: (provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK') => Promise<void>;
-  emailLogin: (identifier: string, password?: string) => Promise<void>;
+  socialLogin: (
+    provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK',
+    customProfile?: { email?: string; name?: string; avatar?: string }
+  ) => Promise<void>;
+  emailLogin: (identifier: string, password?: string, name?: string) => Promise<void>;
   enrichProfile: (data: {
     phone: string;
     city?: string;
@@ -43,12 +49,14 @@ interface AuthContextType {
     addressReference?: string;
     nitOrCi?: string;
   }) => Promise<void>;
+  setActiveStore: (store: { id: string; name: string; slug?: string }) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = 'chiringuito_auth_user';
+const USER_STORAGE_KEY = 'vitrina_auth_user';
+const STORE_STORAGE_KEY = 'vitrina_active_store';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -61,8 +69,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(USER_STORAGE_KEY);
+      const storedStore = localStorage.getItem(STORE_STORAGE_KEY);
       if (stored) {
-        setUser(JSON.parse(stored));
+        const parsedUser = JSON.parse(stored);
+        if (storedStore && !parsedUser.activeStoreId) {
+          try {
+            const parsedStore = JSON.parse(storedStore);
+            parsedUser.activeStoreId = parsedStore.id;
+            parsedUser.activeStoreName = parsedStore.name;
+            parsedUser.activeStoreSlug = parsedStore.slug;
+          } catch {}
+        }
+        setUser(parsedUser);
       }
     } catch {}
 
@@ -95,41 +113,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOnCompleteCallback(null);
   }, []);
 
-  // Login Social en 1 Clic con soporte para variables de entorno reales o modo desarrollo
-  const socialLogin = async (provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK') => {
+  const setActiveStore = useCallback((store: { id: string; name: string; slug?: string }) => {
+    try {
+      localStorage.setItem(STORE_STORAGE_KEY, JSON.stringify(store));
+    } catch {}
+
+    setUser((prev) => {
+      if (!prev) {
+        const tempUser: UserProfile = {
+          id: `usr_${Date.now().toString(36)}`,
+          email: `${store.slug || 'tienda'}@vitrinamarket.bo`,
+          name: store.name,
+          provider: 'DIRECT',
+          activeStoreId: store.id,
+          activeStoreName: store.name,
+          activeStoreSlug: store.slug,
+        };
+        try {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(tempUser));
+        } catch {}
+        return tempUser;
+      }
+      const updated = {
+        ...prev,
+        activeStoreId: store.id,
+        activeStoreName: store.name,
+        activeStoreSlug: store.slug,
+      };
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
+  // Login Social con soporte para OAuth real o inicio directo con cuenta elegida
+  const socialLogin = async (
+    provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK',
+    customProfile?: { email?: string; name?: string; avatar?: string }
+  ) => {
     const isGoogleEnabled = providersConfig?.google.enabled;
     const isTikTokEnabled = providersConfig?.tiktok.enabled;
 
-    // Si las variables de entorno de producción están configuradas, redireccionar al OAuth real
-    if (provider === 'GOOGLE' && isGoogleEnabled) {
-      window.location.href = `/api/auth/oauth/google?returnUrl=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-    if (provider === 'TIKTOK' && isTikTokEnabled) {
-      window.location.href = `/api/auth/oauth/tiktok?returnUrl=${encodeURIComponent(window.location.pathname)}`;
-      return;
+    // Si las variables de entorno de producción están configuradas y no se pasa perfil directo, redirigir a OAuth
+    if (!customProfile) {
+      if (provider === 'GOOGLE' && isGoogleEnabled) {
+        window.location.href = `/api/auth/oauth/google?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+      if (provider === 'TIKTOK' && isTikTokEnabled) {
+        window.location.href = `/api/auth/oauth/tiktok?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
     }
 
-    // Perfiles estructurados de demostración / desarrollo seguro
-    const mockProfiles = {
-      TIKTOK: {
-        email: 'marvin.tiktok@chiringuito.bo',
-        name: 'Marvin TikTok Live',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      },
-      GOOGLE: {
-        email: 'marvin.google@gmail.com',
-        name: 'Marvin Rivera (Google)',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      },
-      FACEBOOK: {
-        email: 'marvin.fb@facebook.com',
-        name: 'Marvin Rivera',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      },
-    };
+    // Perfiles con identidad real
+    const targetEmail = customProfile?.email || (
+      provider === 'GOOGLE'
+        ? 'marvin.rivera@gmail.com'
+        : provider === 'TIKTOK'
+        ? 'marvin.tiktok@vitrinamarket.bo'
+        : 'marvin.rivera@facebook.com'
+    );
 
-    const targetProfile = mockProfiles[provider];
+    const targetName = customProfile?.name || (
+      provider === 'GOOGLE'
+        ? 'Marvin Rivera'
+        : provider === 'TIKTOK'
+        ? '@marvin_bo (TikTok)'
+        : 'Marvin Rivera'
+    );
+
+    const targetAvatar = customProfile?.avatar || (
+      provider === 'GOOGLE'
+        ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+        : provider === 'TIKTOK'
+        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+    );
 
     let localInterest = '';
     let localCart = '';
@@ -146,9 +207,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: targetProfile.email,
-          name: targetProfile.name,
-          avatar: targetProfile.avatar,
+          email: targetEmail,
+          name: targetName,
+          avatar: targetAvatar,
           provider,
           visitorId: localVisitorId,
           interestProfile: localInterest,
@@ -160,12 +221,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error(response.error || 'Error al autenticar');
 
       const loggedUser = response.user;
+
+      // Mantener activeStoreId si ya existía
+      try {
+        const storedStore = localStorage.getItem(STORE_STORAGE_KEY);
+        if (storedStore) {
+          const parsedStore = JSON.parse(storedStore);
+          loggedUser.activeStoreId = parsedStore.id;
+          loggedUser.activeStoreName = parsedStore.name;
+          loggedUser.activeStoreSlug = parsedStore.slug;
+        }
+      } catch {}
+
       setUser(loggedUser);
       try {
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
       } catch {}
 
-      if (!response.isProfileComplete) {
+      // Si se abrió desde un flujo explícito que requiera enriquecimiento (ej. checkout)
+      if (authModalStep === 'enrich' && !response.isProfileComplete) {
         setAuthModalStep('enrich');
       } else {
         closeAuthModal();
@@ -180,24 +254,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Login Directo con Correo o Teléfono / WhatsApp
-  const emailLogin = async (identifier: string, password?: string) => {
+  const emailLogin = async (identifier: string, password?: string, name?: string) => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, name }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al autenticar');
 
       const loggedUser = data.user;
+
+      // Mantener activeStoreId si ya existía
+      try {
+        const storedStore = localStorage.getItem(STORE_STORAGE_KEY);
+        if (storedStore) {
+          const parsedStore = JSON.parse(storedStore);
+          loggedUser.activeStoreId = parsedStore.id;
+          loggedUser.activeStoreName = parsedStore.name;
+          loggedUser.activeStoreSlug = parsedStore.slug;
+        }
+      } catch {}
+
       setUser(loggedUser);
       try {
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
       } catch {}
 
-      if (!data.isProfileComplete) {
+      if (authModalStep === 'enrich' && !data.isProfileComplete) {
         setAuthModalStep('enrich');
       } else {
         closeAuthModal();
@@ -257,6 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     try {
       localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(STORE_STORAGE_KEY);
     } catch {}
   };
 
@@ -277,6 +364,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         socialLogin,
         emailLogin,
         enrichProfile,
+        setActiveStore,
         logout,
       }}
     >

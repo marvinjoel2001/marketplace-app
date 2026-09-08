@@ -311,7 +311,7 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
               : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
           }`}
         >
-          <span>⚡ Modo Interactivo Chiringuito</span>
+          <span>⚡ Modo Interactivo Vitrina Market</span>
         </button>
         <button
           type="button"

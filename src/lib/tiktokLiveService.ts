@@ -272,7 +272,7 @@ export function updateVendorLiveStatus(
     embedUrl: `https://www.tiktok.com/embed/v2/@${norm}/live`,
     avatarUrl: liveRegistry[norm].avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
     coverUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800',
-    statusMessage: isLive ? '¡Transmisión activada con éxito en Chiringuito!' : 'Transmisión finalizada.',
+    statusMessage: isLive ? '¡Transmisión activada con éxito en Vitrina Market!' : 'Transmisión finalizada.',
     source: 'verified_registry',
     timestamp: new Date().toISOString(),
   };

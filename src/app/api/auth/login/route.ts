@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { identifier, password } = await req.json();
+    const { identifier, password, name } = await req.json();
 
     if (!identifier) {
       return NextResponse.json(
@@ -14,13 +14,13 @@ export async function POST(req: NextRequest) {
     const isPhone = /^\+?\d{7,12}$/.test(identifier.replace(/\s+/g, ''));
     const isEmail = identifier.includes('@');
 
-    const cleanName = isEmail
+    const cleanName = name?.trim() || (isEmail
       ? identifier.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
-      : `Usuario ${identifier.slice(-4)}`;
+      : `Usuario ${identifier.slice(-4)}`);
 
     const user = {
       id: `usr_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`,
-      email: isEmail ? identifier.toLowerCase() : `${identifier.replace(/\D/g, '')}@chiringuito.bo`,
+      email: isEmail ? identifier.toLowerCase() : `${identifier.replace(/\D/g, '')}@vitrinamarket.bo`,
       name: cleanName,
       phone: isPhone ? identifier.replace(/\D/g, '').slice(-8) : undefined,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`,

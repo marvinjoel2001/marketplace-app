@@ -1,116 +1,172 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function HeroBanner() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const slides = [
+    {
+      badge: language === 'es' ? '+ Nuevo producto' : '+ New product',
+      title: 'Roco Wireless Headphones',
+      price: 'Bs. 89.00',
+      bullets: [
+        language === 'es' ? 'Sonido Premium con Bajos Profundos' : 'Premium Sound with Deep Bass',
+        language === 'es' ? 'Comodidad para Todo el Día' : 'All-Day Comfort & Ergonomics',
+        language === 'es' ? 'Entrega Express OpenDSP Bolivia' : 'OpenDSP Express Bolivia Delivery',
+      ],
+      productUrl: '/product/roco-wireless-headphones',
+      deskImage: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&auto=format&fit=crop&q=85',
+      userImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=85',
+    },
+    {
+      badge: language === 'es' ? '🔥 Más vendido' : '🔥 Best seller',
+      title: 'Smart Band Pro Ultra',
+      price: 'Bs. 149.00',
+      bullets: [
+        language === 'es' ? 'Monitoreo Cardíaco & GPS Deportivo' : 'Heart Rate & Sports GPS',
+        language === 'es' ? 'Batería hasta 14 Días' : 'Up to 14 Days Battery',
+        language === 'es' ? 'Sumergible 50m Resistente al Agua' : '50m Water Resistant',
+      ],
+      productUrl: '/?flashSale=true',
+      deskImage: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=85',
+      userImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=85',
+    },
+  ];
+
+  const current = slides[activeSlide];
 
   return (
-    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#F4F9F5] via-[#FAFCFA] to-[#F1F7F3] border border-slate-100 p-8 sm:p-12 lg:p-14 mb-10 shadow-xs">
-      {/* Background Soft Natural Lighting Glows */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-10 right-10 w-80 h-80 bg-green-50/50 rounded-full blur-2xl pointer-events-none"></div>
+    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-[#EEF7F2] via-[#F7FAF8] to-[#EDF6F1] border border-emerald-100/60 p-5 sm:p-7 lg:p-9 mb-8 shadow-card">
+      {/* Soft natural lighting ambient blobs */}
+      <div className="absolute -top-12 -left-12 w-64 h-64 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-teal-100/30 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        {/* Left Column: Headline, Description, Shop Now CTA & Social Proof */}
-        <div className="lg:col-span-6 space-y-6">
-          {/* Tag: Nuevo producto */}
-          <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-xs font-bold shadow-2xs">
-            <span className="text-emerald-600">✦</span>
-            <span>{language === 'es' ? 'Nuevo producto' : 'New product'}</span>
+      {/* Main Grid: 3-column layout matching reference screenshot */}
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-7 items-center">
+        {/* Left Column: Product on desk */}
+        <div className="lg:col-span-3 flex items-center justify-center">
+          <div className="relative w-full max-w-[240px] aspect-square rounded-3xl bg-white/70 backdrop-blur-xs p-3.5 border border-emerald-100/70 shadow-xs group hover:shadow-md transition-all duration-300">
+            <img
+              src={current.deskImage}
+              alt="Desk setup preview"
+              className="w-full h-full object-contain rounded-2xl group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+        </div>
+
+        {/* Center Column: Badge, Title, Bullets, Price, CTA, Social proof */}
+        <div className="lg:col-span-6 space-y-4 text-left px-2">
+          {/* Top tag & price row */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-emerald-100/80 text-emerald-900 text-xs font-bold shadow-2xs border border-emerald-200/60">
+              {current.badge}
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              {current.price}
+            </span>
           </div>
 
-          {/* Big Clean Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.08]">
-            Roco Wireless <br />
-            Headphones
+          {/* Big Clean Title */}
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 leading-tight">
+            {current.title}
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-sm sm:text-base text-slate-600 font-normal max-w-md leading-relaxed">
-            {language === 'es'
-              ? 'Sonido premium con bajos profundos y comodidad todo el día. Disponible con entrega express OpenDSP en toda Bolivia.'
-              : 'Premium sound with deep bass and all-day comfort. Available with OpenDSP express delivery across Bolivia.'}
-          </p>
+          {/* Bullet points with checkmarks */}
+          <ul className="space-y-1.5 text-xs sm:text-sm font-medium text-slate-700">
+            {current.bullets.map((b, idx) => (
+              <li key={idx} className="flex items-center space-x-2">
+                <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
 
-          {/* CTA & Social Proof Row */}
-          <div className="pt-2 flex flex-wrap items-center gap-5 sm:gap-7">
+          {/* CTA & Customer Social Proof */}
+          <div className="pt-2 flex flex-wrap items-center gap-4 sm:gap-6">
             <Link
-              href="/product/roco-wireless-headphones"
-              className="inline-flex items-center space-x-2.5 px-7 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-full shadow-lg shadow-emerald-600/25 transition-all hover:scale-102 active:scale-98"
+              href={current.productUrl}
+              className="inline-flex items-center space-x-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-emerald-pill hover:scale-102 active:scale-98 transition-all"
             >
               <span>{language === 'es' ? 'Comprar ahora' : 'Shop now'}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
-            {/* Social Proof: Overlapping Avatars + 1,200+ Happy Customers */}
-            <div className="flex items-center space-x-3">
+            {/* Avatars proof */}
+            <div className="flex items-center space-x-2.5">
               <div className="flex -space-x-2 overflow-hidden">
                 <img
-                  className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  className="inline-block h-7 w-7 rounded-full ring-2 ring-white object-cover"
                   src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"
                   alt="Cliente 1"
                 />
                 <img
-                  className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  className="inline-block h-7 w-7 rounded-full ring-2 ring-white object-cover"
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100"
                   alt="Cliente 2"
                 />
                 <img
-                  className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  className="inline-block h-7 w-7 rounded-full ring-2 ring-white object-cover"
                   src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100"
                   alt="Cliente 3"
                 />
               </div>
-              <div className="text-xs">
-                <span className="font-extrabold text-slate-900 block leading-tight">1,200+</span>
-                <span className="text-slate-500 font-medium leading-tight">
-                  {language === 'es' ? 'Clientes felices' : 'Happy customers'}
+              <div className="text-[11px] leading-tight">
+                <span className="font-extrabold text-slate-900 block">1,200+</span>
+                <span className="text-slate-500 font-medium">
+                  {language === 'es' ? 'clientes felices' : 'happy customers'}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Floating Headphones with Price Tag & Secondary Smartwatch */}
-        <div className="lg:col-span-6 relative flex items-center justify-center min-h-[340px] sm:min-h-[420px]">
-          {/* Subtle background circle behind headphones */}
-          <div className="absolute w-72 h-72 sm:w-88 sm:h-88 rounded-full bg-emerald-50/70 border border-emerald-100/60 shadow-inner"></div>
-
-          {/* Floating Price Pill Tag */}
-          <div className="absolute top-4 sm:top-8 right-8 sm:right-20 z-20 bg-white rounded-2xl px-4 py-2 shadow-md border border-slate-100 flex flex-col items-center">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">SOLO</span>
-            <span className="text-sm font-black text-emerald-700">Bs. 89.00</span>
-          </div>
-
-          {/* Main Hero Product Image: Wireless Headphones */}
-          <div className="relative z-10 w-64 sm:w-84 md:w-96 transform hover:scale-105 transition-transform duration-500">
+        {/* Right Column: Smiling user wearing headphones */}
+        <div className="lg:col-span-3 flex items-center justify-center">
+          <div className="relative w-full max-w-[260px] aspect-4/5 rounded-3xl overflow-hidden border border-emerald-100 shadow-sm group">
             <img
-              src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=85"
-              alt="Roco Wireless Headphones"
-              className="w-full h-auto object-contain drop-shadow-[0_20px_25px_rgba(22,163,74,0.12)] rounded-3xl"
+              src={current.userImage}
+              alt="Happy customer wearing headphones"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-          </div>
-
-          {/* Floating Secondary Smartwatch in bottom right */}
-          <div className="absolute -bottom-2 right-2 sm:right-6 z-15 w-24 sm:w-28 bg-white/80 backdrop-blur-md rounded-2xl p-2 border border-slate-100 shadow-sm transform rotate-6 hover:rotate-0 transition-transform hidden sm:block">
-            <img
-              src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop&q=80"
-              alt="Smartwatch"
-              className="w-full h-auto object-contain drop-shadow-xs"
-            />
+            {/* Subtle gradient overlay at bottom */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
           </div>
         </div>
       </div>
 
+      {/* Side Arrow Navigation Buttons */}
+      <button
+        onClick={() => setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1))}
+        aria-label="Slide anterior"
+        className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-sm border border-slate-100 flex items-center justify-center transition-all hover:scale-105 z-20 cursor-pointer"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1))}
+        aria-label="Slide siguiente"
+        className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-sm border border-slate-100 flex items-center justify-center transition-all hover:scale-105 z-20 cursor-pointer"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+
       {/* Slide Navigation Dots (bottom center) */}
-      <div className="relative z-10 flex items-center justify-center space-x-2 mt-4 sm:mt-6">
-        <button className="w-6 h-1.5 rounded-full bg-emerald-600 transition-all" aria-label="Slide 1"></button>
-        <button className="w-1.5 h-1.5 rounded-full bg-slate-300 hover:bg-slate-400 transition-all" aria-label="Slide 2"></button>
-        <button className="w-1.5 h-1.5 rounded-full bg-slate-300 hover:bg-slate-400 transition-all" aria-label="Slide 3"></button>
+      <div className="relative z-10 flex items-center justify-center space-x-2 mt-5">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActiveSlide(i)}
+            aria-label={`Slide ${i + 1}`}
+            className={`transition-all rounded-full ${
+              activeSlide === i ? 'w-6 h-1.5 bg-emerald-600' : 'w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400'
+            }`}
+          />
+        ))}
       </div>
     </div>
   );

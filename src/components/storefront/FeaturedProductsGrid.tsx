@@ -237,7 +237,7 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
           return (
             <div
               key={product.id}
-              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs hover:shadow-lg hover:-translate-y-1 hover:border-slate-200 transition-all duration-300 flex flex-col justify-between group relative"
+              className="bg-white rounded-3xl border border-slate-100/90 p-4.5 shadow-card hover:shadow-card-hover hover:-translate-y-1.5 hover:border-emerald-200/80 transition-all duration-300 flex flex-col justify-between group relative"
             >
               <div>
                 {/* Top Row: Multi-store comparator link & Status Badge */}

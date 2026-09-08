@@ -95,12 +95,29 @@ export function VendorProfileSettings() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  // Cargar perfil guardado localmente si existe
+  // Cargar perfil guardado localmente o tienda activa si existe
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('chiringuito_vendor_profile');
-      if (stored) {
-        setProfile(JSON.parse(stored));
+      const activeStoreRaw = localStorage.getItem('vitrina_active_store');
+      if (activeStoreRaw) {
+        const s = JSON.parse(activeStoreRaw);
+        setProfile((prev) => ({
+          ...prev,
+          storeId: s.id || prev.storeId,
+          name: s.name || prev.name,
+          category: s.category || prev.category,
+          logo: s.logo || prev.logo,
+          banner: s.banner || prev.banner,
+          phone: s.phone || prev.phone,
+          address: s.address || prev.address,
+          description: s.description || prev.description,
+          tiktokUsername: s.tiktokUsername || prev.tiktokUsername,
+        }));
+      } else {
+        const stored = localStorage.getItem('vitrina_vendor_profile') || localStorage.getItem('chiringuito_vendor_profile');
+        if (stored) {
+          setProfile(JSON.parse(stored));
+        }
       }
     } catch {}
   }, []);
@@ -109,11 +126,12 @@ export function VendorProfileSettings() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setProfile((prev) => ({ ...prev, logo: base64 }));
+      setProfile((prev) => ({
+        ...prev,
+        logo: event.target?.result as string,
+      }));
     };
     reader.readAsDataURL(file);
   };
@@ -122,11 +140,12 @@ export function VendorProfileSettings() {
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setProfile((prev) => ({ ...prev, banner: base64 }));
+      setProfile((prev) => ({
+        ...prev,
+        banner: event.target?.result as string,
+      }));
     };
     reader.readAsDataURL(file);
   };
@@ -139,7 +158,8 @@ export function VendorProfileSettings() {
 
     try {
       // Guardar localmente
-      localStorage.setItem('chiringuito_vendor_profile', JSON.stringify(profile));
+      localStorage.setItem('vitrina_vendor_profile', JSON.stringify(profile));
+      localStorage.setItem('vitrina_active_store', JSON.stringify(profile));
 
       // Guardar en la API interna de Next.js
       await fetch('/api/vendor/profile', {
@@ -608,8 +628,8 @@ export function VendorProfileSettings() {
             </div>
             <p className="text-xs text-slate-500 mb-6">
               {language === 'es'
-                ? 'Así luce el escaparate de tu tienda en Chiringuito con tu banner de portada y foto de perfil seleccionados:'
-                : 'This is how your store appears to customers on Chiringuito with your cover banner and profile logo:'}
+                ? 'Así luce el escaparate de tu tienda en Vitrina Market con tu banner de portada y foto de perfil seleccionados:'
+                : 'This is how your store appears to customers on Vitrina Market with your cover banner and profile logo:'}
             </p>
 
             {/* Simulated Store Hero */}

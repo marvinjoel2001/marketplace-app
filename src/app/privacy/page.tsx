@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            En <strong>Chiringuito</strong> recopilamos únicamente los datos necesarios para procesar tus compras de forma segura, coordinar entregas express con OpenDSP y permitir tu interacción en TikTok Live Shopping.
+            En <strong>Vitrina Market</strong> recopilamos únicamente los datos necesarios para procesar tus compras de forma segura, coordinar entregas express con OpenDSP y permitir tu interacción en TikTok Live Shopping.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
       contentEn: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            At <strong>Chiringuito</strong>, we only collect data strictly necessary to fulfill your purchases securely, coordinate express dispatch with OpenDSP, and enable interactive TikTok Live Shopping.
+            At <strong>Vitrina Market</strong>, we only collect data strictly necessary to fulfill your purchases securely, coordinate express dispatch with OpenDSP, and enable interactive TikTok Live Shopping.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            En Chiringuito <strong>NUNCA almacenamos números de tarjetas de crédito o débito ni códigos CVV/CVC</strong> en nuestros servidores.
+            En Vitrina Market <strong>NUNCA almacenamos números de tarjetas de crédito o débito ni códigos CVV/CVC</strong> en nuestros servidores.
           </p>
           <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 text-emerald-900 text-xs space-y-2">
             <p className="font-bold flex items-center gap-1.5">
@@ -102,7 +102,7 @@ export default function PrivacyPage() {
       contentEn: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Chiringuito <strong>NEVER stores complete credit or debit card numbers or CVV/CVC security codes</strong> on our servers.
+            Vitrina Market <strong>NEVER stores complete credit or debit card numbers or CVV/CVC security codes</strong> on our servers.
           </p>
           <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 text-emerald-900 text-xs space-y-2">
             <p className="font-bold flex items-center gap-1.5">
@@ -154,7 +154,7 @@ export default function PrivacyPage() {
       contentEs: (
         <div className="space-y-4 text-slate-700 leading-relaxed text-sm">
           <p>
-            Como usuario registrado de Chiringuito, tienes control total sobre tu información personal. Puedes en cualquier momento:
+            Como usuario registrado de Vitrina Market, tienes control total sobre tu información personal. Puedes en cualquier momento:
           </p>
           <ol className="list-decimal pl-5 space-y-2 text-slate-600 text-xs sm:text-sm">
             <li><strong>Acceder y descargar</strong> una copia íntegra de tus datos personales, direcciones guardadas e historial de compras.</li>
@@ -199,8 +199,8 @@ export default function PrivacyPage() {
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
             {language === 'es'
-              ? 'Tus datos están protegidos con encriptación de nivel bancario. Conoce cómo cuidamos tu información en Chiringuito y OpenDSP.'
-              : 'Your data is secured with bank-grade encryption. Discover how we protect your personal info across Chiringuito and OpenDSP.'}
+              ? 'Tus datos están protegidos con encriptación de nivel bancario. Conoce cómo cuidamos tu información en Vitrina Market y OpenDSP.'
+              : 'Your data is secured with bank-grade encryption. Discover how we protect your personal info across Vitrina Market and OpenDSP.'}
           </p>
           <p className="text-[11px] text-slate-400 font-semibold pt-1">
             {language === 'es' ? 'Vigente desde: Septiembre 2026 • Cumplimiento ASFI & SIN' : 'Effective: September 2026 • ASFI & SIN Compliant'}
@@ -304,7 +304,7 @@ export default function PrivacyPage() {
                   {language === 'es' ? 'Oficial de Privacidad de Datos' : 'Data Privacy Officer'}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  {language === 'es' ? 'Escríbenos a privacidad@chiringuito.bo' : 'Email us at privacidad@chiringuito.bo'}
+                  {language === 'es' ? 'Escríbenos a privacidad@vitrinamarket.bo' : 'Email us at privacidad@vitrinamarket.bo'}
                 </p>
               </div>
             </div>

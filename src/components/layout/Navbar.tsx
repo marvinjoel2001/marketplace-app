@@ -23,6 +23,8 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { SearchBar } from './SearchBar';
+import { TikTokIcon } from '@/components/common/TikTokIcon';
+import { DataModeToggle } from '@/components/common/DataModeToggle';
 
 export function Navbar() {
   const { totalItems, setIsCartDrawerOpen, savedCity, setSavedCity, cartAnimationTrigger } = useCart();
@@ -73,10 +75,10 @@ export function Navbar() {
           {/* Free Shipping & Live notice */}
           <div className="flex-1 flex items-center justify-center sm:justify-start space-x-2 text-center truncate">
             <Truck className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
-            <span className="truncate">{t('free_shipping_notice', 'Envíos Gratis en compras mayores a Bs. 150 con OpenDSP Express')}</span>
+            <span className="truncate">{t('free_shipping_notice', 'Envíos Gratis con compras mayores a Bs 150 con OpenDSP Express')}</span>
             <span className="text-[#A5B4FC] hidden sm:inline">•</span>
-            <Link href="/live" className="font-bold hover:underline hidden sm:flex items-center text-[#4338CA]">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1 animate-pulse"></span>
+            <Link href="/live" className="font-bold hover:underline hidden sm:flex items-center text-[#4338CA] space-x-1">
+              <TikTokIcon className="w-3 h-3 shrink-0" size={12} variant="color" />
               <span>TikTok Live Shopping</span>
             </Link>
           </div>
@@ -90,6 +92,9 @@ export function Navbar() {
               <HelpCircle className="w-3.5 h-3.5" />
               <span>{t('nav_help', 'Ayuda')}</span>
             </Link>
+
+            {/* Mode Switcher: Demo vs Real */}
+            <DataModeToggle />
 
             {/* Language Selector Pill */}
             <div className="inline-flex items-center bg-white rounded-full p-0.5 border border-indigo-200/80 shadow-2xs text-[11px] font-bold">
@@ -137,15 +142,19 @@ export function Navbar() {
               </button>
 
               <Link href="/" className="flex items-center space-x-2.5 group">
-                {/* Chiringuito Logo Emblem (Clean Green) */}
-                <div className="w-9 h-9 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
-                  <span className="font-black text-lg">CH</span>
+                {/* Vitrina Market Pulpo Logo */}
+                <div className="w-10 h-10 rounded-full overflow-hidden shadow-xs border border-emerald-200/80 group-hover:scale-105 transition-transform shrink-0 bg-white p-0.5">
+                  <img
+                    src="/pulpo-icon.png"
+                    alt="Vitrina Market Logo"
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-black tracking-tight text-slate-900 leading-none">
-                    Chiringuito
+                    Vitrina Market
                   </span>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
                     Marketplace Bolivia
                   </span>
                 </div>
@@ -316,10 +325,11 @@ export function Navbar() {
         </div>
 
         {/* Fila 2: Sub-barra de Navegación y Categorías (Espaciosa, sin cortes de línea) */}
-        <div className="hidden lg:block border-t border-slate-100/90 bg-[#FAFAF9]/80 backdrop-blur-xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between text-xs font-semibold text-slate-600">
-            <nav className="flex items-center space-x-6">
-              {/* Categorías Dropdown */}
+        {/* Fila 2: Sub-barra de Navegación y Categorías (Exacto como en la captura) */}
+        <div className="hidden lg:block border-t border-slate-100/90 bg-white shadow-2xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-700">
+            <nav className="flex items-center space-x-5 xl:space-x-7">
+              {/* Categorías Dropdown - Botón verde píldora como en la captura */}
               <div
                 className="relative"
                 onMouseEnter={() => setIsCategoriesDropdownOpen(true)}
@@ -327,22 +337,22 @@ export function Navbar() {
               >
                 <button
                   onClick={() => setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen)}
-                  className="flex items-center space-x-1.5 py-1 text-slate-800 font-bold hover:text-emerald-700 transition-colors whitespace-nowrap"
+                  className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-full shadow-xs hover:shadow-sm transition-all text-xs whitespace-nowrap cursor-pointer"
                 >
-                  <Menu className="w-3.5 h-3.5 text-emerald-600" />
+                  <Menu className="w-3.5 h-3.5 text-white" />
                   <span>{t('nav_categories', 'Categorías')}</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                  <ChevronDown className="w-3 h-3 text-white/90" />
                 </button>
 
                 {isCategoriesDropdownOpen && (
-                  <div className="absolute top-full left-0 pt-2 w-56 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute top-full left-0 pt-2 w-60 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-0.5">
                       {categories.map((c) => (
                         <Link
                           key={c.name}
                           href={`/?category=${c.slug}`}
                           onClick={() => setIsCategoriesDropdownOpen(false)}
-                          className="block px-3 py-2 rounded-xl text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-medium transition-colors"
+                          className="block px-3 py-2 rounded-xl text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-semibold transition-colors"
                         >
                           {c.name}
                         </Link>
@@ -352,58 +362,70 @@ export function Navbar() {
                 )}
               </div>
 
-              <span className="text-slate-200">|</span>
-
+              {/* Inicio */}
               <Link
                 href="/"
-                className={`transition-colors whitespace-nowrap ${
-                  pathname === '/' ? 'text-emerald-700 font-bold' : 'hover:text-slate-950'
+                className={`transition-colors whitespace-nowrap font-bold text-xs ${
+                  pathname === '/' ? 'text-emerald-700' : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
                 {t('nav_home', 'Inicio')}
               </Link>
 
+              {/* TikTok Live - Logo auténtico y de máxima visibilidad */}
               <Link
                 href="/live"
-                className="hover:text-red-700 transition-colors flex items-center space-x-1.5 whitespace-nowrap font-bold text-red-600"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/80 shadow-2xs transition-all group whitespace-nowrap"
+                title="TikTok Live Shopping"
               >
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
-                <span>TikTok Live Shopping</span>
+                <div className="w-7 h-7 rounded-full bg-black flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform shrink-0 p-1">
+                  <TikTokIcon className="w-4 h-4" size={18} variant="color" />
+                </div>
+                <span className="font-extrabold text-slate-900 group-hover:text-black text-xs">
+                  TikTok Live
+                </span>
+                <span className="px-1.5 py-0.5 rounded-full bg-[#FE2C55] text-[8px] font-black text-white tracking-widest uppercase animate-pulse shadow-xs">
+                  LIVE
+                </span>
               </Link>
 
+              {/* Ofertas */}
               <Link
                 href="/?flashSale=true"
-                className="hover:text-emerald-700 transition-colors flex items-center space-x-1 whitespace-nowrap font-medium"
+                className="hover:text-emerald-700 text-slate-700 transition-colors flex items-center space-x-1.5 whitespace-nowrap font-semibold"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>{t('nav_deals', 'Ofertas Flash')}</span>
+                <span className="text-amber-500">🏷️</span>
+                <span>{t('nav_deals', 'Ofertas')}</span>
               </Link>
 
+              {/* Tiendas Oficiales */}
               <Link
                 href="/#tiendas"
-                className="hover:text-slate-950 transition-colors whitespace-nowrap"
+                className="hover:text-emerald-700 text-slate-700 transition-colors whitespace-nowrap font-semibold"
               >
                 {language === 'es' ? 'Tiendas Oficiales' : 'Official Stores'}
               </Link>
 
+              {/* Comparador */}
               <Link
                 href="/compare"
-                className="hover:text-slate-950 transition-colors whitespace-nowrap"
+                className="hover:text-emerald-700 text-slate-700 transition-colors whitespace-nowrap font-semibold"
               >
-                {t('nav_compare', 'Comparador de Precios')}
+                {t('nav_compare', 'Comparador')}
               </Link>
 
+              {/* Ayuda */}
               <Link
                 href="/help"
-                className="hover:text-slate-950 transition-colors whitespace-nowrap"
+                className="hover:text-emerald-700 text-slate-700 transition-colors whitespace-nowrap font-semibold"
               >
-                {t('nav_help', 'Centro de Ayuda')}
+                {t('nav_help', 'Ayuda')}
               </Link>
             </nav>
 
-            {/* Right side info pill */}
-            <div className="flex items-center space-x-2 text-[11px] text-slate-500 whitespace-nowrap">
-              <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            {/* Right side info: Despacho Express OpenDSP Bolivia */}
+            <div className="flex items-center space-x-2 text-[11px] font-bold text-emerald-700 whitespace-nowrap">
+              <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Despacho Express OpenDSP Bolivia (15 - 45 min)</span>
             </div>
           </div>
@@ -436,9 +458,15 @@ export function Navbar() {
             <Link
               href="/live"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="block py-1.5 text-red-600"
+              className="py-1.5 text-slate-900 font-extrabold flex items-center space-x-2.5"
             >
-              {t('nav_live', 'TikTok Live')}
+              <div className="w-7 h-7 rounded-full bg-black flex items-center justify-center shadow-xs shrink-0 p-1">
+                <TikTokIcon className="w-4 h-4" size={18} variant="color" />
+              </div>
+              <span>TikTok Live Shopping</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-[#FE2C55] text-[8px] font-black text-white tracking-widest uppercase animate-pulse shadow-xs">
+                LIVE
+              </span>
             </Link>
             <Link
               href="/compare"

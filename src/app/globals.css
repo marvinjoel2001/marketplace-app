@@ -162,3 +162,29 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* Layered Shadows & Modern Depth System */
+.shadow-card {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 20px 35px -8px rgba(15, 23, 42, 0.1), 0 6px 12px -2px rgba(15, 23, 42, 0.04);
+}
+
+.shadow-emerald-pill {
+  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.35), 0 4px 8px -2px rgba(5, 150, 105, 0.2);
+}
+
+.shadow-tiktok-badge {
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.15), 0 0 12px -2px rgba(37, 244, 238, 0.2), 0 0 12px -2px rgba(254, 44, 85, 0.2);
+}
+
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+

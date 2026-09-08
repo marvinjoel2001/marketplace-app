@@ -675,11 +675,11 @@ export function getMockStore(idOrSlug: string): MockStore {
 
   return {
     id: `store-${idOrSlug}`,
-    name: cleanName || 'Tienda Oficial Chiringuito',
+    name: cleanName || 'Tienda Oficial Vitrina Market',
     slug: idOrSlug,
     logo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
     banner: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1200',
-    description: `Tienda certificada en Chiringuito Bolivia. Transmitiendo en TikTok Live Shopping con entrega garantizada vía OpenDSP.`,
+    description: `Tienda certificada en Vitrina Market Bolivia. Transmitiendo en TikTok Live Shopping con entrega garantizada vía OpenDSP.`,
     rating: 4.8,
     reviewCount: 450,
     salesCount: 1240,

@@ -2,7 +2,7 @@ import React from 'react';
 import { CheckoutFlow } from '@/components/checkout/CheckoutFlow';
 
 export const metadata = {
-  title: 'Checkout Seguro — Chiringuito & OpenDSP',
+  title: 'Checkout Seguro — Vitrina Market & OpenDSP',
 };
 
 export default function CheckoutPage() {

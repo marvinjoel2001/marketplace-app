@@ -41,39 +41,61 @@ export default function VendorHubPage() {
 
             <p className="text-sm text-slate-600 leading-relaxed">
               {language === 'es'
-                ? 'Chiringuito te conecta directamente con miles de compradores bolivianos a través de TikTok Live y entrega tus pedidos en 15-45 minutos con motorizados OpenDSP.'
-                : 'Chiringuito connects you directly with thousands of Bolivian shoppers via TikTok Live and delivers your orders in 15-45 min with OpenDSP couriers.'}
+                ? 'Vitrina Market te conecta directamente con miles de compradores bolivianos a través de TikTok Live y entrega tus pedidos en 15-45 minutos con motorizados OpenDSP.'
+                : 'Vitrina Market connects you directly with thousands of Bolivian shoppers via TikTok Live and delivers your orders in 15-45 min with OpenDSP couriers.'}
             </p>
 
             <div className="pt-2 flex flex-wrap gap-3">
               {isAuthenticated ? (
-                <div className="flex items-center space-x-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200">
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs">
-                    {user?.name?.[0] || 'T'}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center space-x-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs">
+                      {user?.activeStoreName?.[0] || user?.name?.[0] || 'T'}
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">
+                        {user?.activeStoreName || user?.name}
+                      </span>
+                      <span className="text-[11px] text-emerald-700 font-bold">● Tienda Conectada</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-900 block">{user?.name}</span>
-                    <span className="text-[11px] text-emerald-700 font-bold">● Tienda Conectada</span>
-                  </div>
+
+                  <Link
+                    href={`/vendor/inventory${user?.activeStoreId ? `?storeId=${encodeURIComponent(user.activeStoreId)}` : ''}`}
+                    className="px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2"
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>{language === 'es' ? 'Administrar Mi Tienda' : 'Manage My Store'}</span>
+                  </Link>
+
+                  <Link
+                    href="/vendor/onboarding"
+                    className="px-5 py-3 rounded-full bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center space-x-1.5"
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    <span>{language === 'es' ? 'Crear Otra Tienda' : 'Create Another Store'}</span>
+                  </Link>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => openAuthModal()}
-                  className="px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2"
-                >
-                  <Store className="w-4 h-4" />
-                  <span>{language === 'es' ? 'Iniciar Sesión como Tienda' : 'Sign In as Store'}</span>
-                </button>
-              )}
+                <>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal()}
+                    className="px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2"
+                  >
+                    <Store className="w-4 h-4" />
+                    <span>{language === 'es' ? 'Iniciar Sesión como Tienda' : 'Sign In as Store'}</span>
+                  </button>
 
-              <Link
-                href="/vendor/onboarding"
-                className="px-6 py-3 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center space-x-2"
-              >
-                <span>{language === 'es' ? 'Registrar Nueva Tienda' : 'Register New Store'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+                  <Link
+                    href="/vendor/onboarding"
+                    className="px-6 py-3 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center space-x-2"
+                  >
+                    <span>{language === 'es' ? 'Registrar Nueva Tienda' : 'Register New Store'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -193,14 +215,14 @@ export default function VendorHubPage() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-xs space-y-6">
           <div className="flex items-center space-x-2 text-slate-900 font-black text-lg">
             <Truck className="w-5 h-5 text-emerald-600" />
-            <span>{language === 'es' ? '¿Cómo funciona la logística entre Chiringuito y OpenDSP?' : 'How logistics work between Chiringuito and OpenDSP?'}</span>
+            <span>{language === 'es' ? '¿Cómo funciona la logística entre Vitrina Market y OpenDSP?' : 'How logistics work between Vitrina Market and OpenDSP?'}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
             <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-slate-100 space-y-2">
               <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">1</div>
               <p className="font-extrabold text-slate-900">{language === 'es' ? 'El Cliente Compra' : 'Customer Buys'}</p>
-              <p className="text-slate-500">{language === 'es' ? 'Paga con QR Simple o tarjeta en Chiringuito o durante tu TikTok Live.' : 'Pays via QR Simple or card in Chiringuito or during your TikTok Live.'}</p>
+              <p className="text-slate-500">{language === 'es' ? 'Paga con QR Simple o tarjeta en Vitrina Market o durante tu TikTok Live.' : 'Pays via QR Simple or card in Vitrina Market or during your TikTok Live.'}</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-slate-100 space-y-2">

@@ -33,7 +33,7 @@ export default function BillingPage() {
     cuf: 'A8B92D14C3E2091F84029471BCDEF01293847192834719283471928347192834',
     authNumber: '29384719283',
     issueDate: '03/09/2026 14:25:10',
-    emitterName: 'Chiringuito Bolivia S.R.L. / OpenDSP Ecosystem',
+    emitterName: 'Vitrina Market Bolivia S.R.L. / OpenDSP Ecosystem',
     emitterNit: '3847291018',
     emitterAddress: 'Av. San Martín #450, Equipetrol, Santa Cruz de la Sierra',
     clientName: 'Juan Carlos Pérez Mendoza',
@@ -76,7 +76,7 @@ export default function BillingPage() {
         cuf: 'A8B92D14C3E2091F84029471BCDEF01293847192834719283471928347192834',
         authNumber: '29384719283',
         issueDate: new Date().toLocaleString('es-BO'),
-        emitterName: 'Chiringuito Bolivia S.R.L.',
+        emitterName: 'Vitrina Market Bolivia S.R.L.',
         emitterNit: '3847291018',
         emitterAddress: 'Av. San Martín #450, Equipetrol, Santa Cruz de la Sierra',
         clientName: profileName || 'Cliente Particular',
@@ -84,7 +84,7 @@ export default function BillingPage() {
         clientEmail: profileEmail || 'cliente@ejemplo.bo',
         items: [
           {
-            description: 'Producto Tecnológico Certificado Chiringuito',
+            description: 'Producto Tecnológico Certificado Vitrina Market',
             quantity: 1,
             unitPrice: 189.0,
             subtotal: 189.0,
@@ -149,8 +149,8 @@ export default function BillingPage() {
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
             {language === 'es'
-              ? 'Todas las compras en Chiringuito emiten factura electrónica con Crédito Fiscal (IVA 13%) válida ante el SIN. Consulta, descarga o actualiza tus datos tributarios.'
-              : 'All purchases on Chiringuito generate valid tax credit electronic invoices (13% IVA) compliant with SIN regulations. Search, download, or update your tax info.'}
+              ? 'Todas las compras en Vitrina Market emiten factura electrónica con Crédito Fiscal (IVA 13%) válida ante el SIN. Consulta, descarga o actualiza tus datos tributarios.'
+              : 'All purchases on Vitrina Market generate valid tax credit electronic invoices (13% IVA) compliant with SIN regulations. Search, download, or update your tax info.'}
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export default function BillingPage() {
             </h3>
             <p className="text-xs text-slate-500">
               {language === 'es'
-                ? 'Ingresa tu número de pedido de Chiringuito y tu NIT o C.I. para descargar tu factura.'
+                ? 'Ingresa tu número de pedido de Vitrina Market y tu NIT o C.I. para descargar tu factura.'
                 : 'Enter your order ID and NIT/ID to retrieve your invoice.'}
             </p>
 
@@ -227,7 +227,7 @@ export default function BillingPage() {
             </h3>
             <p className="text-xs text-slate-500">
               {language === 'es'
-                ? 'Guarda tus datos para que tus próximas compras en Chiringuito se facturen automáticamente a tu nombre o empresa.'
+                ? 'Guarda tus datos para que tus próximas compras en Vitrina Market se facturen automáticamente a tu nombre o empresa.'
                 : 'Save your tax info for automatic billing on future orders.'}
             </p>
 
@@ -435,11 +435,11 @@ export default function BillingPage() {
             <div className="space-y-3 text-xs text-slate-600">
               <div className="bg-white p-3.5 rounded-2xl border border-slate-200">
                 <h4 className="font-bold text-slate-900 mb-1">
-                  {language === 'es' ? '¿Todos los productos de Chiringuito tienen factura legal?' : 'Do all products include legal invoices?'}
+                  {language === 'es' ? '¿Todos los productos de Vitrina Market tienen factura legal?' : 'Do all products include legal invoices?'}
                 </h4>
                 <p>
                   {language === 'es'
-                    ? 'Sí. Cada tienda y vendedor registrado en Chiringuito emite factura electrónica en línea con IVA 13% incluido en el precio publicado.'
+                    ? 'Sí. Cada tienda y vendedor registrado en Vitrina Market emite factura electrónica en línea con IVA 13% incluido en el precio publicado.'
                     : 'Yes. Every verified merchant issues official electronic invoices with 13% VAT included in the list price.'}
                 </p>
               </div>

@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 
 import { marketplaceApi } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export function VendorOnboardingWizard() {
   const router = useRouter();
+  const { setActiveStore } = useAuth();
   const [step, setStep] = useState(1);
   const [storeName, setStoreName] = useState('');
   const [category, setCategory] = useState('Moda y Accesorios');
@@ -82,27 +84,57 @@ export function VendorOnboardingWizard() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    let createdStore: any = null;
+    const cleanTiktok = tiktokUsername.trim()
+      ? (tiktokUsername.startsWith('@') ? tiktokUsername.trim() : `@${tiktokUsername.trim()}`)
+      : undefined;
+
     try {
-      await marketplaceApi.createStore({
-        name: storeName,
+      createdStore = await marketplaceApi.createStore({
+        name: storeName.trim(),
         category,
-        address,
-        phone,
-        description,
+        address: address.trim() || 'Santa Cruz, Bolivia',
+        phone: phone.trim(),
+        description: description.trim() || `Tienda oficial de ${storeName} en Vitrina Market Bolivia`,
         logo,
         banner,
-        tiktokUsername: tiktokUsername.startsWith('@') ? tiktokUsername : `@${tiktokUsername}`,
-        tiktokLiveUrl: `https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`,
+        tiktokUsername: cleanTiktok,
+        tiktokLiveUrl: cleanTiktok ? `https://www.tiktok.com/@${cleanTiktok.replace('@', '')}/live` : undefined,
       });
-
-      alert('¡Tienda registrada con éxito en el backend! Bienvenido al Panel del Vendedor.');
-      router.push('/vendor/inventory');
-    } catch {
-      alert('¡Tienda registrada con éxito! Bienvenido al Panel del Vendedor.');
-      router.push('/vendor/inventory');
-    } finally {
-      setIsSubmitting(false);
+    } catch (err: any) {
+      console.warn('Registro local de tienda por fallback:', err);
+      createdStore = {
+        id: `store_${Date.now().toString(36)}`,
+        name: storeName.trim(),
+        slug: storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        category,
+        address: address.trim() || 'Santa Cruz, Bolivia',
+        phone: phone.trim(),
+        description: description.trim() || `Tienda oficial de ${storeName}`,
+        logo,
+        banner,
+        tiktokUsername: cleanTiktok,
+        isLiveNow: false,
+        offers: [],
+      };
     }
+
+    if (createdStore) {
+      setActiveStore({
+        id: createdStore.id,
+        name: createdStore.name,
+        slug: createdStore.slug,
+      });
+      try {
+        localStorage.setItem('vitrina_active_store', JSON.stringify(createdStore));
+        const userStores = JSON.parse(localStorage.getItem('vitrina_user_stores') || '[]');
+        const updated = [createdStore, ...userStores.filter((s: any) => s.id !== createdStore.id)];
+        localStorage.setItem('vitrina_user_stores', JSON.stringify(updated));
+      } catch {}
+    }
+
+    setIsSubmitting(false);
+    router.push(`/vendor/inventory?storeId=${encodeURIComponent(createdStore?.id || createdStore?.slug || '')}`);
   };
 
   return (
@@ -113,7 +145,7 @@ export function VendorOnboardingWizard() {
             🏪
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
-            Registra tu Tienda en Chiringuito
+            Registra tu Tienda en Vitrina Market
           </h1>
           <p className="text-xs text-gray-500 mt-1">
             Vende a miles de clientes en toda Bolivia, transmite en vivo con TikTok y automatiza tus entregas con OpenDSP.
@@ -254,7 +286,7 @@ export function VendorOnboardingWizard() {
                   <span>Vinculación de TikTok Live Shopping</span>
                 </div>
                 <p className="text-[11px] text-emerald-700">
-                  Ingresa tu usuario de TikTok. Nuestro servicio de detección rastreará cuando estés en vivo para que tu tienda aparezca automáticamente en la portada de Chiringuito.
+                  Ingresa tu usuario de TikTok. Nuestro servicio de detección rastreará cuando estés en vivo para que tu tienda aparezca automáticamente en la portada de Vitrina Market.
                 </p>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-800 mb-1">Usuario de TikTok</label>

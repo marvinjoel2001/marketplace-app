@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       address: address || 'Av. San Martín #450, Equipetrol',
       city: city || 'Santa Cruz de la Sierra',
       category: category || 'Celulares y Tecnología',
-      description: description || 'Tienda oficial en Chiringuito Bolivia',
+      description: description || 'Tienda oficial en Vitrina Market Bolivia',
       tiktokUsername: tiktokUsername || '@techplus_bo',
       tiktokLiveUrl: `https://www.tiktok.com/@${(tiktokUsername || 'techplus_bo').replace('@', '')}/live`,
       isOfficial: true,

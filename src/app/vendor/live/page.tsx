@@ -53,7 +53,7 @@ export default function VendorLiveManagerPage() {
       });
 
       setIsLiveActive(true);
-      alert('¡Transmisión TikTok Live sincronizada con éxito! Aparece en la portada de Chiringuito.');
+      alert('¡Transmisión TikTok Live sincronizada con éxito! Aparece en la portada de Vitrina Market.');
     } catch {
       setIsLiveActive(true);
       alert('¡Live activado en modo demostración!');
