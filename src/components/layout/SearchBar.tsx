@@ -217,13 +217,13 @@ export function SearchBar() {
 
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* Search Input Capsule (Fluid & Proportional) */}
+      {/* Search Input Capsule (Fluid & Proportional Frosted Glass) */}
       <form onSubmit={handleSubmit} className="w-full flex items-center">
         <div
           className={`relative flex items-center w-full rounded-full border px-4 py-2 transition-all duration-200 ${
             isFocused
-              ? 'bg-white border-emerald-600 ring-3 ring-emerald-100 shadow-xs'
-              : 'bg-slate-50/90 hover:bg-white border-slate-200/90 hover:border-slate-300'
+              ? 'bg-white/90 border-indigo-300 ring-3 ring-indigo-100/50 shadow-md backdrop-blur-xl'
+              : 'bg-white/60 hover:bg-white/80 border-white/70 hover:border-white shadow-xs backdrop-blur-md'
           }`}
         >
           <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
@@ -253,7 +253,7 @@ export function SearchBar() {
 
       {/* Floating Suggestions Dropdown */}
       {isFocused && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 divide-y divide-slate-100">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white/90 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/80 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 divide-y divide-slate-100">
           {/* 1. When query is empty: Recent Search History & Popular Trends */}
           {!query.trim() && (
             <div className="p-4 space-y-4">

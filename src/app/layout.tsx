@@ -25,18 +25,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen flex flex-col bg-[#FAFAFC] text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
+      <body className="min-h-screen flex flex-col text-slate-900 antialiased selection:bg-indigo-500 selection:text-white bg-[url('/background.jpg')] bg-cover bg-center bg-fixed bg-no-repeat relative">
+        {/* Subtle overlay for consistent light tone and optimal text contrast */}
+        <div className="fixed inset-0 bg-white/20 pointer-events-none z-0"></div>
+
         <LanguageProvider>
           <DataModeProvider>
             <AuthProvider>
               <CartProvider>
-                <Navbar />
-                <CartDrawer />
-                <AuthModal />
-                <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                  {children}
-                </main>
-                <Footer />
+                <div className="relative z-10 flex flex-col min-h-screen">
+                  <Navbar />
+                  <CartDrawer />
+                  <AuthModal />
+                  <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
               </CartProvider>
             </AuthProvider>
           </DataModeProvider>

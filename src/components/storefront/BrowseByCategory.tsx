@@ -85,7 +85,7 @@ export function BrowseByCategory() {
         </h2>
       </div>
 
-      {/* Grid of 8 Mint-colored rounded square cards */}
+      {/* Grid of 8 Frosted Glass rounded square cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
         {categories.map((cat) => {
           const Icon = cat.icon;
@@ -93,9 +93,9 @@ export function BrowseByCategory() {
             <Link
               key={cat.id}
               href={`/?category=${cat.slug}`}
-              className="bg-[#EBF5EE] hover:bg-[#E2EFE6] border border-emerald-100/80 hover:border-emerald-300/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md group cursor-pointer aspect-square sm:aspect-auto sm:py-6"
+              className="bg-white/75 hover:bg-white/95 backdrop-blur-xl border border-white/80 hover:border-emerald-300/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg shadow-sm group cursor-pointer aspect-square sm:aspect-auto sm:py-6"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/80 shadow-2xs flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform duration-200">
+              <div className="w-10 h-10 rounded-xl bg-white/90 shadow-2xs flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform duration-200 border border-white/80">
                 <Icon className={`w-5 h-5 ${cat.iconColor}`} />
               </div>
               <span className="text-xs font-black text-slate-800 group-hover:text-emerald-950 transition-colors">

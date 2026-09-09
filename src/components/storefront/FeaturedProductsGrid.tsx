@@ -6,6 +6,7 @@ import { Star, ArrowRight, Scale, ShoppingBag } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
 import { useLanguage } from '@/context/LanguageContext';
+import { useDataMode } from '@/context/DataModeContext';
 
 interface ProductItem {
   id: string;
@@ -179,8 +180,34 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
     },
   ];
 
-  // Combine real DB products first, filling up to 8 with high-converting showcase products
-  const displayItems = products.length >= 8 ? products : [...products, ...demoFallbackProducts.slice(products.length)];
+  const { isRealMode } = useDataMode();
+
+  // In REAL MODE: strictly only show real products. Never inject demo fallback products!
+  const displayItems = isRealMode ? products : (products.length >= 8 ? products : [...products, ...demoFallbackProducts.slice(products.length)]);
+
+  if (isRealMode && displayItems.length === 0) {
+    return (
+      <div className="bg-white rounded-3xl p-10 border border-slate-100 text-center max-w-lg mx-auto my-8 shadow-card">
+        <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+          <ShoppingBag className="w-6 h-6 text-slate-400" />
+        </div>
+        <h3 className="text-base font-bold text-slate-800 mb-1">
+          {language === 'es' ? 'No hay productos disponibles en esta sección' : 'No products available in this section'}
+        </h3>
+        <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">
+          {language === 'es'
+            ? 'Próximamente se añadirán nuevos artículos a este catálogo. Puedes explorar otras categorías en el menú superior.'
+            : 'New items will be added soon to this catalog. You can browse other categories in the top menu.'}
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs"
+        >
+          <span>{language === 'es' ? 'Ver todas las categorías' : 'View all categories'}</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-6">

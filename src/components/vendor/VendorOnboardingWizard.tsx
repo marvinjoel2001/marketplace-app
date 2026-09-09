@@ -22,11 +22,11 @@ import { useAuth } from '@/context/AuthContext';
 
 export function VendorOnboardingWizard() {
   const router = useRouter();
-  const { setActiveStore } = useAuth();
+  const { setActiveStore, user } = useAuth();
   const [step, setStep] = useState(1);
   const [storeName, setStoreName] = useState('');
   const [category, setCategory] = useState('Moda y Accesorios');
-  const [logo, setLogo] = useState('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150');
+  const [logo, setLogo] = useState(user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150');
   const [banner, setBanner] = useState('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200');
   const [phone, setPhone] = useState('+591 ');
   const [address, setAddress] = useState('');
@@ -37,6 +37,31 @@ export function VendorOnboardingWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingTikTok, setIsCheckingTikTok] = useState(false);
   const [tiktokStatusResult, setTiktokStatusResult] = useState<any>(null);
+
+  // Sincronizar automáticamente con perfil de TikTok si el usuario ya inició sesión
+  React.useEffect(() => {
+    if (user) {
+      if (user.avatar && !user.avatar.includes('unsplash')) {
+        setLogo(user.avatar);
+      }
+      if (user.provider === 'TIKTOK' || user.email?.includes('@tiktok')) {
+        const extractedHandle = user.name?.startsWith('@')
+          ? user.name
+          : user.email?.split('@')[0]
+          ? `@${user.email.split('@')[0]}`
+          : '';
+        if (extractedHandle && !tiktokUsername) {
+          setTiktokUsername(extractedHandle);
+        }
+      }
+      if (user.phone && phone === '+591 ') {
+        setPhone(user.phone.startsWith('+591') ? user.phone : `+591 ${user.phone}`);
+      }
+      if (user.address && !address) {
+        setAddress(user.address);
+      }
+    }
+  }, [user]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,6 +92,9 @@ export function VendorOnboardingWizard() {
       const res = await fetch(`/api/tiktok/status?username=${encodeURIComponent(tiktokUsername.trim())}`);
       const data = await res.json();
       setTiktokStatusResult(data);
+      if (data.avatarUrl) {
+        setLogo(data.avatarUrl);
+      }
     } catch {
       setTiktokStatusResult({
         success: true,
@@ -322,17 +350,29 @@ export function VendorOnboardingWizard() {
                         : 'bg-white border-emerald-200 text-slate-700'
                     }`}
                   >
-                    <div className="flex items-center space-x-2 font-bold">
-                      {tiktokStatusResult.isLive ? (
-                        <>
-                          <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
-                          <span className="text-red-700 font-black">🔴 ¡TRANSMISIÓN EN VIVO DETECTADA EN TIKTOK!</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                          <span className="text-emerald-700 font-bold">✅ Cuenta conectada con éxito</span>
-                        </>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 font-bold">
+                        {tiktokStatusResult.isLive ? (
+                          <>
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                            <span className="text-red-700 font-black">🔴 ¡TRANSMISIÓN EN VIVO DETECTADA EN TIKTOK!</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span className="text-emerald-700 font-bold">✅ Cuenta conectada con éxito</span>
+                          </>
+                        )}
+                      </div>
+                      {tiktokStatusResult.avatarUrl && (
+                        <div className="flex items-center space-x-2 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                          <img
+                            src={tiktokStatusResult.avatarUrl}
+                            alt="Avatar TikTok"
+                            className="w-5 h-5 rounded-full object-cover"
+                          />
+                          <span className="text-[10px] text-slate-600 font-semibold">Avatar sincronizado</span>
+                        </div>
                       )}
                     </div>
                     <p className="text-[11px] mt-1 text-slate-600">

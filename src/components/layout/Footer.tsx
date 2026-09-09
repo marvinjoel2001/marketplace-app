@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { RotateCcw, ShieldCheck, Headphones, Truck, QrCode, CreditCard, Smartphone, HelpCircle } from 'lucide-react';
+import { QrCode, CreditCard, Smartphone, HelpCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function Footer() {
@@ -10,53 +10,6 @@ export function Footer() {
 
   return (
     <footer className="bg-white border-t border-[#EAEAEA] mt-16 text-gray-700">
-      {/* 4 Feature Pillars */}
-      <div className="border-b border-gray-100 py-6 bg-[#FAF9F6]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-2xs">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Truck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-900">{t('trust_delivery_title', 'Envíos a todo el país')}</h4>
-                <p className="text-[11px] text-gray-500">{t('trust_delivery_desc', 'Rastreo satelital GPS con OpenDSP')}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-2xs">
-              <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <RotateCcw className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-900">{t('trust_returns_title', 'Devoluciones fáciles')}</h4>
-                <p className="text-[11px] text-gray-500">{t('trust_returns_desc', 'Tienes hasta 7 días de garantía')}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-2xs">
-              <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-900">{t('trust_secure_title', 'Compra protegida')}</h4>
-                <p className="text-[11px] text-gray-500">{t('trust_secure_desc', 'Tus datos y dinero seguros')}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-2xs">
-              <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <Headphones className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-900">{t('trust_support_title', 'Atención al cliente')}</h4>
-                <p className="text-[11px] text-gray-500">{t('trust_support_desc', '24/7 para ayudarte en tus compras')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Links */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-xs">

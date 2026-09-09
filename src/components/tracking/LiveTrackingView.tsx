@@ -158,27 +158,36 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
         <span className="text-gray-900 font-bold">Rastreo de Pedido #{order.orderNumber}</span>
       </nav>
 
-      {/* Main Status Header */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200/70 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
+      {/* Main Status Header (Frosted Glass Container) */}
+      <div className="bg-white/85 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
           <div>
             <div className="flex items-center space-x-2 mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping"></span>
-              <span className="text-xs font-black uppercase text-green-700">Telemetría GPS OpenDSP en Vivo</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span className="text-xs font-black uppercase text-emerald-700">Telemetría GPS OpenDSP en Vivo</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
               {currentStep === 4 ? '¡Pedido Entregado con Éxito!' : 'Tu pedido va en camino'}
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Orden <span className="font-bold text-gray-800">#{order.orderNumber}</span> • Tracking Token: {order.dspTrackingToken || 'trk_opendsp_live'}
+            <p className="text-xs text-slate-500 mt-0.5">
+              Orden <span className="font-bold text-slate-800">#{order.orderNumber}</span> • Tracking Token: {order.dspTrackingToken || 'trk_opendsp_live'}
             </p>
           </div>
 
-          <div className="bg-amber-50 px-5 py-3 rounded-2xl border border-amber-300 flex items-center space-x-3">
-            <Clock className="w-6 h-6 text-amber-600 shrink-0" />
-            <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Llegada estimada</p>
-              <p className="text-xl font-black text-gray-900">{etaMinutes} - {etaMinutes + 8} min</p>
+          <div className="flex items-center gap-3">
+            {/* Delivery Security PIN */}
+            <div className="bg-emerald-50/90 px-4 py-2.5 rounded-2xl border border-emerald-200/80 text-center">
+              <p className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider">PIN de Entrega</p>
+              <p className="text-lg font-black text-emerald-900 tracking-widest leading-tight">8492</p>
+            </div>
+
+            {/* Arrival estimate */}
+            <div className="bg-amber-50/90 px-5 py-2.5 rounded-2xl border border-amber-200 flex items-center space-x-3">
+              <Clock className="w-6 h-6 text-amber-600 shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Llegada estimada</p>
+                <p className="text-lg font-black text-slate-900">{etaMinutes} - {etaMinutes + 8} min</p>
+              </div>
             </div>
           </div>
         </div>
@@ -190,17 +199,17 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-all ${
                   s.done
-                    ? 'bg-black text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : s.active
                     ? 'bg-amber-400 text-black ring-4 ring-amber-100 animate-pulse'
-                    : 'bg-gray-100 text-gray-400'
+                    : 'bg-slate-100 text-slate-400'
                 }`}
               >
                 {s.done ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
               </div>
               <div>
-                <h4 className="font-extrabold text-xs text-gray-900">{s.title}</h4>
-                <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{s.desc}</p>
+                <h4 className="font-extrabold text-xs text-slate-900">{s.title}</h4>
+                <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{s.desc}</p>
               </div>
             </div>
           ))}
@@ -210,18 +219,18 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
       {/* Map & Driver Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Live GPS Map Simulation */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs space-y-4">
+        <div className="lg:col-span-2 bg-white/85 backdrop-blur-2xl rounded-3xl p-5 sm:p-6 border border-white/80 shadow-xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Navigation className="w-4 h-4 text-blue-600" />
-              <h3 className="font-extrabold text-sm text-gray-900">Ruta Satelital en Tiempo Real</h3>
+              <h3 className="font-extrabold text-sm text-slate-900">Ruta Satelital en Tiempo Real</h3>
             </div>
-            <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
               GPS Activo 4G
             </span>
           </div>
 
-          <div className="relative w-full aspect-[16/9] bg-[#E9ECEF] rounded-2xl overflow-hidden border border-gray-200 shadow-inner flex items-center justify-center">
+          <div className="relative w-full aspect-[16/9] bg-slate-100/90 rounded-2xl overflow-hidden border border-slate-200 shadow-inner flex items-center justify-center">
             {/* Street Grid pattern */}
             <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#64748b_1.5px,transparent_1.5px)] [background-size:24px_24px]"></div>
 
@@ -242,7 +251,7 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
               <div className="w-8 h-8 rounded-full bg-amber-500 text-black flex items-center justify-center shadow-lg font-bold text-xs">
                 🏬
               </div>
-              <span className="text-[9px] font-bold bg-white text-gray-900 px-2 py-0.5 rounded-full shadow-xs mt-1">
+              <span className="text-[9px] font-bold bg-white text-slate-900 px-2 py-0.5 rounded-full shadow-xs mt-1 border border-slate-100">
                 Tienda Origen
               </span>
             </div>
@@ -255,7 +264,7 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
               <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center shadow-2xl ring-4 ring-amber-400">
                 <span className="text-lg">🛵</span>
               </div>
-              <span className="text-[9px] font-extrabold bg-black text-white px-2 py-0.5 rounded-full shadow-xs mt-1">
+              <span className="text-[9px] font-extrabold bg-black text-white px-2 py-0.5 rounded-full shadow-xs mt-1 whitespace-nowrap">
                 {driverInfo.name} ({currentStep === 4 ? 'Entregado' : 'En ruta'})
               </span>
             </div>
@@ -265,26 +274,26 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
               <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg font-bold text-xs ring-4 ring-red-200">
                 <MapPin className="w-4 h-4" />
               </div>
-              <span className="text-[9px] font-bold bg-white text-gray-900 px-2 py-0.5 rounded-full shadow-xs mt-1">
+              <span className="text-[9px] font-bold bg-white text-slate-900 px-2 py-0.5 rounded-full shadow-xs mt-1 border border-slate-100">
                 Tu Dirección
               </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
             <div className="flex items-center space-x-1">
-              <MapPin className="w-3.5 h-3.5 text-gray-400" />
+              <MapPin className="w-3.5 h-3.5 text-slate-400" />
               <span>Destino: {order.customerAddress}</span>
             </div>
-            <span className="font-bold text-green-700">OpenDSP Delivery Safe Guaranteed</span>
+            <span className="font-bold text-emerald-700">OpenDSP Delivery Safe Guaranteed</span>
           </div>
         </div>
 
         {/* Driver Card & Order Items */}
         <div className="space-y-4">
           {/* Driver Card */}
-          <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs space-y-4">
-            <h3 className="font-extrabold text-sm text-gray-900 pb-2 border-b border-gray-100">
+          <div className="bg-white/85 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-xl space-y-4">
+            <h3 className="font-extrabold text-sm text-slate-900 pb-2 border-b border-slate-100">
               Repartidor Asignado
             </h3>
 
@@ -292,34 +301,34 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
               <img
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
                 alt={driverInfo.name}
-                className="w-14 h-14 rounded-2xl object-cover border-2 border-gray-200 shadow-sm"
+                className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
               />
               <div>
-                <h4 className="font-extrabold text-sm text-gray-900">{driverInfo.name}</h4>
-                <p className="text-xs text-gray-500">Repartidor Oficial OpenDSP</p>
+                <h4 className="font-extrabold text-sm text-slate-900">{driverInfo.name}</h4>
+                <p className="text-xs text-slate-500">Repartidor Oficial OpenDSP</p>
                 <div className="flex items-center text-amber-500 text-xs font-bold mt-1">
                   <span>★ {driverInfo.rating}</span>
-                  <span className="text-gray-400 font-normal ml-1">(1,420 entregas)</span>
+                  <span className="text-slate-400 font-normal ml-1">(1,420 entregas)</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs text-gray-700">
+            <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 text-xs text-slate-700">
               <p className="font-semibold">Vehículo:</p>
-              <p className="text-gray-500">{driverInfo.plate}</p>
+              <p className="text-slate-500">{driverInfo.plate}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <a
                 href={`tel:${driverInfo.phone}`}
-                className="py-2.5 px-4 rounded-full bg-black hover:bg-gray-800 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-xs"
+                className="py-2.5 px-4 rounded-full bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-xs"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Llamar</span>
               </a>
               <button
-                onClick={() => alert('Abriendo chat con el repartidor...')}
-                className="py-2.5 px-4 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                onClick={() => alert('Abriendo chat de soporte OpenDSP con el repartidor...')}
+                className="py-2.5 px-4 rounded-full border border-slate-200 bg-white/80 hover:bg-white text-slate-800 font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span>Mensaje</span>
@@ -328,7 +337,7 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
           </div>
 
           {/* Order Details Mini Card */}
-          <div className="bg-white rounded-3xl p-5 border border-gray-200/70 shadow-2xs space-y-3">
+          <div className="bg-white/85 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-xl space-y-3">
             <h3 className="font-extrabold text-sm text-gray-900 pb-2 border-b border-gray-100">
               Productos en Entrega
             </h3>

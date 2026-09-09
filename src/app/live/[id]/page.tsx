@@ -1,6 +1,5 @@
 import React from 'react';
 import { marketplaceApi } from '@/lib/api';
-import { getMockStore, MOCK_PRODUCTS } from '@/lib/mockData';
 import { LiveRoom } from '@/components/live/LiveRoom';
 
 export const dynamic = 'force-dynamic';
@@ -19,12 +18,24 @@ export default async function LivePage({
     store = null;
   }
 
-  // Resilient fallback: Never trigger 404
+  // Si no se encuentra en el backend, preparar fallback limpio para rehidratar en cliente
   if (!store) {
-    store = getMockStore(id);
+    store = {
+      id,
+      name: id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      slug: id,
+      logo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      rating: 5.0,
+      reviewCount: 0,
+      salesCount: 0,
+      isOfficial: true,
+      address: 'Santa Cruz, Bolivia',
+      description: 'Tienda en Vitrina Market Bolivia',
+      offers: [],
+    };
   }
 
-  let liveProducts = (store.offers || []).map((o: any) => {
+  const liveProducts = (store.offers || []).map((o: any) => {
     let img = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400';
     try {
       img = JSON.parse(o.product?.images || '[]')[0] || img;
@@ -35,43 +46,25 @@ export default async function LivePage({
       id: o.product?.id || o.id,
       title: o.product?.title || 'Producto en Oferta',
       slug: o.product?.slug || 'producto-en-oferta',
-      price: o.price || 189,
+      price: o.price || 0,
       image: img,
-      rating: o.product?.rating || 4.8,
+      rating: o.product?.rating || 5.0,
     };
   });
-
-  // Guarantee at least 3 live products for an engaging live shopping experience
-  if (liveProducts.length === 0) {
-    liveProducts = MOCK_PRODUCTS.slice(0, 3).map((p) => {
-      let img = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400';
-      try {
-        img = JSON.parse(p.images)[0] || img;
-      } catch {
-        img = p.images;
-      }
-      return {
-        id: p.id,
-        title: p.title,
-        slug: p.slug,
-        price: p.basePrice,
-        image: img,
-        rating: p.rating,
-      };
-    });
-  }
 
   return (
     <LiveRoom
       store={store}
-      liveStream={store.liveStreams?.[0] || {
-        id: `ls-${store.id}`,
-        title: store.liveTitle || `Transmisión en vivo de ${store.name}`,
-        streamerName: store.streamerName || 'Host Oficial',
-        viewerCount: 1420,
-        likeCount: 3820,
-        status: 'LIVE',
-      }}
+      liveStream={
+        store.liveStreams?.[0] || {
+          id: `ls-${store.id}`,
+          title: store.liveTitle || `Transmisión de ${store.name}`,
+          streamerName: store.streamerName || store.name,
+          viewerCount: 0,
+          likeCount: 0,
+          status: store.isLiveNow ? 'LIVE' : 'OFFLINE',
+        }
+      }
       liveProducts={liveProducts}
     />
   );

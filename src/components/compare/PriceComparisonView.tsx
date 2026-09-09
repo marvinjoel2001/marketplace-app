@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { usePersonalization } from '@/hooks/usePersonalization';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
 
@@ -59,6 +60,7 @@ interface PriceComparisonViewProps {
 
 export function PriceComparisonView({ product }: PriceComparisonViewProps) {
   const { addToCart } = useCart();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const { trackProductView, trackCompareQuery } = usePersonalization();
 
   let parsedImages: string[] = [];
@@ -117,22 +119,35 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
 
   const handleSelectOffer = (offer: VendorOffer) => {
     setSelectedOfferId(offer.id);
-    addToCart({
-      productOfferId: offer.id,
-      productId: product.id,
-      productTitle: product.title,
-      productSlug: product.slug,
-      storeId: offer.store.id,
-      storeName: offer.store.name,
-      storeSlug: offer.store.slug,
-      storeAddress: offer.store.address,
-      unitPrice: offer.price,
-      quantity: 1,
-      productImage: currentMainImage,
-      shippingCost: offer.shippingCost,
-      estimatedDelivery: offer.estimatedDelivery,
-      hasInvoice: product.hasInvoice,
-    });
+    const doAdd = () => {
+      addToCart({
+        productOfferId: offer.id,
+        productId: product.id,
+        productTitle: product.title,
+        productSlug: product.slug,
+        storeId: offer.store.id,
+        storeName: offer.store.name,
+        storeSlug: offer.store.slug,
+        storeAddress: offer.store.address,
+        unitPrice: offer.price,
+        quantity: 1,
+        productImage: currentMainImage,
+        shippingCost: offer.shippingCost,
+        estimatedDelivery: offer.estimatedDelivery,
+        hasInvoice: product.hasInvoice,
+      });
+    };
+
+    if (!isAuthenticated) {
+      openAuthModal({
+        onComplete: () => {
+          doAdd();
+        },
+      });
+      return;
+    }
+
+    doAdd();
   };
 
   const primaryOffer = product.offers.find((o) => o.id === selectedOfferId) || product.offers[0];

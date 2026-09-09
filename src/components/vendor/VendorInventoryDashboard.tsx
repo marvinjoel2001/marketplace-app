@@ -126,9 +126,12 @@ export function VendorInventoryDashboard({
   }, []);
 
   const filteredOffers = offers.filter((o) => {
+    if (!o) return false;
+    const prod = o.product || o;
+    const title = prod.title || prod.name || '';
     const term = search.toLowerCase();
-    const matchesTitle = o.product.title.toLowerCase().includes(term);
-    const matchesCategory = o.product.category?.name?.toLowerCase().includes(term);
+    const matchesTitle = title.toLowerCase().includes(term);
+    const matchesCategory = (prod.category?.name || '').toLowerCase().includes(term);
     return matchesTitle || matchesCategory;
   });
 
@@ -438,11 +441,25 @@ export function VendorInventoryDashboard({
                 </tr>
               ) : (
                 filteredOffers.map((item) => {
+                  const prod = item.product || item;
+                  const itemTitle = prod.title || prod.name || 'Producto';
+                  const itemCategory = prod.category?.name || 'General';
+                  const itemSlug = prod.slug || item.slug || item.id;
+                  const rawImgs = prod.images || prod.image || item.images || item.image || '';
+
                   let parsedImages: string[] = [];
-                  try {
-                    parsedImages = JSON.parse(item.product.images);
-                  } catch {
-                    parsedImages = [item.product.images];
+                  if (rawImgs) {
+                    if (typeof rawImgs === 'string') {
+                      try {
+                        const arr = JSON.parse(rawImgs);
+                        if (Array.isArray(arr)) parsedImages = arr;
+                        else parsedImages = [rawImgs];
+                      } catch {
+                        parsedImages = [rawImgs];
+                      }
+                    } else if (Array.isArray(rawImgs)) {
+                      parsedImages = rawImgs;
+                    }
                   }
 
                   return (
@@ -451,19 +468,19 @@ export function VendorInventoryDashboard({
                         <div className="flex items-center space-x-3">
                           <img
                             src={parsedImages[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100'}
-                            alt={item.product.title}
+                            alt={itemTitle}
                             className="w-10 h-10 rounded-xl object-contain bg-gray-50 border border-gray-100 p-1"
                           />
                           <div>
                             <span className="font-bold text-gray-900 block line-clamp-1">
-                              {item.product.title}
+                              {itemTitle}
                             </span>
                             <span className="text-[10px] text-gray-400">SKU: {item.id.slice(-6)}</span>
                           </div>
                         </div>
                       </td>
                       <td className="p-3.5 text-gray-600 font-medium">
-                        {item.product.category?.name || 'General'}
+                        {itemCategory}
                       </td>
                       <td className="p-3.5 font-black text-gray-900">{formatBs(item.price)}</td>
                       <td className="p-3.5">

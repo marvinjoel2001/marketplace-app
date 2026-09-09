@@ -19,6 +19,8 @@ import {
   ArrowRight,
   Sparkles,
   Lock,
+  X,
+  Clock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useCart } from '@/context/CartContext';
@@ -84,13 +86,14 @@ export function CheckoutFlow() {
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
+    setShowQRModal(false);
 
     try {
       const order = await marketplaceApi.createOrder({
         userId: user?.id,
         customerEmail: user?.email || 'cliente@bolivia.bo',
-        customerName,
-        customerPhone,
+        customerName: customerName || user?.name || 'Cliente Vitrina',
+        customerPhone: customerPhone || user?.phone || '+591 77098765',
         customerAddress: `${customerAddress} (Ref: ${addressReference})`,
         customerLat: -17.7695,
         customerLng: -63.194,
@@ -118,30 +121,61 @@ export function CheckoutFlow() {
       setOrderCreated(order);
       clearCart();
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 120,
+        spread: 80,
         origin: { y: 0.6 },
       });
 
-      // Redirect to live DSP tracking after short celebration
+      // Save to localStorage for instant tracking resilience
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vitrina_last_order', JSON.stringify(order));
+      }
+
+      // Redirect to live DSP tracking after celebration
       setTimeout(() => {
-        router.push(`/order/track/${order.orderNumber}`);
-      }, 1500);
+        router.push(`/order/track/${order.orderNumber || order.id || 'CY-894120-412'}`);
+      }, 1200);
     } catch {
       // Fallback demo order creation
       const mockOrderNumber = `CY-${Date.now().toString().slice(-6)}-412`;
-      setOrderCreated({ orderNumber: mockOrderNumber });
+      const fallbackOrder = {
+        id: 'demo-order-id',
+        orderNumber: mockOrderNumber,
+        customerName: customerName || user?.name || 'Juan Pérez',
+        customerPhone: customerPhone || user?.phone || '+591 77098765',
+        customerAddress: customerAddress || 'Santa Cruz, Bolivia',
+        totalAmount: currentTotal,
+        paymentMethod: 'QR_SIMPLE',
+        status: 'CONFIRMED',
+        dspEstimatedMinutes: 18,
+      };
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vitrina_last_order', JSON.stringify(fallbackOrder));
+      }
+
+      setOrderCreated(fallbackOrder);
       clearCart();
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       setTimeout(() => {
         router.push(`/order/track/${mockOrderNumber}`);
-      }, 1500);
+      }, 1200);
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleCheckoutAction = () => {
+    // 1. Exigir autenticación obligatoria para comprar
+    if (!isAuthenticated) {
+      openAuthModal({
+        onComplete: () => {
+          setGeneralError('');
+        },
+      });
+      return;
+    }
+
     const newErrors: { [key: string]: string } = {};
 
     if (!customerName || !customerName.trim()) {
@@ -165,6 +199,12 @@ export function CheckoutFlow() {
 
     setErrors({});
     setGeneralError('');
+
+    // Si el método es QR Simple, abrir el modal interactivo de pago QR antes de despachar
+    if (paymentMethod === 'QR') {
+      setShowQRModal(true);
+      return;
+    }
 
     handleConfirmOrder();
   };
@@ -607,6 +647,142 @@ export function CheckoutFlow() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Pago Interactivo con QR Simple Bolivia */}
+      {showQRModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs">
+                  QR
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                    Pago con QR Simple Bolivia
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Interoperable con todos los bancos del país
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQRModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* QR Amount Display */}
+            <div className="text-center py-1">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Monto Total a Pagar
+              </span>
+              <span className="text-3xl font-black text-slate-950 tracking-tight block mt-0.5">
+                {formatBs(currentTotal)}
+              </span>
+            </div>
+
+            {/* Generated QR Code Graphic */}
+            <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+              <div className="relative p-3 bg-white rounded-xl shadow-xs border border-slate-200">
+                {/* SVG QR representation */}
+                <svg className="w-48 h-48 text-slate-900" viewBox="0 0 100 100" fill="currentColor">
+                  {/* Position detection patterns */}
+                  <rect x="5" y="5" width="28" height="28" fill="currentColor" rx="4" />
+                  <rect x="9" y="9" width="20" height="20" fill="white" rx="2" />
+                  <rect x="13" y="13" width="12" height="12" fill="currentColor" rx="2" />
+
+                  <rect x="67" y="5" width="28" height="28" fill="currentColor" rx="4" />
+                  <rect x="71" y="9" width="20" height="20" fill="white" rx="2" />
+                  <rect x="75" y="13" width="12" height="12" fill="currentColor" rx="2" />
+
+                  <rect x="5" y="67" width="28" height="28" fill="currentColor" rx="4" />
+                  <rect x="9" y="71" width="20" height="20" fill="white" rx="2" />
+                  <rect x="13" y="75" width="12" height="12" fill="currentColor" rx="2" />
+
+                  {/* QR Matrix Elements */}
+                  <rect x="38" y="10" width="6" height="6" />
+                  <rect x="48" y="15" width="6" height="6" />
+                  <rect x="58" y="10" width="6" height="6" />
+                  <rect x="38" y="24" width="6" height="6" />
+                  <rect x="48" y="28" width="6" height="6" />
+                  <rect x="58" y="24" width="6" height="6" />
+
+                  <rect x="10" y="38" width="6" height="6" />
+                  <rect x="20" y="48" width="6" height="6" />
+                  <rect x="10" y="58" width="6" height="6" />
+                  <rect x="24" y="38" width="6" height="6" />
+                  <rect x="28" y="48" width="6" height="6" />
+                  <rect x="24" y="58" width="6" height="6" />
+
+                  <rect x="40" y="40" width="20" height="20" fill="#00D1B2" rx="4" />
+                  <circle cx="50" cy="50" r="6" fill="white" />
+
+                  <rect x="67" y="38" width="6" height="6" />
+                  <rect x="78" y="48" width="6" height="6" />
+                  <rect x="88" y="38" width="6" height="6" />
+                  <rect x="67" y="58" width="6" height="6" />
+                  <rect x="78" y="68" width="6" height="6" />
+                  <rect x="88" y="58" width="6" height="6" />
+
+                  <rect x="38" y="67" width="6" height="6" />
+                  <rect x="48" y="78" width="6" height="6" />
+                  <rect x="58" y="67" width="6" height="6" />
+                  <rect x="38" y="88" width="6" height="6" />
+                  <rect x="48" y="88" width="6" height="6" />
+                  <rect x="58" y="88" width="6" height="6" />
+
+                  <rect x="70" y="80" width="8" height="8" />
+                  <rect x="82" y="80" width="6" height="12" />
+                </svg>
+              </div>
+
+              <div className="flex items-center space-x-1 text-[10px] text-slate-500 font-semibold mt-3">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                <span>Expira en 04:59 minutos • QR Dinámico</span>
+              </div>
+            </div>
+
+            {/* Instruction Steps */}
+            <div className="bg-blue-50/80 rounded-2xl p-3 border border-blue-100 text-xs text-blue-900 space-y-1">
+              <p className="font-bold">Instrucciones de Pago:</p>
+              <p className="text-[11px] text-blue-800">1. Abre la app de tu banco móvil (BCP, BNB, Unión, etc.).</p>
+              <p className="text-[11px] text-blue-800">2. Selecciona la opción <strong>Pago con QR</strong> y escanea el código.</p>
+              <p className="text-[11px] text-blue-800">3. Confirma el monto y presiona el botón inferior para iniciar el despacho.</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={handleConfirmOrder}
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-full flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                {isProcessing ? (
+                  <span>Confirmando pago y notificando a OpenDSP...</span>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                    <span>Ya realicé el pago desde mi app bancaria</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQRModal(false)}
+                className="w-full py-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold transition-colors cursor-pointer text-center"
+              >
+                Volver y elegir otro método
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

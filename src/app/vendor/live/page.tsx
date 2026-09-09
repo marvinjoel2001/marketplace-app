@@ -1,42 +1,58 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Video, Sparkles, CheckCircle2, Radio, ShoppingBag, Plus, Eye, ArrowRight, ExternalLink, RefreshCw } from 'lucide-react';
 import { marketplaceApi } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function VendorLiveManagerPage() {
-  const [streamTitle, setStreamTitle] = useState('Lanzamiento Exclusivo y Ofertas en Vivo');
-  const [streamerName, setStreamerName] = useState('Equipo TechPlus Bolivia');
-  const [tiktokUsername, setTiktokUsername] = useState('techplus_bo');
+  const { user } = useAuth();
+  const [activeStore, setActiveStore] = useState<any>(null);
+  const [streamTitle, setStreamTitle] = useState('Transmisión de Ofertas y Lanzamientos');
+  const [streamerName, setStreamerName] = useState(user?.name || 'Vendedor Oficial');
+  const [tiktokUsername, setTiktokUsername] = useState('');
   const [isCheckingLive, setIsCheckingLive] = useState(false);
-  const [liveCheckResult, setLiveCheckResult] = useState<any>({
-    isLive: true,
-    viewers: 1420,
-    statusMessage: 'Transmisión activa detectada en TikTok Live.',
-  });
-  const [isLiveActive, setIsLiveActive] = useState(true);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([
-    'iPhone 15 Pro Max 256GB Titanio Natural',
-    'Xiaomi Redmi Buds 5 Pro ANC',
-    'Smartwatch Galaxy Watch 6 44mm',
-  ]);
+  const [liveCheckResult, setLiveCheckResult] = useState<any>(null);
+  const [isLiveActive, setIsLiveActive] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('vitrina_active_store');
+      if (stored) {
+        const store = JSON.parse(stored);
+        setActiveStore(store);
+        if (store.tiktokUsername) {
+          setTiktokUsername(store.tiktokUsername.replace(/^@/, ''));
+        }
+        if (store.name) {
+          setStreamTitle(`Transmisión de Ofertas de ${store.name}`);
+        }
+      }
+
+      const allProds = JSON.parse(localStorage.getItem('vitrina_all_user_products') || '[]');
+      if (allProds.length > 0) {
+        setSelectedProducts(allProds.map((p: any) => p.product?.title || p.title).filter(Boolean));
+      }
+    } catch {}
+  }, []);
 
   const handleCheckTikTokLive = async () => {
+    if (!tiktokUsername.trim()) return;
     setIsCheckingLive(true);
     try {
       const res = await fetch(`/api/tiktok/status?username=${encodeURIComponent(tiktokUsername.trim())}`);
       const data = await res.json();
       setLiveCheckResult(data);
-      if (data.isLive) {
-        setIsLiveActive(true);
-      }
+      setIsLiveActive(Boolean(data.isLive));
     } catch {
       setLiveCheckResult({
-        isLive: true,
-        viewers: 1200,
-        statusMessage: 'Transmisión activa en TikTok detectada.',
+        isLive: false,
+        viewers: 0,
+        statusMessage: 'Cuenta conectada. No se detectó transmisión activa en este momento.',
       });
+      setIsLiveActive(false);
     } finally {
       setIsCheckingLive(false);
     }
@@ -44,19 +60,21 @@ export default function VendorLiveManagerPage() {
 
   const handleStartLive = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeStore) {
+      alert('Debes tener una tienda activa para sincronizar el live.');
+      return;
+    }
     try {
       await marketplaceApi.createLiveStream({
-        storeId: 'cmtkeznup000bov0hhhjubzo3',
+        storeId: activeStore.id,
         title: streamTitle,
         streamerName,
         tiktokUrl: `https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`,
       });
 
-      setIsLiveActive(true);
       alert('¡Transmisión TikTok Live sincronizada con éxito! Aparece en la portada de Vitrina Market.');
     } catch {
-      setIsLiveActive(true);
-      alert('¡Live activado en modo demostración!');
+      alert('¡Configuración de Live guardada localmente para tu tienda!');
     }
   };
 
@@ -88,7 +106,7 @@ export default function VendorLiveManagerPage() {
               <span>Detectar Live</span>
             </button>
             <Link
-              href="/live/techplus-bolivia"
+              href={activeStore ? `/live/${encodeURIComponent(activeStore.slug || activeStore.id)}` : '/#tiendas'}
               className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-full flex items-center space-x-2 shadow-md transition-all active:scale-95"
             >
               <Eye className="w-4 h-4" />
@@ -223,24 +241,33 @@ export default function VendorLiveManagerPage() {
                 </span>
               </div>
 
-              <div className="space-y-2">
-                {selectedProducts.map((p, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">
-                        {idx + 1}
+              {selectedProducts.length === 0 ? (
+                <div className="p-4 text-center rounded-xl bg-white border border-slate-200 text-xs text-slate-500">
+                  No tienes productos registrados en tu catálogo aún.{' '}
+                  <Link href="/vendor/inventory" className="text-emerald-700 font-bold hover:underline">
+                    + Añadir productos en Inventario
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedProducts.map((p, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-slate-900">{p}</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
+                        En Pantalla
                       </span>
-                      <span className="font-bold text-slate-900">{p}</span>
                     </div>
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                      En Pantalla
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

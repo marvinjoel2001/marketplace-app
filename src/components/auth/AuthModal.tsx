@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Phone,
@@ -42,8 +42,10 @@ export function AuthModal() {
   const [errorMessage, setErrorMessage] = useState('');
 
   // Interactive custom credentials for Google / TikTok in dev mode
-  const [tiktokUsername, setTiktokUsername] = useState('@marvin_bo');
-  const [tiktokName, setTiktokName] = useState('Marvin Rivera');
+  const [tiktokUsername, setTiktokUsername] = useState('');
+  const [tiktokName, setTiktokName] = useState('');
+  const [tiktokPreview, setTiktokPreview] = useState<{ avatarUrl?: string; nickname?: string; isLive?: boolean } | null>(null);
+  const [isSearchingTiktok, setIsSearchingTiktok] = useState(false);
   const [googleEmail, setGoogleEmail] = useState('marvin.rivera@gmail.com');
   const [googleName, setGoogleName] = useState('Marvin Rivera');
 
@@ -61,8 +63,6 @@ export function AuthModal() {
   const [reference, setReference] = useState(user?.addressReference || '');
   const [nitOrCi, setNitOrCi] = useState(user?.nitOrCi || '');
   const [phoneError, setPhoneError] = useState('');
-
-  if (!isAuthModalOpen) return null;
 
   const handleSocialClick = async (provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK') => {
     setErrorMessage('');
@@ -113,10 +113,29 @@ export function AuthModal() {
     setErrorMessage('');
     const cleanHandle = tiktokUsername.startsWith('@') ? tiktokUsername : `@${tiktokUsername}`;
     try {
+      let realAvatar = '';
+      let realName = tiktokName.trim();
+
+      // Fetch real public profile directly from TikTok via scraper API
+      try {
+        const profileRes = await fetch(`/api/tiktok/status?username=${encodeURIComponent(cleanHandle)}&action=profile`);
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.success) {
+            realAvatar = profileData.avatarUrl;
+            if (!realName && profileData.nickname) {
+              realName = profileData.nickname;
+            }
+          }
+        }
+      } catch (profileErr) {
+        console.warn('Could not auto-fetch TikTok profile avatar:', profileErr);
+      }
+
       await socialLogin('TIKTOK', {
-        email: `${cleanHandle.replace('@', '')}@vitrinamarket.bo`,
-        name: tiktokName.trim() || cleanHandle,
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        email: `${cleanHandle.replace('@', '')}@tiktok.bo`,
+        name: realName || cleanHandle,
+        avatar: realAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(realName || cleanHandle)}&background=000&color=fff`,
       });
     } catch (err: any) {
       setErrorMessage(err.message || 'Error al conectar con TikTok');
@@ -124,6 +143,32 @@ export function AuthModal() {
       setLoadingProvider(null);
     }
   };
+
+  // Búsqueda en tiempo real del perfil de TikTok al escribir el handle
+  useEffect(() => {
+    const clean = tiktokUsername.replace(/^@/, '').trim();
+    if (clean.length < 2 || subView !== 'TIKTOK') {
+      setTiktokPreview(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingTiktok(true);
+      try {
+        const res = await fetch(`/api/tiktok/status?username=${encodeURIComponent(clean)}&action=profile`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.avatarUrl) {
+            setTiktokPreview(data);
+            if (!tiktokName && data.nickname) {
+              setTiktokName(data.nickname);
+            }
+          }
+        }
+      } catch {}
+      setIsSearchingTiktok(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [tiktokUsername, subView]);
 
   const handleCustomGoogleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -214,6 +259,8 @@ export function AuthModal() {
     'Trinidad',
     'Cobija',
   ];
+
+  if (!isAuthModalOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -493,6 +540,32 @@ export function AuthModal() {
                     className="flex-1 px-3 py-2.5 rounded-r-xl border border-slate-200 outline-hidden focus:border-black font-bold text-slate-900"
                   />
                 </div>
+                {isSearchingTiktok && (
+                  <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                    <span>Buscando perfil en TikTok...</span>
+                  </div>
+                )}
+                {tiktokPreview && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <img
+                        src={tiktokPreview.avatarUrl}
+                        alt="Avatar TikTok"
+                        className="w-8 h-8 rounded-full object-cover border border-slate-300 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-slate-900 text-xs truncate block">
+                          {tiktokPreview.nickname || tiktokUsername}
+                        </span>
+                        <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Perfil real de TikTok detectado</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

@@ -12,6 +12,7 @@ import { usePersonalization } from '@/hooks/usePersonalization';
 import { FeaturedProductsGrid } from './FeaturedProductsGrid';
 import { formatBs } from '@/lib/utils';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
+import { useDataMode } from '@/context/DataModeContext';
 
 interface PersonalizedStorefrontFeedProps {
   initialProducts: any[];
@@ -27,6 +28,7 @@ export function PersonalizedStorefrontFeed({
   isFlashSale,
 }: PersonalizedStorefrontFeedProps) {
   const { rerankProducts, personalizedFeed, isLoaded } = usePersonalization();
+  const { isRealMode } = useDataMode();
 
   // Re-ranking dinámico por comportamiento del usuario
   const displayProducts = useMemo(() => {
@@ -51,8 +53,8 @@ export function PersonalizedStorefrontFeed({
 
   return (
     <div className="space-y-12">
-      {/* 1. SECCIÓN: PORQUE BUSCASTE '...' (Si hay búsquedas recientes) */}
-      {!searchQuery && !categorySlug && !isFlashSale && lastSearchKeyword && basedOnSearchProducts.length > 0 && (
+      {/* 1. SECCIÓN: PORQUE BUSCASTE '...' (Si hay búsquedas recientes en modo demo) */}
+      {!isRealMode && !searchQuery && !categorySlug && !isFlashSale && lastSearchKeyword && basedOnSearchProducts.length > 0 && (
         <section className="bg-[#F5F3FF] rounded-[2rem] p-6 sm:p-8 border border-[#EDE9FE] shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div>
@@ -137,8 +139,8 @@ export function PersonalizedStorefrontFeed({
         </section>
       )}
 
-      {/* 2. SECCIÓN: VISTOS RECIENTEMENTE */}
-      {!searchQuery && !categorySlug && !isFlashSale && recentlyViewed.length > 0 && (
+      {/* 2. SECCIÓN: VISTOS RECIENTEMENTE (Sólo en demo o con historial real) */}
+      {!isRealMode && !searchQuery && !categorySlug && !isFlashSale && recentlyViewed.length > 0 && (
         <section className="bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-2xs">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center space-x-2.5">

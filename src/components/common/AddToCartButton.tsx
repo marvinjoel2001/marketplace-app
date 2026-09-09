@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ShoppingCart, CheckCircle2, Loader2, Check } from 'lucide-react';
 import { useCart, CartItem } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface AddToCartButtonProps {
   item: CartItem;
@@ -22,6 +23,7 @@ export function AddToCartButton({
   variant = 'pill',
 }: AddToCartButtonProps) {
   const { addToCart } = useCart();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
   const handleClick = (e: React.MouseEvent) => {
@@ -29,6 +31,20 @@ export function AddToCartButton({
     e.stopPropagation();
 
     if (status !== 'idle') return;
+
+    // Exigir inicio de sesión para comprar o añadir al carrito
+    if (!isAuthenticated) {
+      openAuthModal({
+        onComplete: () => {
+          addToCart(item);
+          setStatus('success');
+          setTimeout(() => {
+            setStatus('idle');
+          }, 1600);
+        },
+      });
+      return;
+    }
 
     setStatus('loading');
 
