@@ -52,7 +52,7 @@ export function Footer() {
               <li><Link href="/live" className="hover:text-amber-600">{t('footer_live_shopping', 'TikTok Live Shopping')}</Link></li>
               <li><Link href="/compare" className="hover:text-amber-600">{t('footer_price_compare', 'Comparar Precios')}</Link></li>
               <li><Link href="/#tiendas" className="hover:text-amber-600">{t('footer_official_stores', 'Tiendas Oficiales')}</Link></li>
-              <li><Link href="/#envios" className="hover:text-amber-600">{t('footer_order_tracking', 'Rastreo de Envíos')}</Link></li>
+              <li><Link href="/order/track" className="hover:text-amber-600">{t('footer_order_tracking', 'Rastreo de Envíos')}</Link></li>
             </ul>
           </div>
 
@@ -82,7 +82,7 @@ export function Footer() {
               <li><Link href="/billing" className="hover:text-emerald-700 font-medium">{t('footer_billing', 'Facturación Electrónica (SIAT)')}</Link></li>
               <li><Link href="/terms" className="hover:text-emerald-700">{t('footer_terms', 'Términos y Condiciones')}</Link></li>
               <li><Link href="/privacy" className="hover:text-emerald-700">{t('footer_privacy', 'Política de Privacidad')}</Link></li>
-              <li><Link href="/order/track/CY-894120-412" className="hover:text-emerald-700">Rastrear mi pedido</Link></li>
+              <li><Link href="/order/track" className="hover:text-emerald-700 font-medium text-emerald-800">Rastrear mi pedido</Link></li>
               <li><Link href="/admin" className="hover:text-emerald-700">{t('footer_admin_portal', 'Portal Administrativo')}</Link></li>
               <li><a href="tel:+591380026677" className="hover:text-emerald-700">+591 3 800-VITRINA</a></li>
               <li><span className="text-gray-400">Santa Cruz, Bolivia</span></li>

@@ -8,6 +8,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { CartDrawer } from '@/components/layout/CartDrawer';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Footer } from '@/components/layout/Footer';
+import { CustomCursor } from '@/components/common/CustomCursor';
 
 export const metadata: Metadata = {
   title: 'Vitrina Market — Marketplace Bolivia & Live Shopping TikTok',
@@ -33,6 +34,7 @@ export default function RootLayout({
           <DataModeProvider>
             <AuthProvider>
               <CartProvider>
+                <CustomCursor />
                 <div className="relative z-10 flex flex-col min-h-screen">
                   <Navbar />
                   <CartDrawer />

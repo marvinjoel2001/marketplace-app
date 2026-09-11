@@ -730,31 +730,18 @@ export function LiveRoom({ store, liveStream, liveProducts }: LiveRoomProps) {
 
                       <button
                         onClick={() => {
-                          const doAdd = () => {
-                            addToCart({
-                              productId: p.id,
-                              productTitle: p.title,
-                              productSlug: p.slug,
-                              storeId: currentStore.id,
-                              storeName: currentStore.name,
-                              unitPrice: p.price,
-                              quantity: 1,
-                              productImage: p.image,
-                              shippingCost: 0,
-                              estimatedDelivery: 'Llega hoy mismo (Express)',
-                            });
-                          };
-
-                          if (!isAuthenticated) {
-                            openAuthModal({
-                              onComplete: () => {
-                                doAdd();
-                              },
-                            });
-                            return;
-                          }
-
-                          doAdd();
+                          addToCart({
+                            productId: p.id,
+                            productTitle: p.title,
+                            productSlug: p.slug,
+                            storeId: currentStore.id,
+                            storeName: currentStore.name,
+                            unitPrice: p.price,
+                            quantity: 1,
+                            productImage: p.image,
+                            shippingCost: 0,
+                            estimatedDelivery: 'Llega hoy mismo (Express)',
+                          });
                         }}
                         className="py-2 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs transition-all shadow-xs active:scale-95 flex items-center justify-center space-x-1 cursor-pointer"
                       >

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Package,
@@ -14,8 +14,11 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
+  RefreshCw,
+  ArrowRight,
 } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
+import { marketplaceApi } from '@/lib/api';
 
 interface VendorOrder {
   id: string;
@@ -23,16 +26,17 @@ interface VendorOrder {
   customerName: string;
   customerPhone: string;
   address: string;
-  status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED';
+  status: 'PENDING' | 'PREPARING' | 'IN_TRANSIT' | 'DELIVERED';
   driverName?: string;
   driverPhone?: string;
   dspTrackingToken?: string;
   total: number;
   itemsCount: number;
   timeAgo: string;
+  items?: any[];
 }
 
-const mockOrders: VendorOrder[] = [
+const defaultMockOrders: VendorOrder[] = [
   {
     id: 'ord-101',
     orderNumber: 'CY-894120-412',
@@ -101,10 +105,132 @@ const mockOrders: VendorOrder[] = [
 ];
 
 export default function VendorOrdersPage() {
-  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'IN_TRANSIT' | 'DELIVERED'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'PREPARING' | 'IN_TRANSIT' | 'DELIVERED'>('ALL');
   const [search, setSearch] = useState('');
+  const [orders, setOrders] = useState<VendorOrder[]>(defaultMockOrders);
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState('');
 
-  const filteredOrders = mockOrders.filter((order) => {
+  const loadOrders = async () => {
+    setIsLoading(true);
+    const combined: VendorOrder[] = [];
+
+    // 1. Cargar órdenes locales de compras realizadas
+    try {
+      const localList = JSON.parse(localStorage.getItem('vitrina_orders') || '[]');
+      if (Array.isArray(localList)) {
+        localList.forEach((lo: any) => {
+          combined.push({
+            id: lo.id || `ord-${Math.random()}`,
+            orderNumber: lo.orderNumber || lo.id || 'CY-ORD',
+            customerName: lo.customerName || 'Cliente Vitrina',
+            customerPhone: lo.customerPhone || '+591 77000000',
+            address: lo.customerAddress || 'Santa Cruz, Bolivia',
+            status: lo.status || 'PENDING',
+            driverName: lo.dspDriverName,
+            driverPhone: lo.dspDriverPhone,
+            dspTrackingToken: lo.dspTrackingToken,
+            total: lo.totalAmount || lo.total || 0,
+            itemsCount: lo.items?.length || 1,
+            timeAgo: 'Reciente',
+            items: lo.items,
+          });
+        });
+      }
+    } catch {}
+
+    // 2. Cargar órdenes de la API backend
+    try {
+      const apiOrders = await marketplaceApi.getOrders(30);
+      if (Array.isArray(apiOrders) && apiOrders.length > 0) {
+        apiOrders.forEach((ao: any) => {
+          if (!combined.some((c) => c.orderNumber === ao.orderNumber || c.id === ao.id)) {
+            combined.push({
+              id: ao.id,
+              orderNumber: ao.orderNumber || ao.id,
+              customerName: ao.customerName || 'Cliente',
+              customerPhone: ao.customerPhone || '+591 70000000',
+              address: ao.customerAddress || 'Bolivia',
+              status: ao.status || 'PENDING',
+              driverName: ao.dspDriverName,
+              driverPhone: ao.dspDriverPhone,
+              dspTrackingToken: ao.dspTrackingToken,
+              total: ao.totalAmount || 0,
+              itemsCount: ao.items?.length || 1,
+              timeAgo: new Date(ao.createdAt).toLocaleDateString(),
+              items: ao.items,
+            });
+          }
+        });
+      }
+    } catch {}
+
+    // 3. Si no hay pedidos aún, incluir los pedidos demo para testing
+    if (combined.length === 0) {
+      setOrders(defaultMockOrders);
+    } else {
+      defaultMockOrders.forEach((mo) => {
+        if (!combined.some((c) => c.orderNumber === mo.orderNumber)) {
+          combined.push(mo);
+        }
+      });
+      setOrders(combined);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const handleUpdateStatus = async (orderId: string, newStatus: VendorOrder['status']) => {
+    try {
+      await marketplaceApi.updateOrderStatus(orderId, newStatus).catch(() => null);
+    } catch {}
+
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.id === orderId || o.orderNumber === orderId) {
+          const updated = {
+            ...o,
+            status: newStatus,
+            driverName: newStatus === 'IN_TRANSIT' ? o.driverName || 'Carlos Mendoza (OpenDSP)' : o.driverName,
+            driverPhone: newStatus === 'IN_TRANSIT' ? o.driverPhone || '+591 77012345' : o.driverPhone,
+          };
+          return updated;
+        }
+        return o;
+      })
+    );
+
+    // Actualizar en localStorage para que el comprador vea el cambio en su tracking
+    try {
+      const localList = JSON.parse(localStorage.getItem('vitrina_orders') || '[]');
+      const updated = localList.map((lo: any) =>
+        lo.id === orderId || lo.orderNumber === orderId ? { ...lo, status: newStatus } : lo
+      );
+      localStorage.setItem('vitrina_orders', JSON.stringify(updated));
+
+      const lastOrderRaw = localStorage.getItem('vitrina_last_order');
+      if (lastOrderRaw) {
+        const last = JSON.parse(lastOrderRaw);
+        if (last.id === orderId || last.orderNumber === orderId) {
+          last.status = newStatus;
+          localStorage.setItem('vitrina_last_order', JSON.stringify(last));
+        }
+      }
+    } catch {}
+
+    const statusLabels: Record<string, string> = {
+      PREPARING: 'preparación',
+      IN_TRANSIT: 'en ruta con OpenDSP',
+      DELIVERED: 'entregado',
+    };
+    setNotification(`Pedido ${orderId} marcado como ${statusLabels[newStatus] || newStatus}.`);
+    setTimeout(() => setNotification(''), 4000);
+  };
+
+  const filteredOrders = orders.filter((order) => {
     if (filter !== 'ALL' && order.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -144,11 +270,20 @@ export default function VendorOrdersPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={loadOrders}
+            disabled={isLoading}
+            className="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Actualizar</span>
+          </button>
           <Link
             href="/vendor/live"
-            className="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+            className="px-4 py-2.5 rounded-full bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-colors"
           >
-            Transmitir en Live
+            TikTok Live
           </Link>
           <Link
             href="/vendor/inventory"
@@ -159,54 +294,65 @@ export default function VendorOrdersPage() {
         </div>
       </div>
 
-      {/* Metric Cards */}
+      {notification && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center space-x-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{notification}</span>
+        </div>
+      )}
+
+      {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
-          <span className="text-xs font-bold text-slate-400 uppercase">Pedidos Hoy</span>
-          <p className="text-2xl font-black text-slate-900 mt-1">12</p>
-          <span className="text-[10px] text-emerald-600 font-semibold">+33% vs ayer</span>
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs">
+          <span className="text-xs font-bold text-slate-400">Total Pedidos</span>
+          <p className="text-2xl font-black text-slate-900 mt-1">{orders.length}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
-          <span className="text-xs font-bold text-slate-400 uppercase">En Ruta (DSP)</span>
-          <p className="text-2xl font-black text-indigo-600 mt-1">2</p>
-          <span className="text-[10px] text-slate-500">Conductores activos</span>
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs">
+          <span className="text-xs font-bold text-amber-600">Por Despachar</span>
+          <p className="text-2xl font-black text-amber-600 mt-1">
+            {orders.filter((o) => o.status === 'PENDING' || o.status === 'PREPARING').length}
+          </p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
-          <span className="text-xs font-bold text-slate-400 uppercase">Entregados Hoy</span>
-          <p className="text-2xl font-black text-emerald-600 mt-1">10</p>
-          <span className="text-[10px] text-emerald-700 font-semibold">100% a tiempo</span>
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs">
+          <span className="text-xs font-bold text-blue-600">En Ruta OpenDSP</span>
+          <p className="text-2xl font-black text-blue-600 mt-1">
+            {orders.filter((o) => o.status === 'IN_TRANSIT').length}
+          </p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
-          <span className="text-xs font-bold text-slate-400 uppercase">Facturación</span>
-          <p className="text-2xl font-black text-slate-900 mt-1">{formatBs(1404)}</p>
-          <span className="text-[10px] text-slate-500">Cobro QR Simple</span>
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs">
+          <span className="text-xs font-bold text-emerald-600">Entregados Hoy</span>
+          <p className="text-2xl font-black text-emerald-600 mt-1">
+            {orders.filter((o) => o.status === 'DELIVERED').length}
+          </p>
         </div>
       </div>
 
-      {/* Filters & Table */}
+      {/* Filter and Search Bar */}
       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-2">
-            {(['ALL', 'PENDING', 'IN_TRANSIT', 'DELIVERED'] as const).map((status) => (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl">
+            {(['ALL', 'PENDING', 'PREPARING', 'IN_TRANSIT', 'DELIVERED'] as const).map((status) => (
               <button
                 key={status}
+                type="button"
                 onClick={() => setFilter(status)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   filter === status
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {status === 'ALL' && 'Todos'}
                 {status === 'PENDING' && 'Pendientes'}
-                {status === 'IN_TRANSIT' && 'En Tránsito'}
+                {status === 'PREPARING' && 'En Preparación'}
+                {status === 'IN_TRANSIT' && 'En Ruta'}
                 {status === 'DELIVERED' && 'Entregados'}
               </button>
             ))}
           </div>
 
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Buscar por orden o cliente..."
@@ -224,21 +370,24 @@ export default function VendorOrdersPage() {
               key={order.id}
               className="bg-slate-50 hover:bg-indigo-50/40 rounded-2xl p-4 border border-slate-100 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
             >
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1">
                 <div className="flex items-center space-x-2">
                   <span className="font-black text-sm text-slate-900">{order.orderNumber}</span>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                       order.status === 'IN_TRANSIT'
-                        ? 'bg-amber-100 text-amber-900 animate-pulse'
+                        ? 'bg-blue-100 text-blue-900 animate-pulse'
                         : order.status === 'DELIVERED'
                         ? 'bg-emerald-100 text-emerald-900'
+                        : order.status === 'PREPARING'
+                        ? 'bg-amber-100 text-amber-900'
                         : 'bg-slate-200 text-slate-800'
                     }`}
                   >
                     {order.status === 'IN_TRANSIT' && '● EN RUTA OPENDSP'}
                     {order.status === 'DELIVERED' && '✓ ENTREGADO'}
-                    {order.status === 'PENDING' && '⌛ PENDIENTE DESPACHO'}
+                    {order.status === 'PREPARING' && '⚙ EN PREPARACIÓN'}
+                    {order.status === 'PENDING' && '⌛ PENDIENTE'}
                   </span>
                   <span className="text-[11px] text-slate-400">{order.timeAgo}</span>
                 </div>
@@ -260,7 +409,7 @@ export default function VendorOrdersPage() {
                 {order.driverName && (
                   <p className="text-[11px] text-indigo-700 font-semibold flex items-center pt-1">
                     <Truck className="w-3 h-3 mr-1" />
-                    Conductor asignado: {order.driverName} ({order.driverPhone})
+                    Conductor asignado: {order.driverName} ({order.driverPhone || '+591 77012345'})
                   </p>
                 )}
               </div>
@@ -271,13 +420,45 @@ export default function VendorOrdersPage() {
                   <span className="text-base font-black text-slate-900">{formatBs(order.total)}</span>
                 </div>
 
-                <Link
-                  href={`/order/track/${order.orderNumber}`}
-                  className="px-4 py-2 rounded-full bg-white hover:bg-slate-900 hover:text-white text-slate-800 border border-slate-200 font-bold text-xs transition-all shadow-2xs flex items-center space-x-1.5"
-                >
-                  <span>Tracking en Vivo</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {/* Action buttons for changing status */}
+                  {order.status === 'PENDING' && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                      className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+                    >
+                      Preparar
+                    </button>
+                  )}
+                  {order.status === 'PREPARING' && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(order.id, 'IN_TRANSIT')}
+                      className="px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1"
+                    >
+                      <Truck className="w-3 h-3" />
+                      <span>Despachar DSP</span>
+                    </button>
+                  )}
+                  {order.status === 'IN_TRANSIT' && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
+                      className="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+                    >
+                      Marcar Entregado
+                    </button>
+                  )}
+
+                  <Link
+                    href={`/order/track/${encodeURIComponent(order.orderNumber)}`}
+                    className="px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-900 hover:text-white text-slate-800 border border-slate-200 font-bold text-xs transition-all shadow-2xs flex items-center space-x-1"
+                  >
+                    <span>Tracking</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

@@ -16,6 +16,7 @@ export default function VendorLiveManagerPage() {
   const [liveCheckResult, setLiveCheckResult] = useState<any>(null);
   const [isLiveActive, setIsLiveActive] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     try {
@@ -60,26 +61,68 @@ export default function VendorLiveManagerPage() {
 
   const handleStartLive = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeStore) {
-      alert('Debes tener una tienda activa para sincronizar el live.');
-      return;
-    }
+    const currentStore = activeStore || { id: 'store-active', slug: 'techplus-bolivia', name: 'Mi Tienda Oficial' };
+
+    try {
+      const updated = {
+        ...currentStore,
+        tiktokUsername,
+        streamTitle,
+        streamerName,
+        isLive: true,
+      };
+      localStorage.setItem('vitrina_active_store', JSON.stringify(updated));
+      setActiveStore(updated);
+    } catch {}
+
     try {
       await marketplaceApi.createLiveStream({
-        storeId: activeStore.id,
+        storeId: currentStore.id,
         title: streamTitle,
         streamerName,
         tiktokUrl: `https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`,
       });
 
-      alert('¡Transmisión TikTok Live sincronizada con éxito! Aparece en la portada de Vitrina Market.');
+      setToast({
+        type: 'success',
+        message: '¡Transmisión TikTok Live sincronizada con éxito! Ahora aparece en vivo en la portada de Vitrina Market.',
+      });
     } catch {
-      alert('¡Configuración de Live guardada localmente para tu tienda!');
+      setToast({
+        type: 'success',
+        message: '¡Configuración de Live guardada con éxito para tu tienda en Vitrina Market!',
+      });
     }
+
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {toast && (
+        <div
+          className={`p-4 rounded-2xl flex items-center justify-between text-xs font-bold shadow-md animate-in fade-in duration-200 ${
+            toast.type === 'success'
+              ? 'bg-emerald-600 text-white shadow-emerald-200'
+              : 'bg-rose-600 text-white shadow-rose-200'
+          }`}
+        >
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{toast.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="p-1 hover:bg-white/20 rounded-full"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
           <div>

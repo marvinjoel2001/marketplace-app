@@ -2,17 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Radio, ShoppingBag, Store, Plus, Sparkles, RefreshCw } from 'lucide-react';
+import { ChevronRight, Radio, ShoppingBag, ShoppingCart, Store, Plus, Sparkles, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useDataMode } from '@/context/DataModeContext';
 import { marketplaceApi } from '@/lib/api';
+import { ImageWithSkeleton } from '@/components/common/ImageWithSkeleton';
 
 export function HomeHighlightSection() {
   const { language, t } = useLanguage();
   const { addToCart } = useCart();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { isRealMode } = useDataMode();
 
   const [realStores, setRealStores] = useState<any[]>([]);
@@ -288,30 +289,17 @@ export function HomeHighlightSection() {
     e.preventDefault();
     e.stopPropagation();
 
-    const doAdd = () => {
-      addToCart({
-        productId: product.id,
-        productTitle: product.fullTitle,
-        productSlug: product.slug,
-        unitPrice: product.price,
-        productImage: product.image,
-        storeName: 'Vitrina Market Oficial',
-        storeId: 'vitrina-oficial',
-        shippingCost: 0,
-        quantity: 1,
-      });
-    };
-
-    if (!isAuthenticated) {
-      openAuthModal({
-        onComplete: () => {
-          doAdd();
-        },
-      });
-      return;
-    }
-
-    doAdd();
+    addToCart({
+      productId: product.id,
+      productTitle: product.fullTitle,
+      productSlug: product.slug,
+      unitPrice: product.price,
+      productImage: product.image,
+      storeName: 'Vitrina Market Oficial',
+      storeId: 'vitrina-oficial',
+      shippingCost: 0,
+      quantity: 1,
+    });
   };
 
   return (
@@ -369,8 +357,8 @@ export function HomeHighlightSection() {
                     <div
                       className={`w-full h-full rounded-full p-[2.5px] bg-gradient-to-tr ${store.ringColor} shadow-sm group-hover:rotate-6 transition-all duration-300`}
                     >
-                      <div className="w-full h-full rounded-full p-0.5 bg-white overflow-hidden">
-                        <img
+                      <div className="w-full h-full rounded-full p-0.5 bg-white overflow-hidden relative">
+                        <ImageWithSkeleton
                           src={store.avatar}
                           alt={store.name}
                           className="w-full h-full rounded-full object-cover object-center"
@@ -449,39 +437,49 @@ export function HomeHighlightSection() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-3.5">
               {offersToDisplay.slice(0, 4).map((item) => (
-              <div
-                key={item.id}
-                className={`rounded-2xl p-2.5 border ${item.bgTint || 'bg-white/90 border-white/80'} hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group cursor-pointer`}
-                onClick={(e) => handleQuickAdd(item, e)}
-              >
-                <div>
-                  {/* Product Image Container */}
-                  <div className="aspect-square w-full rounded-xl overflow-hidden mb-2 p-1.5 flex items-center justify-center">
-                    <img
-                      src={item.image}
-                      alt={item.fullTitle}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+                <div
+                  key={item.id}
+                  className={`rounded-2xl p-2.5 border ${item.bgTint || 'bg-white/90 border-white/80'} hover-card-3d transition-all duration-300 flex flex-col justify-between group relative`}
+                >
+                  <Link href={`/product/${item.slug}`} className="block">
+                    {/* Product Image Container */}
+                    <div className="aspect-square w-full rounded-xl overflow-hidden mb-2 p-1.5 flex items-center justify-center relative">
+                      <ImageWithSkeleton
+                        src={item.image}
+                        alt={item.fullTitle}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
 
-                  {/* Title & Price & Discount */}
-                  <h3 className="text-xs font-bold text-slate-900 truncate" title={item.fullTitle}>
-                    {item.title}
-                  </h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs font-black text-slate-900">
-                      Bs. {Number(item.price).toFixed(2)}
-                    </span>
-                    {item.discount && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-[#5B4DF0] text-white text-[10px] font-black leading-none shadow-2xs">
-                        {item.discount}
+                    {/* Title & Price & Discount */}
+                    <h3 className="text-xs font-bold text-slate-900 truncate" title={item.fullTitle}>
+                      {item.title}
+                    </h3>
+                  </Link>
+
+                  <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-200/50">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black text-slate-900">
+                        Bs. {Number(item.price).toFixed(2)}
                       </span>
-                    )}
+                      {item.discount && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#5B4DF0] text-white text-[9px] font-black leading-none shadow-2xs">
+                          {item.discount}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleQuickAdd(item, e)}
+                      title="Añadir al carrito"
+                      className="p-1.5 rounded-lg bg-white hover:bg-[#4F46E5] text-slate-700 hover:text-white border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
         )}
         </div>
 

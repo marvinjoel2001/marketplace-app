@@ -7,6 +7,7 @@ import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck, ShieldCheck, St
 import { useCart, CartItem } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatBs } from '@/lib/utils';
+import { ImageWithSkeleton } from '@/components/common/ImageWithSkeleton';
 
 export function CartDrawer() {
   const router = useRouter();
@@ -97,13 +98,15 @@ export function CartDrawer() {
                   {storeItems.map((item) => (
                     <div
                       key={item.productOfferId || item.productId}
-                      className="flex space-x-3 bg-white p-2.5 rounded-xl border border-gray-100 hover:border-gray-200 transition-all"
+                      className="flex space-x-3 bg-white p-2.5 rounded-xl border border-gray-100 hover:border-gray-200 transition-all hover-card-3d"
                     >
-                      <img
-                        src={item.productImage || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=200'}
-                        alt={item.productTitle}
-                        className="w-16 h-16 object-cover rounded-lg bg-gray-50 border border-gray-100"
-                      />
+                      <div className="w-16 h-16 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden relative shrink-0">
+                        <ImageWithSkeleton
+                          src={item.productImage || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=200'}
+                          alt={item.productTitle}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-gray-900 truncate">{item.productTitle}</p>
                         <p className="text-sm font-extrabold text-gray-900 mt-0.5">{formatBs(item.unitPrice)}</p>

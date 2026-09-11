@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Zap, Clock, ChevronRight } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
+import { ImageWithSkeleton } from '@/components/common/ImageWithSkeleton';
 
 interface FlashProduct {
   id: string;
@@ -136,15 +137,15 @@ export function FlashDeals() {
         {mockFlashProducts.map((p) => (
           <div
             key={p.id}
-            className="group relative bg-[#FAF9F6] rounded-xl p-3 border border-gray-200/90 hover:border-amber-400 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col justify-between"
+            className="group relative bg-[#FAF9F6] rounded-xl p-3 border border-gray-200/90 hover:border-amber-400 hover-card-3d transition-all duration-300 ease-out flex flex-col justify-between"
           >
             {/* Discount Badge with AAA Contrast */}
             <div className="absolute top-2 left-2 z-10 bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs">
               -{p.discount}%
             </div>
 
-            <Link href={`/product/${p.slug}`} className="block overflow-hidden rounded-lg bg-white mb-2 aspect-square flex items-center justify-center p-2 border border-gray-100">
-              <img
+            <Link href={`/product/${p.slug}`} className="block overflow-hidden rounded-lg bg-white mb-2 aspect-square flex items-center justify-center p-2 border border-gray-100 relative">
+              <ImageWithSkeleton
                 src={p.image}
                 alt={p.title}
                 className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"

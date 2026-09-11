@@ -19,6 +19,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePersonalization } from '@/hooks/usePersonalization';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
+import { ImageWithSkeleton } from '@/components/common/ImageWithSkeleton';
 
 interface VendorOffer {
   id: string;
@@ -60,7 +61,7 @@ interface PriceComparisonViewProps {
 
 export function PriceComparisonView({ product }: PriceComparisonViewProps) {
   const { addToCart } = useCart();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { trackProductView, trackCompareQuery } = usePersonalization();
 
   let parsedImages: string[] = [];
@@ -138,15 +139,6 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
       });
     };
 
-    if (!isAuthenticated) {
-      openAuthModal({
-        onComplete: () => {
-          doAdd();
-        },
-      });
-      return;
-    }
-
     doAdd();
   };
 
@@ -169,14 +161,14 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
           {/* Left: Product Image Gallery with Smooth Transition */}
           <div className="lg:col-span-5 space-y-4">
             <div className="aspect-square w-full rounded-2xl bg-[#FAF9F6] border border-gray-200 overflow-hidden p-4 flex items-center justify-center relative">
-              <img
+              <ImageWithSkeleton
                 src={currentMainImage}
                 alt={`${product.title} - ${selectedColor}`}
                 className={`w-full h-full object-contain transition-opacity duration-200 ease-out ${
                   isImageFading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
                 }`}
               />
-              <span className="absolute top-3 left-3 bg-black/80 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full backdrop-blur-xs">
+              <span className="absolute top-3 left-3 z-10 bg-black/80 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full backdrop-blur-xs">
                 Color: {selectedColor}
               </span>
             </div>
@@ -342,17 +334,17 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
               return (
                 <div
                   key={offer.id}
-                  className={`relative bg-white rounded-2xl p-5 border-2 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 ${
+                  className={`relative bg-white rounded-2xl p-5 border-2 transition-all duration-300 flex flex-col justify-between hover-card-3d ${
                     offer.isRecommended
                       ? 'border-amber-400 bg-amber-50/20 shadow-md ring-2 ring-amber-400/20'
                       : isSelected
                       ? 'border-black shadow-lg ring-2 ring-black/10'
-                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   {/* Top Badge (Recomendado) */}
                   {offer.isRecommended && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-black font-extrabold text-[10px] px-3 py-0.5 rounded-full shadow-xs flex items-center space-x-1 uppercase tracking-wider">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-amber-400 text-black font-extrabold text-[10px] px-3 py-0.5 rounded-full shadow-xs flex items-center space-x-1 uppercase tracking-wider">
                       <Award className="w-3 h-3 text-black" />
                       <span>Recomendado</span>
                     </div>
@@ -360,8 +352,8 @@ export function PriceComparisonView({ product }: PriceComparisonViewProps) {
 
                   <div>
                     {/* Product thumbnail */}
-                    <div className="w-full aspect-square bg-gray-50 rounded-xl mb-4 p-3 flex items-center justify-center border border-gray-100">
-                      <img
+                    <div className="w-full aspect-square bg-gray-50 rounded-xl mb-4 p-3 flex items-center justify-center border border-gray-100 relative overflow-hidden">
+                      <ImageWithSkeleton
                         src={currentMainImage}
                         alt={product.title}
                         className="w-full h-full object-contain"

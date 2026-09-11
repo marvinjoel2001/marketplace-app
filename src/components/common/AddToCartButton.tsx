@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart, CheckCircle2, Loader2, Check } from 'lucide-react';
 import { useCart, CartItem } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
 
 interface AddToCartButtonProps {
   item: CartItem;
@@ -23,7 +22,6 @@ export function AddToCartButton({
   variant = 'pill',
 }: AddToCartButtonProps) {
   const { addToCart } = useCart();
-  const { isAuthenticated, openAuthModal } = useAuth();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
   const handleClick = (e: React.MouseEvent) => {
@@ -31,20 +29,6 @@ export function AddToCartButton({
     e.stopPropagation();
 
     if (status !== 'idle') return;
-
-    // Exigir inicio de sesión para comprar o añadir al carrito
-    if (!isAuthenticated) {
-      openAuthModal({
-        onComplete: () => {
-          addToCart(item);
-          setStatus('success');
-          setTimeout(() => {
-            setStatus('idle');
-          }, 1600);
-        },
-      });
-      return;
-    }
 
     setStatus('loading');
 
@@ -67,17 +51,17 @@ export function AddToCartButton({
         onClick={handleClick}
         disabled={status === 'loading'}
         aria-label={`Añadir al carrito - ${item.productTitle}`}
-        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 shadow-2xs ${
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-90 shadow-sm ${
           status === 'success'
-            ? 'bg-emerald-600 text-white shadow-md'
+            ? 'bg-emerald-600 text-white shadow-md scale-105'
             : status === 'loading'
             ? 'bg-slate-100 text-slate-400 cursor-wait'
-            : 'border border-slate-200 bg-white hover:bg-[#4F46E5] hover:text-white text-slate-700 hover:border-[#4F46E5]'
+            : 'bg-[#5B4DF0] hover:bg-[#4E3FE0] text-white shadow-indigo-500/20 hover:scale-105'
         } ${className}`}
       >
-        {status === 'loading' && <Loader2 className="w-4 h-4 animate-spin" />}
-        {status === 'success' && <Check className="w-4 h-4 animate-badge-pop stroke-[2.5]" />}
-        {status === 'idle' && <ShoppingCart className="w-4 h-4" />}
+        {status === 'loading' && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+        {status === 'success' && <Check className="w-4 h-4 animate-badge-pop stroke-[2.5] text-white" />}
+        {status === 'idle' && <ShoppingCart className="w-4 h-4 text-white" />}
       </button>
     );
   }

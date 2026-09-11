@@ -30,12 +30,20 @@ interface ProductOfferItem {
   stock: number;
   estimatedDelivery: string;
   isRecommended: boolean;
-  product: {
+  slug?: string;
+  images?: string;
+  image?: string;
+  title?: string;
+  name?: string;
+  category?: { name: string };
+  product?: {
     id: string;
-    title: string;
-    slug: string;
-    basePrice: number;
-    images: string;
+    title?: string;
+    name?: string;
+    slug?: string;
+    basePrice?: number;
+    images?: string;
+    image?: string;
     category?: { name: string };
   };
 }
@@ -106,6 +114,175 @@ export function VendorInventoryDashboard({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotification, setSuccessNotification] = useState('');
+
+  // Edit product modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ProductOfferItem | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editStock, setEditStock] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Delete product confirmation modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<ProductOfferItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const openEditModal = (item: ProductOfferItem) => {
+    const prod = item.product || item;
+    const itemTitle = prod.title || prod.name || '';
+    const rawImgs = prod.images || prod.image || item.images || item.image || '';
+    let parsedImg = '';
+    if (typeof rawImgs === 'string') {
+      try {
+        const arr = JSON.parse(rawImgs);
+        parsedImg = Array.isArray(arr) ? arr[0] || '' : rawImgs;
+      } catch {
+        parsedImg = rawImgs;
+      }
+    } else if (Array.isArray(rawImgs)) {
+      parsedImg = rawImgs[0] || '';
+    }
+
+    setEditingItem(item);
+    setEditTitle(itemTitle);
+    setEditPrice(String(item.price || (prod as any).basePrice || ''));
+    setEditStock(String(item.stock ?? 10));
+    setEditCategory((prod.category as any)?.id || prod.category?.name || categoriesList[0]?.id || '');
+    setEditImageUrl(parsedImg);
+    setEditDescription((prod as any).description || '');
+    setEditIsActive((item as any).isActive !== false);
+    setErrors({});
+    setErrorMessage('');
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    const newErrors: { [key: string]: string } = {};
+    if (!editTitle.trim()) newErrors.editTitle = 'El título es obligatorio';
+    const numPrice = parseFloat(editPrice);
+    if (!editPrice || isNaN(numPrice) || numPrice <= 0) newErrors.editPrice = 'Precio inválido mayor a 0';
+    const numStock = parseInt(editStock, 10);
+    if (isNaN(numStock) || numStock < 0) newErrors.editStock = 'Stock inválido';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsUpdating(true);
+    const prodId = editingItem.product?.id || editingItem.id;
+
+    try {
+      await marketplaceApi.updateProduct(prodId, {
+        title: editTitle.trim(),
+        basePrice: numPrice,
+        stock: numStock,
+        description: editDescription.trim(),
+        images: editImageUrl.trim() ? JSON.stringify([editImageUrl.trim()]) : undefined,
+      }).catch(() => null);
+
+      await marketplaceApi.updateProductStock(prodId, {
+        storeId: currentStoreId,
+        stock: numStock,
+        price: numPrice,
+      }).catch(() => null);
+    } catch {}
+
+    // Update state and localStorage
+    setOffers((prev) =>
+      prev.map((o) => {
+        if (o.id === editingItem.id || o.product?.id === prodId) {
+          return {
+            ...o,
+            price: numPrice,
+            stock: numStock,
+            isActive: editIsActive,
+            product: o.product
+              ? {
+                  ...o.product,
+                  title: editTitle.trim(),
+                  basePrice: numPrice,
+                  images: editImageUrl.trim() ? JSON.stringify([editImageUrl.trim()]) : o.product.images,
+                }
+              : undefined,
+          };
+        }
+        return o;
+      })
+    );
+
+    try {
+      const stored = JSON.parse(localStorage.getItem(`vitrina_products_${currentStoreId}`) || '[]');
+      const updated = stored.map((p: any) => {
+        if (p.id === editingItem.id || p.product?.id === prodId) {
+          return {
+            ...p,
+            price: numPrice,
+            stock: numStock,
+            isActive: editIsActive,
+            product: p.product ? { ...p.product, title: editTitle.trim(), basePrice: numPrice } : undefined,
+          };
+        }
+        return p;
+      });
+      localStorage.setItem(`vitrina_products_${currentStoreId}`, JSON.stringify(updated));
+    } catch {}
+
+    setIsUpdating(false);
+    setIsEditModalOpen(false);
+    setSuccessNotification(`¡Producto "${editTitle}" actualizado con éxito!`);
+    setTimeout(() => setSuccessNotification(''), 4000);
+  };
+
+  const confirmDeleteProduct = (item: ProductOfferItem) => {
+    setItemToDelete(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
+    const prodId = itemToDelete.product?.id || itemToDelete.id;
+
+    try {
+      await marketplaceApi.deleteProduct(prodId).catch(() => null);
+    } catch {}
+
+    setOffers((prev) => prev.filter((o) => o.id !== itemToDelete.id && o.product?.id !== prodId));
+
+    try {
+      const stored = JSON.parse(localStorage.getItem(`vitrina_products_${currentStoreId}`) || '[]');
+      const updated = stored.filter((p: any) => p.id !== itemToDelete.id && p.product?.id !== prodId);
+      localStorage.setItem(`vitrina_products_${currentStoreId}`, JSON.stringify(updated));
+
+      const allUserProds = JSON.parse(localStorage.getItem('vitrina_all_user_products') || '[]');
+      const updatedAll = allUserProds.filter((p: any) => p.id !== itemToDelete.id && p.product?.id !== prodId);
+      localStorage.setItem('vitrina_all_user_products', JSON.stringify(updatedAll));
+    } catch {}
+
+    setIsDeleting(false);
+    setIsDeleteModalOpen(false);
+    setItemToDelete(null);
+    setSuccessNotification('Producto eliminado del catálogo.');
+    setTimeout(() => setSuccessNotification(''), 4000);
+  };
+
+  const toggleProductActive = (item: ProductOfferItem) => {
+    const isNowActive = (item as any).isActive === false ? true : false;
+    setOffers((prev) =>
+      prev.map((o) => (o.id === item.id ? { ...o, isActive: isNowActive } : o))
+    );
+    setSuccessNotification(isNowActive ? 'Producto activado en el catálogo.' : 'Producto pausado.');
+    setTimeout(() => setSuccessNotification(''), 3000);
+  };
 
   // Fetch real categories from backend on mount
   useEffect(() => {
@@ -495,26 +672,49 @@ export function VendorInventoryDashboard({
                         </span>
                       </td>
                       <td className="p-3.5">
-                        <span className="inline-flex items-center space-x-1 text-green-600 text-[10px] font-bold">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Activo en Catálogo</span>
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleProductActive(item)}
+                          className="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                          title="Clic para cambiar estado"
+                        >
+                          {(item as any).isActive !== false ? (
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Activo</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1 border border-slate-200">
+                              <X className="w-3 h-3" />
+                              <span>Pausado</span>
+                            </span>
+                          )}
+                        </button>
                       </td>
                       <td className="p-3.5 text-right">
                         <div className="flex items-center justify-end space-x-1.5">
                           <Link
-                            href={`/product/${item.product.slug || item.product.id}`}
+                            href={`/product/${itemSlug}`}
                             className="p-1.5 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-colors"
                             title="Ver en tienda"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
                           <button
-                            onClick={() => alert(`Editar precio/stock para: ${item.product.title}`)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
-                            title="Editar"
+                            type="button"
+                            onClick={() => openEditModal(item)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
+                            title="Editar producto"
                           >
                             <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => confirmDeleteProduct(item)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Eliminar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -753,6 +953,191 @@ export function VendorInventoryDashboard({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edición de Producto */}
+      {isEditModalOpen && editingItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border border-gray-100 my-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center space-x-2">
+                <Edit2 className="w-5 h-5 text-amber-500" />
+                <h3 className="font-extrabold text-lg text-gray-900">Editar Producto</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setErrors({});
+                  setIsEditModalOpen(false);
+                }}
+                className="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                aria-label="Cerrar modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs flex items-center space-x-2 border border-red-100">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">
+                  Nombre del Producto <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                    errors.editTitle ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                  } outline-hidden focus:border-amber-400`}
+                />
+                {errors.editTitle && <p className="text-red-500 text-[11px] mt-1">{errors.editTitle}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    Precio de Venta (Bs.) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    required
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                      errors.editPrice ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                    } outline-hidden focus:border-amber-400`}
+                  />
+                  {errors.editPrice && <p className="text-red-500 text-[11px] mt-1">{errors.editPrice}</p>}
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    Stock Disponible <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={editStock}
+                    onChange={(e) => setEditStock(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                      errors.editStock ? 'border-red-500 bg-red-50/20' : 'border-gray-200'
+                    } outline-hidden focus:border-amber-400`}
+                  />
+                  {errors.editStock && <p className="text-red-500 text-[11px] mt-1">{errors.editStock}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">URL de la Imagen</label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={editImageUrl}
+                  onChange={(e) => setEditImageUrl(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 outline-hidden focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">Descripción</label>
+                <textarea
+                  rows={3}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 outline-hidden focus:border-amber-400"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <span className="font-bold text-slate-900 block">Estado en el Catálogo</span>
+                  <span className="text-[11px] text-slate-500">
+                    {editIsActive ? 'Visible para compras de clientes y TikTok Live' : 'Pausado temporalmente'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditIsActive(!editIsActive)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                    editIsActive
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {editIsActive ? '✓ Activo' : 'Pausado'}
+                </button>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-full hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-full transition-all disabled:opacity-50"
+                >
+                  {isUpdating ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {isDeleteModalOpen && itemToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95">
+            <div className="flex items-center space-x-3 text-red-600 mb-4">
+              <div className="p-2 rounded-xl bg-red-50 border border-red-100">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <h3 className="font-extrabold text-base text-gray-900">¿Eliminar producto?</h3>
+            </div>
+
+            <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+              ¿Estás seguro de que deseas eliminar{' '}
+              <strong className="text-gray-900">
+                {itemToDelete.product?.title || itemToDelete.title}
+              </strong>{' '}
+              del catálogo? Esta acción no se puede deshacer.
+            </p>
+
+            <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 font-bold text-xs rounded-full hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteProduct}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full transition-all shadow-sm disabled:opacity-50"
+              >
+                {isDeleting ? 'Eliminando...' : 'Sí, Eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}

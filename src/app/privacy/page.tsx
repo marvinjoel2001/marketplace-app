@@ -178,6 +178,34 @@ export default function PrivacyPage() {
     },
   ];
 
+  const handleExportData = () => {
+    let userData: any = {};
+    let ordersData: any = [];
+    try {
+      userData = JSON.parse(localStorage.getItem('vitrina_user') || '{}');
+      ordersData = JSON.parse(localStorage.getItem('vitrina_orders') || '[]');
+    } catch {}
+
+    const exportPayload = {
+      platform: 'Vitrina Market Bolivia',
+      exportedAt: new Date().toISOString(),
+      userProfile: userData,
+      orderHistory: ordersData,
+      policyVersion: 'September 2026',
+      legalFramework: 'ASFI & SIN Bolivia Data Compliance',
+    };
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vitrina_mis_datos_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-4">
       {/* Breadcrumb */}
@@ -209,8 +237,8 @@ export default function PrivacyPage() {
 
         <div className="flex flex-col sm:flex-row gap-2 shrink-0">
           <button
-            onClick={() => alert(language === 'es' ? 'Solicitud de descarga de datos generada. Enviaremos un archivo seguro a tu correo.' : 'Data export request submitted. We will send a secure file to your email.')}
-            className="px-5 py-2.5 rounded-full border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center space-x-2 shadow-2xs transition-all"
+            onClick={handleExportData}
+            className="px-5 py-2.5 rounded-full border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center space-x-2 shadow-2xs transition-all cursor-pointer"
           >
             <Key className="w-4 h-4 text-emerald-600" />
             <span>{language === 'es' ? 'Descargar Mis Datos' : 'Export My Data'}</span>

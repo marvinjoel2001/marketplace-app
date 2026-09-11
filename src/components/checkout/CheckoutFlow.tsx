@@ -21,6 +21,7 @@ import {
   Lock,
   X,
   Clock,
+  ShoppingBag,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useCart } from '@/context/CartContext';
@@ -46,6 +47,12 @@ export function CheckoutFlow() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [orderCreated, setOrderCreated] = useState<any>(null);
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Validation state
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [generalError, setGeneralError] = useState('');
@@ -60,29 +67,10 @@ export function CheckoutFlow() {
     }
   }, [user, savedCity]);
 
-  // Default item fallback if cart is empty for demo purposes
-  const displayItems =
-    cart.length > 0
-      ? cart
-      : [
-          {
-            productOfferId: 'demo-offer',
-            productId: 'demo-prod',
-            productTitle: 'Chompa Oversize Beige - Talla M',
-            productSlug: 'chompa-oversize-beige-talla-m',
-            storeId: 'store-modabol',
-            storeName: 'ModaBol (Tienda Oficial)',
-            unitPrice: 189,
-            quantity: 1,
-            productImage: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500',
-            shippingCost: 0,
-            estimatedDelivery: 'Llega mañana con OpenDSP',
-          },
-        ];
-
-  const currentSubtotal = cart.length > 0 ? subtotal : 189;
-  const currentShipping = cart.length > 0 ? shippingFee : 0;
-  const currentTotal = currentSubtotal + currentShipping;
+  const displayItems = cart;
+  const currentSubtotal = subtotal;
+  const currentShipping = shippingFee;
+  const currentTotal = totalAmount;
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
@@ -126,9 +114,17 @@ export function CheckoutFlow() {
         origin: { y: 0.6 },
       });
 
-      // Save to localStorage for instant tracking resilience
+      // Save to localStorage for instant tracking resilience & vendor visibility
       if (typeof window !== 'undefined') {
         localStorage.setItem('vitrina_last_order', JSON.stringify(order));
+        try {
+          const stored = localStorage.getItem('vitrina_orders');
+          const list = stored ? JSON.parse(stored) : [];
+          list.unshift(order);
+          localStorage.setItem('vitrina_orders', JSON.stringify(list));
+        } catch {
+          // ignore
+        }
       }
 
       // Redirect to live DSP tracking after celebration
@@ -139,19 +135,35 @@ export function CheckoutFlow() {
       // Fallback demo order creation
       const mockOrderNumber = `CY-${Date.now().toString().slice(-6)}-412`;
       const fallbackOrder = {
-        id: 'demo-order-id',
+        id: `demo-${Date.now()}`,
         orderNumber: mockOrderNumber,
         customerName: customerName || user?.name || 'Juan Pérez',
         customerPhone: customerPhone || user?.phone || '+591 77098765',
         customerAddress: customerAddress || 'Santa Cruz, Bolivia',
         totalAmount: currentTotal,
-        paymentMethod: 'QR_SIMPLE',
+        paymentMethod: paymentMethod === 'QR' ? 'QR_SIMPLE' : paymentMethod === 'CARD' ? 'CREDIT_CARD' : 'TIGO_MONEY',
         status: 'CONFIRMED',
         dspEstimatedMinutes: 18,
+        createdAt: new Date().toISOString(),
+        items: displayItems.map((it) => ({
+          productTitle: it.productTitle,
+          storeName: it.storeName,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          productImage: it.productImage,
+        })),
       };
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('vitrina_last_order', JSON.stringify(fallbackOrder));
+        try {
+          const stored = localStorage.getItem('vitrina_orders');
+          const list = stored ? JSON.parse(stored) : [];
+          list.unshift(fallbackOrder);
+          localStorage.setItem('vitrina_orders', JSON.stringify(list));
+        } catch {
+          // ignore
+        }
       }
 
       setOrderCreated(fallbackOrder);
@@ -208,6 +220,31 @@ export function CheckoutFlow() {
 
     handleConfirmOrder();
   };
+
+  if (isMounted && cart.length === 0) {
+    return (
+      <div className="min-h-[55vh] flex flex-col items-center justify-center text-center p-8 sm:p-12 bg-white rounded-3xl border border-gray-100 shadow-sm my-6 max-w-xl mx-auto">
+        <div className="w-20 h-20 rounded-3xl bg-indigo-50 text-[#4F46E5] flex items-center justify-center mb-5 shadow-xs">
+          <ShoppingBag className="w-10 h-10" />
+        </div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">
+          {language === 'es' ? 'Tu carrito está vacío' : 'Your cart is empty'}
+        </h2>
+        <p className="text-gray-500 text-sm leading-relaxed max-w-sm mb-8">
+          {language === 'es'
+            ? 'Aún no has agregado productos a tu carrito. Explora nuestras tiendas oficiales y encuentra increíbles ofertas.'
+            : 'You have not added products to your cart yet. Explore our official stores and find great deals.'}
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 px-8 py-3.5 bg-[#4F46E5] hover:bg-[#4338CA] text-white font-black text-sm rounded-full shadow-lg shadow-indigo-200 transition-all hover:scale-105 active:scale-95"
+        >
+          <span>{language === 'es' ? 'Explorar Tiendas y Catálogo' : 'Browse Stores & Catalog'}</span>
+          <ChevronRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

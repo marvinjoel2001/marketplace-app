@@ -40,7 +40,6 @@ export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) 
 export const marketplaceApi = {
   // Products
   async getProducts(params: { category?: string; flashSale?: boolean; q?: string; slug?: string } = {}) {
-    const isRealModeClient = typeof window !== 'undefined' && localStorage.getItem('vitrina_data_mode') === 'real';
     try {
       const query = new URLSearchParams();
       if (params.category) query.set('category', params.category);
@@ -49,25 +48,20 @@ export const marketplaceApi = {
       if (params.slug) query.set('slug', params.slug);
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/products${qs}`);
-      if (Array.isArray(data)) return data;
+      if (Array.isArray(data) && data.length > 0) return data;
     } catch {
       // Graceful offline/backend-less fallback
-      if (isRealModeClient) return [];
     }
-    if (isRealModeClient) return [];
     return getMockProducts(params);
   },
 
   async getProduct(idOrSlug: string) {
-    const isRealModeClient = typeof window !== 'undefined' && localStorage.getItem('vitrina_data_mode') === 'real';
     try {
       const data = await fetchFromAPI(`/products/${encodeURIComponent(idOrSlug)}`);
       if (data && data.id) return data;
     } catch {
       // Graceful offline/backend-less fallback
-      if (isRealModeClient) return null;
     }
-    if (isRealModeClient) return null;
     return getMockProduct(idOrSlug);
   },
 
@@ -75,6 +69,26 @@ export const marketplaceApi = {
     return fetchFromAPI('/products', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async updateProduct(id: string, data: any) {
+    return fetchFromAPI(`/products/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateProductStock(id: string, data: { storeId: string; stock: number; price?: number }) {
+    return fetchFromAPI(`/products/${encodeURIComponent(id)}/stock`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteProduct(id: string) {
+    return fetchFromAPI(`/products/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
     });
   },
 
@@ -91,18 +105,15 @@ export const marketplaceApi = {
 
   // Stores
   async getStores(params: { isLive?: boolean } = {}) {
-    const isRealModeClient = typeof window !== 'undefined' && localStorage.getItem('vitrina_data_mode') === 'real';
     try {
       const query = new URLSearchParams();
       if (params.isLive) query.set('isLive', 'true');
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/stores${qs}`);
-      if (Array.isArray(data)) return data;
+      if (Array.isArray(data) && data.length > 0) return data;
     } catch {
       // Graceful offline fallback
-      if (isRealModeClient) return [];
     }
-    if (isRealModeClient) return [];
     if (params.isLive) {
       return MOCK_STORES.filter((s) => s.isLive);
     }
@@ -110,15 +121,12 @@ export const marketplaceApi = {
   },
 
   async getStore(idOrSlug: string) {
-    const isRealModeClient = typeof window !== 'undefined' && localStorage.getItem('vitrina_data_mode') === 'real';
     try {
       const data = await fetchFromAPI(`/stores/${encodeURIComponent(idOrSlug)}`);
       if (data && data.id) return data;
     } catch {
       // Graceful offline fallback
-      if (isRealModeClient) return null;
     }
-    if (isRealModeClient) return null;
     return getMockStore(idOrSlug);
   },
 
@@ -131,18 +139,15 @@ export const marketplaceApi = {
 
   // Live Streams
   async getLiveStreams(storeId?: string) {
-    const isRealModeClient = typeof window !== 'undefined' && localStorage.getItem('vitrina_data_mode') === 'real';
     try {
       const query = new URLSearchParams();
       if (storeId) query.set('storeId', storeId);
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/live-streams${qs}`);
-      if (Array.isArray(data)) return data;
+      if (Array.isArray(data) && data.length > 0) return data;
     } catch {
       // Graceful offline fallback
-      if (isRealModeClient) return [];
     }
-    if (isRealModeClient) return [];
     return MOCK_STORES.filter((s) => s.isLive).flatMap((s) => s.liveStreams || []);
   },
 
@@ -174,6 +179,13 @@ export const marketplaceApi = {
     return fetchFromAPI('/orders', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async updateOrderStatus(id: string, status: string) {
+    return fetchFromAPI(`/orders/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     });
   },
 

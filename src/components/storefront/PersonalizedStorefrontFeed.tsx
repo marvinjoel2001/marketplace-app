@@ -12,6 +12,7 @@ import { usePersonalization } from '@/hooks/usePersonalization';
 import { FeaturedProductsGrid } from './FeaturedProductsGrid';
 import { formatBs } from '@/lib/utils';
 import { AddToCartButton } from '@/components/common/AddToCartButton';
+import { ImageWithSkeleton } from '@/components/common/ImageWithSkeleton';
 import { useDataMode } from '@/context/DataModeContext';
 
 interface PersonalizedStorefrontFeedProps {
@@ -93,10 +94,10 @@ export function PersonalizedStorefrontFeed({
               return (
                 <div
                   key={item.id}
-                  className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs hover:shadow-md transition-all duration-200 flex space-x-3.5 items-center"
+                  className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs hover-card-3d transition-all duration-300 flex space-x-3.5 items-center"
                 >
-                  <div className="w-20 h-20 rounded-xl bg-slate-50 p-2 shrink-0 flex items-center justify-center overflow-hidden">
-                    <img src={img} alt={item.title} className="w-full h-full object-contain" />
+                  <div className="w-20 h-20 rounded-xl bg-slate-50 p-2 shrink-0 flex items-center justify-center overflow-hidden relative">
+                    <ImageWithSkeleton src={img} alt={item.title} className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-[10px] text-slate-400 font-semibold block truncate">
@@ -159,17 +160,17 @@ export function PersonalizedStorefrontFeed({
             {recentlyViewed.slice(0, 6).map((item) => (
               <div
                 key={item.id}
-                className="bg-slate-50/50 rounded-xl p-3 border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all flex flex-col justify-between group"
+                className="bg-slate-50/50 rounded-xl p-3 border border-slate-100 hover-card-3d transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
                   <Link
                     href={`/product/${item.slug}`}
-                    className="block aspect-square w-full rounded-lg bg-white p-2 border border-slate-100 mb-2 overflow-hidden flex items-center justify-center"
+                    className="block aspect-square w-full rounded-lg bg-white p-2 border border-slate-100 mb-2 overflow-hidden flex items-center justify-center relative"
                   >
-                    <img
+                    <ImageWithSkeleton
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
                   </Link>
                   <p className="text-[10px] text-slate-400 truncate">{item.storeName}</p>

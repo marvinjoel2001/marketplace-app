@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useDataMode } from '@/context/DataModeContext';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { ImageWithSkeleton } from '@/components/common/ImageWithSkeleton';
 
 export function HeroBanner() {
   const { language } = useLanguage();
@@ -165,31 +166,23 @@ export function HeroBanner() {
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
-    const executeBuy = () => {
-      addToCart({
-        productId: 'roco-wireless-headphones',
-        productTitle: `${current.titleLine1} ${current.titleLine2}`,
-        productSlug: 'roco-wireless-headphones',
-        unitPrice: 89.0,
-        productImage: current.heroImage,
-        storeName: 'Vitrina Market Oficial',
-        storeId: 'vitrina-oficial',
-        shippingCost: 0,
-        quantity: 1,
-      });
-      router.push('/checkout');
-    };
+    const numericPrice = parseFloat(current.price.replace(/[^0-9.]/g, '')) || 89.0;
+    const slug = current.productUrl.startsWith('/product/')
+      ? current.productUrl.replace('/product/', '')
+      : 'roco-wireless-headphones';
 
-    if (!isAuthenticated) {
-      openAuthModal({
-        onComplete: () => {
-          executeBuy();
-        },
-      });
-      return;
-    }
-
-    executeBuy();
+    addToCart({
+      productId: slug,
+      productTitle: `${current.titleLine1} ${current.titleLine2}`,
+      productSlug: slug,
+      unitPrice: numericPrice,
+      productImage: current.heroImage,
+      storeName: 'Vitrina Market Oficial',
+      storeId: 'vitrina-oficial',
+      shippingCost: 0,
+      quantity: 1,
+    });
+    router.push('/checkout');
   };
 
   return (
@@ -291,13 +284,17 @@ export function HeroBanner() {
         {/* Right Column (45% width): Headphone on desk + Floating Deal Badge + Mini Preview Thumbnail */}
         <div className="lg:col-span-5 relative flex items-center justify-center">
           {/* Main Product Photography */}
-          <div className="relative w-full max-w-[420px] aspect-4/3 sm:aspect-square rounded-3xl overflow-hidden group">
-            <img
+          <Link
+            href={current.productUrl}
+            className="relative w-full max-w-[420px] aspect-4/3 sm:aspect-square rounded-3xl overflow-hidden group block cursor-pointer"
+          >
+            <ImageWithSkeleton
               src={current.heroImage}
               alt={current.titleLine1}
-              className="w-full h-full object-contain rounded-2xl group-hover:scale-102 transition-transform duration-500"
+              containerClassName="w-full h-full rounded-2xl"
+              className="w-full h-full object-contain rounded-2xl group-hover:scale-105 transition-transform duration-500"
             />
-          </div>
+          </Link>
 
           {/* Floating Deal Badge at top right */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-6 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/80 shadow-lg px-4 py-2 text-center select-none animate-float-gentle">
@@ -312,16 +309,17 @@ export function HeroBanner() {
           {/* Floating Thumbnail Preview Card at bottom right with mini arrow */}
           <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-6 flex items-center space-x-2">
             <div className="w-14 h-14 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/80 shadow-md p-1 overflow-hidden">
-              <img
+              <ImageWithSkeleton
                 src={current.thumbImage}
                 alt="Vista miniatura"
+                containerClassName="w-full h-full rounded-xl"
                 className="w-full h-full object-cover rounded-xl"
               />
             </div>
             <button
               onClick={() => setActiveSlide((prev) => (prev === demoSlides.length - 1 ? 0 : prev + 1))}
               aria-label="Ver siguiente detalle"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-md border border-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-md border border-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer active:scale-90"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

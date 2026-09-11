@@ -73,6 +73,27 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
     plate: '4829-KPL (Honda Navi Roja)',
   });
 
+  // Rehidratar con la orden real guardada localmente si el backend no la tiene
+  useEffect(() => {
+    try {
+      const lastOrderRaw = localStorage.getItem('vitrina_last_order');
+      if (lastOrderRaw) {
+        const parsed = JSON.parse(lastOrderRaw);
+        if (
+          parsed.orderNumber === initialOrder.orderNumber ||
+          parsed.id === initialOrder.id ||
+          initialOrder.orderNumber === 'CY-894120-412'
+        ) {
+          setOrder((prev) => ({
+            ...prev,
+            ...parsed,
+            items: parsed.items && parsed.items.length > 0 ? parsed.items : prev.items,
+          }));
+        }
+      }
+    } catch {}
+  }, [initialOrder.orderNumber, initialOrder.id]);
+
   // Polling de telemetría y estado en tiempo real cada 5 segundos
   useEffect(() => {
     let isMounted = true;
@@ -326,13 +347,18 @@ export function LiveTrackingView({ order: initialOrder }: OrderTrackingProps) {
                 <Phone className="w-3.5 h-3.5" />
                 <span>Llamar</span>
               </a>
-              <button
-                onClick={() => alert('Abriendo chat de soporte OpenDSP con el repartidor...')}
-                className="py-2.5 px-4 rounded-full border border-slate-200 bg-white/80 hover:bg-white text-slate-800 font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+              <a
+                href={`https://wa.me/${driverInfo.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                  `Hola ${driverInfo.name}, te escribo respecto a la entrega de mi pedido ${order.orderNumber || ''} en Vitrina Market.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2.5 px-4 rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                title="Abrir WhatsApp con el repartidor"
               >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Mensaje</span>
-              </button>
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                <span>WhatsApp</span>
+              </a>
             </div>
           </div>
 

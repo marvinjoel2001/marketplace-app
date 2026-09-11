@@ -4,9 +4,48 @@ import { Scale, ChevronRight, Store, Truck, ShieldCheck, ArrowRight, Star } from
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 import { formatBs } from '@/lib/utils';
 
+import { marketplaceApi } from '@/lib/api';
+
 export const dynamic = 'force-dynamic';
 
-export default function CompareHubPage() {
+export default async function CompareHubPage() {
+  let productsToDisplay: any[] = MOCK_PRODUCTS;
+
+  try {
+    const res = await marketplaceApi.getProducts();
+    if (Array.isArray(res) && res.length > 0) {
+      productsToDisplay = res.map((p: any) => {
+        let imgs = p.images;
+        if (Array.isArray(imgs)) {
+          imgs = JSON.stringify(imgs);
+        } else if (typeof imgs !== 'string') {
+          imgs = JSON.stringify(['https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=300']);
+        }
+
+        return {
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          images: imgs,
+          category: {
+            name: p.category?.name || 'General',
+            slug: p.category?.slug || 'general',
+          },
+          basePrice: p.minPrice || p.price || 199,
+          offers: p.offers || [
+            {
+              id: `offer-${p.id}`,
+              price: p.minPrice || p.price || 199,
+              store: { name: 'Tienda Oficial Vitrina' },
+            },
+          ],
+        };
+      });
+    }
+  } catch {
+    // fallback to MOCK_PRODUCTS
+  }
+
   return (
     <div className="space-y-8">
       {/* Breadcrumb */}
@@ -44,7 +83,7 @@ export default function CompareHubPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_PRODUCTS.map((product) => {
+          {productsToDisplay.map((product) => {
             let img = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=300';
             try {
               img = JSON.parse(product.images)[0] || img;
@@ -53,8 +92,8 @@ export default function CompareHubPage() {
             }
 
             const offersCount = product.offers?.length || 1;
-            const minPrice = Math.min(...(product.offers?.map((o) => o.price) || [product.basePrice]));
-            const maxPrice = Math.max(...(product.offers?.map((o) => o.price) || [product.basePrice]));
+            const minPrice = Math.min(...(product.offers?.map((o: any) => o.price) || [product.basePrice]));
+            const maxPrice = Math.max(...(product.offers?.map((o: any) => o.price) || [product.basePrice]));
 
             return (
               <div

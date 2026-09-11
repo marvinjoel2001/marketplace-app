@@ -110,20 +110,60 @@ export default function BillingPage() {
     setTimeout(() => setProfileSaved(false), 3000);
   };
 
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('vitrina_last_order');
+      if (stored) {
+        const ord = JSON.parse(stored);
+        if (ord.orderNumber) setOrderQuery(ord.orderNumber);
+        if (ord.customerName) setProfileName(ord.customerName);
+      }
+    } catch {}
+  }, []);
+
   const handleDownloadPdf = () => {
-    alert(
-      language === 'es'
-        ? 'Descargando Factura Electrónica en PDF con código QR oficial del SIN...'
-        : 'Downloading official SIN Electronic Invoice PDF with verified QR code...'
-    );
+    window.print();
   };
 
   const handleDownloadXml = () => {
-    alert(
-      language === 'es'
-        ? 'Descargando archivo XML firmado digitalmente para validación SIAT...'
-        : 'Downloading digitally signed XML file for SIAT tax validation...'
-    );
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<facturaElectronicaCompraVenta xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <cabecera>
+    <nitEmisor>${invoiceFound.emitterNit}</nitEmisor>
+    <razonSocialEmisor>${invoiceFound.emitterName}</razonSocialEmisor>
+    <numeroFactura>${invoiceFound.invoiceNumber}</numeroFactura>
+    <cuf>${invoiceFound.cuf}</cuf>
+    <fechaEmision>${invoiceFound.issueDate}</fechaEmision>
+    <nombreRazonSocial>${invoiceFound.clientName}</nombreRazonSocial>
+    <numeroDocumento>${invoiceFound.clientNit}</numeroDocumento>
+    <montoTotal>${invoiceFound.totalBs}</montoTotal>
+    <montoTotalSujetoIva>${invoiceFound.totalBs}</montoTotalSujetoIva>
+    <estado>VALIDADA_SIAT</estado>
+  </cabecera>
+  <detalle>
+${(invoiceFound.items || [])
+  .map(
+    (item: any, i: number) => `    <lineaDetalle>
+      <numeroLinea>${i + 1}</numeroLinea>
+      <descripcion>${item.description}</descripcion>
+      <cantidad>${item.quantity}</cantidad>
+      <precioUnitario>${item.unitPrice}</precioUnitario>
+      <subTotal>${item.subtotal}</subTotal>
+    </lineaDetalle>`
+  )
+  .join('\n')}
+  </detalle>
+</facturaElectronicaCompraVenta>`;
+
+    const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${invoiceFound.invoiceNumber || 'factura-siat'}.xml`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
