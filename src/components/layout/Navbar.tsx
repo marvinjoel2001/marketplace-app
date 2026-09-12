@@ -179,6 +179,16 @@ export function Navbar() {
                   📦 Catálogo & Stock
                 </Link>
                 <Link
+                  href="/vendor/offers"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center space-x-1 ${
+                    pathname === '/vendor/offers'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-amber-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <span>🔥 Ofertas & Promos</span>
+                </Link>
+                <Link
                   href="/vendor/live"
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
                     pathname === '/vendor/live'

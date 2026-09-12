@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Users,
   QrCode,
+  Flame,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -100,8 +101,8 @@ export default function VendorHubPage() {
           </div>
         </div>
 
-        {/* 4 Core Pillars: Catálogo, Perfil & Fotos, Pedidos OpenDSP, TikTok Live */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Core Pillars: Catálogo, Ofertas Flash, Perfil & Fotos, Pedidos OpenDSP, TikTok Live */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Card 1: Catálogo e Inventario */}
           <Link
             href="/vendor/inventory"
@@ -117,14 +118,46 @@ export default function VendorHubPage() {
                 </h2>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   {language === 'es'
-                    ? 'Publica productos, define precios en Bs., controla el stock y activa promociones.'
-                    : 'List products, set prices in Bs., manage stock and activate flash sales.'}
+                    ? 'Publica productos, define precios en Bs., controla el stock y organiza tus artículos.'
+                    : 'List products, set prices in Bs., manage stock and organize items.'}
                 </p>
               </div>
             </div>
 
             <div className="pt-6 flex items-center text-xs font-bold text-emerald-700 space-x-1 group-hover:translate-x-1 transition-transform">
               <span>{language === 'es' ? 'Gestionar productos' : 'Manage products'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          {/* Card: Ofertas Flash & Cupones */}
+          <Link
+            href="/vendor/offers"
+            className="group bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:border-orange-300 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Flame className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <h2 className="text-base font-black text-slate-900">
+                    {language === 'es' ? 'Ofertas Flash & Cupones' : 'Flash Sales & Coupons'}
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700">
+                    HOT
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {language === 'es'
+                    ? 'Activa descuentos con reloj regresivo, insignias de liquidación y cupones de descuento.'
+                    : 'Activate countdown discounts, clearance badges and promo coupons.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-6 flex items-center text-xs font-bold text-orange-600 space-x-1 group-hover:translate-x-1 transition-transform">
+              <span>{language === 'es' ? 'Configurar ofertas' : 'Configure offers'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </Link>

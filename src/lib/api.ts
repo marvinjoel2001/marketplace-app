@@ -137,6 +137,57 @@ export const marketplaceApi = {
     });
   },
 
+  // Store Offers & Promotions
+  async getStoreOffers(storeId: string) {
+    try {
+      return await fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/offers`);
+    } catch {
+      return [];
+    }
+  },
+
+  async createFlashOffer(storeId: string, data: any) {
+    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/offers/flash`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async toggleOfferPromo(storeId: string, offerId: string) {
+    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/offers/${encodeURIComponent(offerId)}/toggle`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Store Coupons
+  async getStoreCoupons(storeId: string) {
+    try {
+      return await fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/coupons`);
+    } catch {
+      return [];
+    }
+  },
+
+  async createStoreCoupon(storeId: string, data: any) {
+    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/coupons`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteStoreCoupon(storeId: string, couponId: string) {
+    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/coupons/${encodeURIComponent(couponId)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async validateCoupon(code: string, storeId?: string, amount?: number) {
+    const query = new URLSearchParams({ code });
+    if (storeId) query.set('storeId', storeId);
+    if (amount) query.set('amount', amount.toString());
+    return fetchFromAPI(`/stores/coupons/validate?${query.toString()}`);
+  },
+
   // Live Streams
   async getLiveStreams(storeId?: string) {
     try {
@@ -271,6 +322,102 @@ export const marketplaceApi = {
         liveStreamsNow: 7,
       };
     }
+  },
+
+  // Admin Stores Management
+  async getAdminStores() {
+    return fetchFromAPI('/admin/stores');
+  },
+
+  async updateStoreStatus(id: string, status: string) {
+    return fetchFromAPI(`/admin/stores/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async updateStoreAdmin(id: string, data: any) {
+    return fetchFromAPI(`/admin/stores/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteStoreAdmin(id: string) {
+    return fetchFromAPI(`/admin/stores/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Admin Users Management
+  async getAdminUsers() {
+    return fetchFromAPI('/admin/users');
+  },
+
+  async updateUserRole(id: string, role: string) {
+    return fetchFromAPI(`/admin/users/${encodeURIComponent(id)}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  async updateUserStatus(id: string, status: string) {
+    return fetchFromAPI(`/admin/users/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async deleteUserAdmin(id: string) {
+    return fetchFromAPI(`/admin/users/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Admin Orders Management
+  async getAdminOrders(params?: { storeId?: string; status?: string }) {
+    const query = new URLSearchParams();
+    if (params?.storeId) query.set('storeId', params.storeId);
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return fetchFromAPI(`/admin/orders${qs}`);
+  },
+
+  async cancelOrderAdmin(id: string, reason?: string) {
+    return fetchFromAPI(`/admin/orders/${encodeURIComponent(id)}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  // Admin Products Moderation
+  async getAdminProducts() {
+    return fetchFromAPI('/admin/products');
+  },
+
+  async moderateProductAdmin(id: string, status: string) {
+    return fetchFromAPI(`/admin/products/${encodeURIComponent(id)}/moderate`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async deleteProductAdmin(id: string) {
+    return fetchFromAPI(`/admin/products/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Admin Payment Configs
+  async getPaymentConfigs() {
+    return fetchFromAPI('/admin/payment-configs');
+  },
+
+  async updatePaymentConfig(key: string, data: any) {
+    return fetchFromAPI(`/admin/payment-configs/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 
   // Auth & Progressive Profiling
