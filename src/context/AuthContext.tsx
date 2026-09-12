@@ -7,6 +7,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
+  role?: 'CUSTOMER' | 'VENDOR' | 'ADMIN';
   avatar?: string;
   provider: string;
   phone?: string;
@@ -49,6 +50,8 @@ interface AuthContextType {
     addressReference?: string;
     nitOrCi?: string;
   }) => Promise<void>;
+  isVendor: boolean;
+  setUserRole: (role: 'CUSTOMER' | 'VENDOR') => void;
   setActiveStore: (store: { id: string; name: string; slug?: string }) => void;
   logout: () => void;
 }
@@ -113,6 +116,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOnCompleteCallback(null);
   }, []);
 
+  const isVendor = Boolean(
+    user?.role === 'VENDOR' || user?.activeStoreId || (typeof window !== 'undefined' && localStorage.getItem(STORE_STORAGE_KEY))
+  );
+
+  const setUserRole = useCallback((role: 'CUSTOMER' | 'VENDOR') => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated: UserProfile = { ...prev, role };
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   const setActiveStore = useCallback((store: { id: string; name: string; slug?: string }) => {
     try {
       localStorage.setItem(STORE_STORAGE_KEY, JSON.stringify(store));
@@ -124,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: `usr_${Date.now().toString(36)}`,
           email: `${store.slug || 'tienda'}@vitrinamarket.bo`,
           name: store.name,
+          role: 'VENDOR',
           provider: 'DIRECT',
           activeStoreId: store.id,
           activeStoreName: store.name,
@@ -134,8 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {}
         return tempUser;
       }
-      const updated = {
+      const updated: UserProfile = {
         ...prev,
+        role: 'VENDOR',
         activeStoreId: store.id,
         activeStoreName: store.name,
         activeStoreSlug: store.slug,
@@ -364,6 +384,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         socialLogin,
         emailLogin,
         enrichProfile,
+        isVendor,
+        setUserRole,
         setActiveStore,
         logout,
       }}

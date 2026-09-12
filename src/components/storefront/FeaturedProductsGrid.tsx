@@ -343,10 +343,10 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
     },
   ];
 
-  // In real mode, render products from DB if available, else render reference cards
+  const hasProductsArray = Array.isArray(products);
   const displayItems: ProductItem[] =
-    isRealMode && products && products.length >= 8
-      ? products.slice(0, 8).map((p, idx) => ({
+    hasProductsArray && products.length > 0
+      ? products.map((p, idx) => ({
           ...p,
           subtitle: p.subtitle || p.category?.name || 'Producto Oficial',
           soldCount: p.soldCount || `${Math.max(12, ((p.basePrice * 7) % 80) + 12)} vendidos`,
@@ -355,27 +355,48 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
           guaranteeTag: p.guaranteeTag || 'Garantía oficial',
           guaranteeIconType: idx % 2 === 0 ? 'shield' : 'rotate',
         }))
+      : hasProductsArray && products.length === 0
+      ? []
       : demoFallbackProducts;
 
   if (!displayItems || displayItems.length === 0) {
     return (
-      <div className="bg-white rounded-3xl p-10 border border-slate-100 text-center max-w-lg mx-auto my-8 shadow-card">
-        <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-          <ShoppingBag className="w-6 h-6 text-slate-400" />
+      <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200/80 text-center max-w-xl mx-auto my-8 shadow-sm animate-in fade-in">
+        <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4 border border-slate-200">
+          <ShoppingBag className="w-8 h-8 text-slate-400" />
         </div>
-        <h3 className="text-base font-bold text-slate-800 mb-1">
-          {language === 'es' ? 'No hay productos disponibles en esta sección' : 'No products available in this section'}
+        <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold mb-2">
+          📍 Santa Cruz de la Sierra
+        </span>
+        <h3 className="text-xl font-black text-slate-900 mb-2">
+          {language === 'es' ? 'No se encontraron publicaciones' : 'No marketplace listings found'}
         </h3>
-        <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">
+        <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto leading-relaxed">
           {language === 'es'
-            ? 'Próximamente se añadirán nuevos artículos a este catálogo.'
-            : 'New items will be added soon to this catalog.'}
+            ? 'No hay productos disponibles con los filtros o término de búsqueda seleccionado. Prueba con otra palabra clave o explora las categorías principales de Santa Cruz.'
+            : 'No products match your search or filter in this area. Try adjusting your search term or browse popular categories.'}
         </p>
+        
+        {/* Sugerencias estilo Facebook Marketplace */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+          <span className="text-[11px] font-bold text-slate-400">Prueba buscar:</span>
+          {['Celulares', 'Audífonos', 'Zapatillas', 'Ropa', 'Smartwatch'].map((kw) => (
+            <Link
+              key={kw}
+              href={`/?q=${encodeURIComponent(kw)}`}
+              className="px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+            >
+              {kw}
+            </Link>
+          ))}
+        </div>
+
         <Link
           href="/"
-          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#5B4DF0] hover:bg-[#4E3FE0] text-white text-xs font-bold transition-all shadow-xs"
+          className="inline-flex items-center space-x-2 px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md active:scale-95"
         >
-          <span>{language === 'es' ? 'Ver todas las categorías' : 'View all categories'}</span>
+          <span>{language === 'es' ? 'Ver todo el catálogo' : 'View all catalog'}</span>
+          <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     );

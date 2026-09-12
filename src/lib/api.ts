@@ -158,6 +158,25 @@ export const marketplaceApi = {
     });
   },
 
+  async startLiveStream(id: string) {
+    return fetchFromAPI(`/live-streams/${encodeURIComponent(id)}/start`, {
+      method: 'POST',
+    });
+  },
+
+  async endLiveStream(id: string) {
+    return fetchFromAPI(`/live-streams/${encodeURIComponent(id)}/end`, {
+      method: 'POST',
+    });
+  },
+
+  async featureLiveProduct(id: string, productId: string) {
+    return fetchFromAPI(`/live-streams/${encodeURIComponent(id)}/feature`, {
+      method: 'POST',
+      body: JSON.stringify({ productId }),
+    });
+  },
+
   // Orders
   async getOrders(limit: number = 20) {
     try {

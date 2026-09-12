@@ -6,13 +6,14 @@ import { BrowseByCategory } from '@/components/storefront/BrowseByCategory';
 import { SpecialOfferBanner } from '@/components/storefront/SpecialOfferBanner';
 import { PersonalizedStorefrontFeed } from '@/components/storefront/PersonalizedStorefrontFeed';
 import { TrustBadgesBar } from '@/components/storefront/TrustBadgesBar';
+import { VendorViewPrompt } from '@/components/vendor/VendorViewPrompt';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; q?: string; flashSale?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; flashSale?: string; view?: string }>;
 }) {
   const params = await searchParams;
   const categorySlug = params.category;
@@ -34,6 +35,9 @@ export default async function HomePage({
 
   return (
     <div className="w-full">
+      {/* Banner de aviso para tiendas que visualizan el marketplace */}
+      <VendorViewPrompt />
+
       {/* If not filtering, show full Vitrina Market Experience */}
       {!isFiltering ? (
         <>

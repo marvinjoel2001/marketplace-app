@@ -29,7 +29,7 @@ import { DataModeToggle } from '@/components/common/DataModeToggle';
 
 export function Navbar() {
   const { totalItems, setIsCartDrawerOpen, savedCity, setSavedCity, cartAnimationTrigger } = useCart();
-  const { user, isAuthenticated, openAuthModal, logout } = useAuth();
+  const { user, isAuthenticated, openAuthModal, logout, isVendor } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -142,6 +142,87 @@ export function Navbar() {
 
       {/* Main Sticky Header (Frosted Glass Floating Container) */}
       <header className="sticky top-0 z-40 bg-white/75 backdrop-blur-2xl border-b border-white/60 shadow-lg shadow-black/5">
+        {/* BARRA SUPERIOR EXCLUSIVA PARA TIENDAS / PANEL ADMIN */}
+        {isAuthenticated && isVendor && (
+          <div className="bg-slate-950 text-white px-4 py-2 border-b border-slate-800 text-xs">
+            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-black text-emerald-400 uppercase tracking-widest text-[10px]">
+                  PANEL ADMIN TIENDA
+                </span>
+                <span className="text-slate-600">•</span>
+                <span className="font-bold text-slate-200 truncate max-w-[180px]">
+                  {user?.activeStoreName || user?.name || 'Mi Tienda Oficial'}
+                </span>
+              </div>
+
+              <nav className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-0.5">
+                <Link
+                  href="/vendor"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    pathname === '/vendor'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  📊 Resumen
+                </Link>
+                <Link
+                  href="/vendor/inventory"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    pathname === '/vendor/inventory'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  📦 Catálogo & Stock
+                </Link>
+                <Link
+                  href="/vendor/live"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
+                    pathname === '/vendor/live'
+                      ? 'bg-[#FE2C55] text-white shadow-xs'
+                      : 'bg-[#FE2C55]/20 text-[#FE2C55] hover:bg-[#FE2C55] hover:text-white'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping"></span>
+                  <span>🔴 TikTok Live Shopping</span>
+                </Link>
+                <Link
+                  href="/vendor/orders"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    pathname === '/vendor/orders'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  🛵 Pedidos
+                </Link>
+                <Link
+                  href="/admin/cash-register"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    pathname === '/admin/cash-register'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  💵 Caja POS
+                </Link>
+              </nav>
+
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/?view=marketplace"
+                  className="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-[11px] border border-slate-700 transition-colors flex items-center space-x-1"
+                >
+                  <span>👁️ Ver Vitrina como Comprador</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Fila 1: Logo + Barra de Búsqueda Centrada y Proporcional + Acciones de Usuario */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between gap-4 lg:gap-8">

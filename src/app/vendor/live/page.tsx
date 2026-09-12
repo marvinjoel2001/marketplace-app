@@ -2,77 +2,188 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Video, Sparkles, CheckCircle2, Radio, ShoppingBag, Plus, Eye, ArrowRight, ExternalLink, RefreshCw } from 'lucide-react';
+import {
+  Video,
+  Radio,
+  ShoppingBag,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Eye,
+  ArrowRight,
+  ExternalLink,
+  Copy,
+  Pin,
+  Flame,
+  ShieldCheck,
+  Package,
+  Layers,
+} from 'lucide-react';
 import { marketplaceApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { formatBs } from '@/lib/utils';
+import { buildTikTokEmbedLiveUrl } from '@/lib/tiktokLiveService';
+
+interface LiveProductConfig {
+  id: string;
+  title: string;
+  image: string;
+  basePrice: number;
+  livePrice: number;
+  stockReserved: number;
+  stockSold: number;
+  isSelected: boolean;
+  isFeatured: boolean;
+}
 
 export default function VendorLiveManagerPage() {
   const { user } = useAuth();
   const [activeStore, setActiveStore] = useState<any>(null);
-  const [streamTitle, setStreamTitle] = useState('Transmisión de Ofertas y Lanzamientos');
+
+  // Form State
+  const [streamTitle, setStreamTitle] = useState('Gran Venta Flash de Tecnología y Accesorios');
   const [streamerName, setStreamerName] = useState(user?.name || 'Vendedor Oficial');
   const [tiktokUsername, setTiktokUsername] = useState('');
-  const [isCheckingLive, setIsCheckingLive] = useState(false);
-  const [liveCheckResult, setLiveCheckResult] = useState<any>(null);
+  const [offerExpiryMode, setOfferExpiryMode] = useState<'during' | 'plus2h' | 'plus24h'>('during');
+  
+  // Live State
   const [isLiveActive, setIsLiveActive] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [liveStartedAt, setLiveStartedAt] = useState<string | null>(null);
+  const [featuredProductId, setFeaturedProductId] = useState<string | null>(null);
+  
+  // Products
+  const [products, setProducts] = useState<LiveProductConfig[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
+  // 1. Cargar datos de la tienda activa y catálogo
   useEffect(() => {
     try {
       const stored = localStorage.getItem('vitrina_active_store');
+      let currentStore: any = null;
       if (stored) {
-        const store = JSON.parse(stored);
-        setActiveStore(store);
-        if (store.tiktokUsername) {
-          setTiktokUsername(store.tiktokUsername.replace(/^@/, ''));
+        currentStore = JSON.parse(stored);
+        setActiveStore(currentStore);
+        if (currentStore.tiktokUsername) {
+          setTiktokUsername(currentStore.tiktokUsername.replace(/^@/, ''));
         }
-        if (store.name) {
-          setStreamTitle(`Transmisión de Ofertas de ${store.name}`);
+        if (currentStore.name) {
+          setStreamTitle(`Venta en Vivo de ${currentStore.name}`);
+        }
+        if (currentStore.isLiveNow || currentStore.isLive) {
+          setIsLiveActive(true);
         }
       }
 
-      const allProds = JSON.parse(localStorage.getItem('vitrina_all_user_products') || '[]');
-      if (allProds.length > 0) {
-        setSelectedProducts(allProds.map((p: any) => p.product?.title || p.title).filter(Boolean));
-      }
+      // Cargar productos de la tienda
+      loadStoreProducts(currentStore?.id || 's-1');
     } catch {}
   }, []);
 
-  const handleCheckTikTokLive = async () => {
-    if (!tiktokUsername.trim()) return;
-    setIsCheckingLive(true);
+  const loadStoreProducts = async (storeId: string) => {
+    setIsLoadingProducts(true);
     try {
-      const res = await fetch(`/api/tiktok/status?username=${encodeURIComponent(tiktokUsername.trim())}`);
-      const data = await res.json();
-      setLiveCheckResult(data);
-      setIsLiveActive(Boolean(data.isLive));
-    } catch {
-      setLiveCheckResult({
-        isLive: false,
-        viewers: 0,
-        statusMessage: 'Cuenta conectada. No se detectó transmisión activa en este momento.',
+      const apiProds = await marketplaceApi.getProducts();
+      // Mapear a LiveProductConfig con precios de oferta sugeridos (15% - 25% OFF)
+      const mapped: LiveProductConfig[] = (apiProds || []).slice(0, 8).map((p: any, idx: number) => {
+        let img = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400';
+        try {
+          const parsed = JSON.parse(p.images);
+          if (Array.isArray(parsed) && parsed[0]) img = parsed[0];
+          else if (typeof p.images === 'string' && p.images.startsWith('http')) img = p.images;
+        } catch {
+          if (typeof p.images === 'string' && p.images.startsWith('http')) img = p.images;
+        }
+
+        const base = Number(p.basePrice) || 150;
+        const discountRate = 0.82; // 18% descuento en Live
+        const calculatedLivePrice = Math.round(base * discountRate);
+
+        return {
+          id: p.id || `prod-${idx}`,
+          title: p.title || 'Producto de Catálogo',
+          image: img,
+          basePrice: base,
+          livePrice: calculatedLivePrice,
+          stockReserved: 10,
+          stockSold: idx === 0 ? 3 : 0,
+          isSelected: idx < 4, // primeros 4 preseleccionados
+          isFeatured: idx === 0,
+        };
       });
-      setIsLiveActive(false);
+
+      setProducts(mapped);
+      if (mapped.length > 0) {
+        setFeaturedProductId(mapped[0].id);
+      }
+    } catch {
+      console.warn('Error al cargar productos para el live');
     } finally {
-      setIsCheckingLive(false);
+      setIsLoadingProducts(false);
     }
   };
 
-  const handleStartLive = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const currentStore = activeStore || { id: 'store-active', slug: 'techplus-bolivia', name: 'Mi Tienda Oficial' };
+  const handleToggleProduct = (id: string) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isSelected: !p.isSelected } : p))
+    );
+  };
+
+  const handleUpdatePrice = (id: string, newLivePrice: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, livePrice: Math.max(1, newLivePrice) } : p))
+    );
+  };
+
+  const handleUpdateStock = (id: string, newStock: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, stockReserved: Math.max(1, newStock) } : p))
+    );
+  };
+
+  const handleFeatureProduct = (id: string) => {
+    setFeaturedProductId(id);
+    setProducts((prev) =>
+      prev.map((p) => ({
+        ...p,
+        isFeatured: p.id === id,
+      }))
+    );
+    const prod = products.find((p) => p.id === id);
+    setToast({
+      type: 'info',
+      message: `🌟 ¡Producto Destacado en Pantalla! "${prod?.title || 'Producto'}" aparece como banner flotante para los espectadores.`,
+    });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // Iniciar Live Manualmente (CERO SCRAPING)
+  const handleStartLiveNow = async () => {
+    const selectedCount = products.filter((p) => p.isSelected).length;
+    if (selectedCount === 0) {
+      alert('Debes seleccionar al menos 1 producto para vender durante el Live.');
+      return;
+    }
+
+    const currentStore = activeStore || { id: 's-1', slug: 'techplus-bolivia', name: 'TechPlus Bolivia' };
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    setIsLiveActive(true);
+    setLiveStartedAt(now);
 
     try {
-      const updated = {
+      const updatedStore = {
         ...currentStore,
+        isLiveNow: true,
+        isLive: true,
         tiktokUsername,
         streamTitle,
         streamerName,
-        isLive: true,
       };
-      localStorage.setItem('vitrina_active_store', JSON.stringify(updated));
-      setActiveStore(updated);
+      localStorage.setItem('vitrina_active_store', JSON.stringify(updatedStore));
+      setActiveStore(updatedStore);
     } catch {}
 
     try {
@@ -81,124 +192,202 @@ export default function VendorLiveManagerPage() {
         title: streamTitle,
         streamerName,
         tiktokUrl: `https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`,
+        featuredProductIds: products.filter((p) => p.isSelected).map((p) => p.id),
       });
+    } catch {}
 
-      setToast({
-        type: 'success',
-        message: '¡Transmisión TikTok Live sincronizada con éxito! Ahora aparece en vivo en la portada de Vitrina Market.',
-      });
-    } catch {
-      setToast({
-        type: 'success',
-        message: '¡Configuración de Live guardada con éxito para tu tienda en Vitrina Market!',
-      });
-    }
-
-    setTimeout(() => {
-      setToast(null);
-    }, 4500);
+    setToast({
+      type: 'success',
+      message: '🔴 ¡Transmisión en Vivo INICIADA en Vitrina! Tu sala pública ya está activa con ofertas exclusivas y checkout express.',
+    });
+    setTimeout(() => setToast(null), 5000);
   };
 
+  // Finalizar Live Manualmente
+  const handleEndLiveNow = () => {
+    if (!confirm('¿Deseas finalizar la transmisión en vivo? Los productos no vendidos se liberarán de vuelta al inventario regular.')) {
+      return;
+    }
+
+    setIsLiveActive(false);
+    setLiveStartedAt(null);
+
+    try {
+      const updatedStore = {
+        ...activeStore,
+        isLiveNow: false,
+        isLive: false,
+      };
+      localStorage.setItem('vitrina_active_store', JSON.stringify(updatedStore));
+      setActiveStore(updatedStore);
+    } catch {}
+
+    setToast({
+      type: 'info',
+      message: '⏹️ Sesión de Live Finalizada. El stock reservado no vendido ha retornado al catálogo regular de tu tienda.',
+    });
+    setTimeout(() => setToast(null), 5000);
+  };
+
+  const publicLiveUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/live/${activeStore?.slug || 'techplus-bolivia'}`
+    : `https://vitrina.bo/live/${activeStore?.slug || 'techplus-bolivia'}`;
+
+  const handleCopyLink = () => {
+    try {
+      navigator.clipboard.writeText(publicLiveUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch {}
+  };
+
+  const selectedProducts = products.filter((p) => p.isSelected);
+  const totalReservedUnits = selectedProducts.reduce((acc, p) => acc + p.stockReserved, 0);
+  const totalSoldUnits = selectedProducts.reduce((acc, p) => acc + p.stockSold, 0);
+  const totalLiveRevenueBob = selectedProducts.reduce((acc, p) => acc + p.stockSold * p.livePrice, 0);
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Toast Alert */}
       {toast && (
         <div
           className={`p-4 rounded-2xl flex items-center justify-between text-xs font-bold shadow-md animate-in fade-in duration-200 ${
             toast.type === 'success'
-              ? 'bg-emerald-600 text-white shadow-emerald-200'
-              : 'bg-rose-600 text-white shadow-rose-200'
+              ? 'bg-emerald-600 text-white'
+              : toast.type === 'error'
+              ? 'bg-rose-600 text-white'
+              : 'bg-slate-900 text-white'
           }`}
         >
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{toast.message}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            className="p-1 hover:bg-white/20 rounded-full"
-          >
+          <button type="button" onClick={() => setToast(null)} className="p-1 hover:bg-white/20 rounded-full">
             ✕
           </button>
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-          <div>
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-black text-emerald-700 uppercase">TikTok Live Shopping Hub</span>
+      {/* Header Principal del Command Center */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+          <div className="space-y-1">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-950 text-white text-xs font-black">
+              <span className={`w-2 h-2 rounded-full ${isLiveActive ? 'bg-red-500 animate-ping' : 'bg-slate-400'}`}></span>
+              <span>{isLiveActive ? '🔴 EN VIVO AHORA EN VITRINA' : '⚪ SESIÓN PREPARADA (OFFLINE)'}</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900">
-              Gestor de Transmisiones en Vivo
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Consola de TikTok LIVE Shopping
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Transmite en TikTok y sincroniza tus productos para que los compradores añadan al carrito en tiempo real.
+            <p className="text-xs text-slate-500">
+              Vende en vivo desde tu celular en TikTok y sincroniza tus productos para que tus clientes compren con QR Simple y delivery en Santa Cruz.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              disabled={isCheckingLive}
-              onClick={handleCheckTikTokLive}
-              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full border border-emerald-200 flex items-center space-x-1.5 transition-all"
+              onClick={handleCopyLink}
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-2xs"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isCheckingLive ? 'animate-spin' : ''}`} />
-              <span>Detectar Live</span>
+              <Copy className="w-3.5 h-3.5" />
+              <span>{copiedLink ? '¡Enlace Copiado!' : 'Copiar Enlace Público'}</span>
             </button>
             <Link
-              href={activeStore ? `/live/${encodeURIComponent(activeStore.slug || activeStore.id)}` : '/#tiendas'}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-full flex items-center space-x-2 shadow-md transition-all active:scale-95"
+              href={`/live/${activeStore?.slug || 'techplus-bolivia'}`}
+              target="_blank"
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl flex items-center space-x-1.5 shadow-xs transition-all active:scale-95"
             >
               <Eye className="w-4 h-4" />
-              <span>Ver mi Live como Comprador</span>
+              <span>Ver Sala en Vivo (Comprador)</span>
+              <ExternalLink className="w-3 h-3 ml-1" />
             </Link>
           </div>
         </div>
 
-        {/* Live Status Detection Alert */}
-        {liveCheckResult && (
-          <div
-            className={`mt-6 p-4 rounded-2xl border text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-              liveCheckResult.isLive
-                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
-                : 'bg-slate-50 border-slate-200 text-slate-700'
-            }`}
-          >
-            <div className="flex items-center space-x-2.5">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
-              <div>
-                <span className="font-extrabold text-sm block">
-                  {liveCheckResult.isLive ? '🔴 Transmisión en Vivo Activa en TikTok' : '⚪ Sin transmisión en vivo en este momento'}
-                </span>
-                <span className="text-[11px] text-slate-600 mt-0.5 block">
-                  {liveCheckResult.statusMessage} • Cuenta: @{tiktokUsername}
-                </span>
-              </div>
+        {/* Módulo 1: Conexión Oficial TikTok (CERO SCRAPING) */}
+        <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-black text-base shadow-xs shrink-0">
+              🎵
             </div>
-            {liveCheckResult.isLive && (
-              <span className="px-3 py-1 bg-white rounded-full text-emerald-800 font-bold text-[11px] border border-emerald-200 shrink-0">
-                {liveCheckResult.viewers || 1420} espectadores en TikTok
+            <div>
+              <span className="text-xs font-black text-slate-900 block">
+                Cuenta TikTok Vinculada: @{tiktokUsername || 'techplus_bo'}
               </span>
-            )}
+              <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Integración oficial con TikTok Embed LIVE Player (Sin scraping ni bots)</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={tiktokUsername}
+              onChange={(e) => setTiktokUsername(e.target.value.replace(/^@/, ''))}
+              placeholder="usuario_tiktok"
+              className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 outline-hidden focus:border-emerald-600 bg-white"
+            />
+            <span className="text-xs font-bold text-slate-400">@tiktok</span>
+          </div>
+        </div>
+
+        {/* Métricas en Tiempo Real durante la Sesión */}
+        {isLiveActive && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-red-50 border border-red-100">
+              <span className="text-[10px] font-black text-red-700 uppercase tracking-wider block">Estado</span>
+              <span className="text-base font-black text-red-900 flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                Transmitiendo
+              </span>
+              <span className="text-[10px] text-red-600 mt-1 block">Desde {liveStartedAt || 'hace instantes'}</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider block">Ventas en el Live</span>
+              <span className="text-base font-black text-emerald-900 mt-0.5 block">{formatBs(totalLiveRevenueBob)}</span>
+              <span className="text-[10px] text-emerald-700 mt-1 block">{totalSoldUnits} órdenes confirmadas</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100">
+              <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider block">Stock Reservado</span>
+              <span className="text-base font-black text-blue-900 mt-0.5 block">{totalReservedUnits} piezas</span>
+              <span className="text-[10px] text-blue-700 mt-1 block">{selectedProducts.length} productos activos</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+              <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider block">Producto en Pantalla</span>
+              <span className="text-xs font-black text-amber-950 truncate block mt-1">
+                {products.find((p) => p.id === featuredProductId)?.title || 'Ninguno'}
+              </span>
+              <span className="text-[10px] text-amber-800 mt-1 block">Visible para todos</span>
+            </div>
           </div>
         )}
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-          {/* Config form */}
-          <form onSubmit={handleStartLive} className="lg:col-span-6 space-y-4 text-xs">
-            <h3 className="font-extrabold text-sm text-slate-900">Configuración del Stream</h3>
+      {/* Contenido en Dos Columnas: Configuración vs Control de Productos */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Columna Izquierda: Parámetros del Stream & Botón de Control */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4 text-xs">
+            <h2 className="font-black text-base text-slate-900 flex items-center gap-2">
+              <Radio className="w-4 h-4 text-emerald-600" />
+              <span>1. Configurar Transmisión</span>
+            </h2>
 
             <div>
-              <label className="block font-bold text-slate-800 mb-1">Título de la Transmisión *</label>
+              <label className="block font-bold text-slate-800 mb-1">Título de la Sesión *</label>
               <input
                 type="text"
-                required
                 value={streamTitle}
                 onChange={(e) => setStreamTitle(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-hidden focus:border-emerald-600"
+                placeholder="Ej. Ofertas Flash de Tecnología y Accesorios"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 outline-hidden focus:border-emerald-600"
               />
             </div>
 
@@ -208,109 +397,176 @@ export default function VendorLiveManagerPage() {
                 type="text"
                 value={streamerName}
                 onChange={(e) => setStreamerName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-hidden focus:border-emerald-600"
+                placeholder="Ej. Marvin (TechPlus Oficial)"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-900 outline-hidden focus:border-emerald-600"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-800 mb-1">Usuario de TikTok Live</label>
-              <input
-                type="text"
-                value={tiktokUsername}
-                onChange={(e) => setTiktokUsername(e.target.value)}
-                placeholder="techplus_bo"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-hidden focus:border-emerald-600"
-              />
+              <label className="block font-bold text-slate-800 mb-1">Vigencia de Precios Especiales Live</label>
+              <select
+                value={offerExpiryMode}
+                onChange={(e: any) => setOfferExpiryMode(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 outline-hidden focus:border-emerald-600 bg-white"
+              >
+                <option value="during">Vigente solo durante la transmisión en vivo</option>
+                <option value="plus2h">Mantener precios especiales por 2 horas posteriores</option>
+                <option value="plus24h">Mantener precios por 24 horas</option>
+              </select>
               <span className="text-[10px] text-slate-400 mt-1 block">
-                URL generada: https://www.tiktok.com/@{tiktokUsername.replace('@', '')}/live
+                Al vencerse el tiempo, Vitrina restaura automáticamente los precios normales de catálogo.
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 text-emerald-950">
-              <p className="font-bold">✨ Sincronización Automática con Portada</p>
-              <p className="text-[11px] text-emerald-800 mt-0.5">
-                Los clientes que sintonicen el Live verán el botón de compra instantánea con despacho express por OpenDSP.
+            {/* BOTÓN MANUAL DE ACTIVACIÓN / FINALIZACIÓN */}
+            <div className="pt-2">
+              {!isLiveActive ? (
+                <button
+                  type="button"
+                  onClick={handleStartLiveNow}
+                  className="w-full py-4 bg-[#FE2C55] hover:bg-[#E0264B] text-white font-black text-sm rounded-2xl transition-all shadow-lg shadow-rose-200 active:scale-98 flex items-center justify-center space-x-2"
+                >
+                  <Radio className="w-5 h-5 animate-pulse" />
+                  <span>🔴 INICIAR LIVE AHORA EN VITRINA</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleEndLiveNow}
+                  className="w-full py-4 bg-slate-900 hover:bg-black text-white font-black text-sm rounded-2xl transition-all shadow-lg active:scale-98 flex items-center justify-center space-x-2"
+                >
+                  <span>⏹️ FINALIZAR LIVE & LIBERAR STOCK</span>
+                </button>
+              )}
+              <p className="text-[10px] text-center text-slate-400 mt-2">
+                Inicia tu transmisión en la app de TikTok desde tu teléfono y pulsa este botón para sincronizar la sala de ventas.
               </p>
             </div>
+          </div>
 
-            <button
-              type="submit"
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-full flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95"
-            >
-              <Radio className="w-4 h-4 text-white" />
-              <span>{isLiveActive ? 'Actualizar Sesión Live' : 'Iniciar TikTok Live'}</span>
-            </button>
-          </form>
+          {/* Tarjeta de Información de Envíos Express OpenDSP */}
+          <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-100 text-xs text-emerald-950 space-y-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-base">🛵</span>
+              <span className="font-black text-emerald-900">Despacho Express OpenDSP Bolivia</span>
+            </div>
+            <p className="text-slate-600 leading-relaxed">
+              Cada pedido generado en tu Live se despacha punto a punto en Santa Cruz de la Sierra en 15 a 45 minutos. Los clientes pueden pagar con QR Simple bancario o en efectivo al recibir.
+            </p>
+          </div>
+        </div>
 
-          {/* Right Column: WebView Player Preview & Products */}
-          <div className="lg:col-span-6 space-y-5">
-            {/* Embedded WebView Preview */}
-            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 shadow-md flex flex-col">
-              <div className="bg-slate-950 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                  <span className="font-bold text-white">Preview WebView TikTok</span>
-                </div>
-                <a
-                  href={`https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-400 hover:underline flex items-center gap-1 font-bold"
-                >
-                  <span>Abrir TikTok</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+        {/* Columna Derecha: Catálogo & Precios Especiales para el Live */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="font-black text-base text-slate-900 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-emerald-600" />
+                  <span>2. Productos Seleccionados para el Live</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Marca los productos que venderás, define el precio de oferta y el stock apartado exclusivamente.
+                </p>
               </div>
-              <div className="aspect-[16/9] w-full bg-slate-950 flex items-center justify-center relative">
-                <iframe
-                  src={`https://www.tiktok.com/@${tiktokUsername.replace('@', '')}/live`}
-                  title="TikTok Live Preview"
-                  className="w-full h-full border-0"
-                  allow="autoplay; camera; microphone; fullscreen; clipboard-write; encrypted-media"
-                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                />
-              </div>
+              <span className="text-xs font-extrabold px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200 shrink-0">
+                {selectedProducts.length} seleccionados
+              </span>
             </div>
 
-            {/* Products featured in Live */}
-            <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-100 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm text-slate-900 flex items-center">
-                  <ShoppingBag className="w-4 h-4 text-emerald-600 mr-1.5" />
-                  Productos Destacados en Cámara
-                </h3>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  {selectedProducts.length} fijados
-                </span>
-              </div>
+            {/* Lista de Productos Interactiva */}
+            <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+              {products.map((item) => {
+                const discount = Math.round(((item.basePrice - item.livePrice) / item.basePrice) * 100);
+                const isItemFeatured = featuredProductId === item.id;
 
-              {selectedProducts.length === 0 ? (
-                <div className="p-4 text-center rounded-xl bg-white border border-slate-200 text-xs text-slate-500">
-                  No tienes productos registrados en tu catálogo aún.{' '}
-                  <Link href="/vendor/inventory" className="text-emerald-700 font-bold hover:underline">
-                    + Añadir productos en Inventario
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {selectedProducts.map((p, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">
-                          {idx + 1}
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-2xl border transition-all text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      item.isSelected
+                        ? isItemFeatured
+                          ? 'bg-amber-50/50 border-amber-300 ring-2 ring-amber-300/60 shadow-xs'
+                          : 'bg-white border-slate-200 shadow-2xs'
+                        : 'bg-slate-50/60 border-slate-100 opacity-60'
+                    }`}
+                  >
+                    {/* Checkbox y Foto */}
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={item.isSelected}
+                        onChange={() => handleToggleProduct(item.id)}
+                        className="w-4 h-4 rounded-md text-emerald-600 focus:ring-emerald-500 border-slate-300 shrink-0 cursor-pointer"
+                      />
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <span className="font-black text-slate-900 text-xs block truncate max-w-[220px]">
+                          {item.title}
                         </span>
-                        <span className="font-bold text-slate-900">{p}</span>
+                        <div className="flex items-center space-x-2 mt-0.5 text-[11px]">
+                          <span className="text-slate-400 line-through">{formatBs(item.basePrice)}</span>
+                          <span className="font-extrabold text-emerald-700">{formatBs(item.livePrice)}</span>
+                          {discount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-black text-[9px]">
+                              {discount}% OFF
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                        En Pantalla
-                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    {/* Inputs de Precio Live & Stock Reservado */}
+                    {item.isSelected && (
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">Precio Live</span>
+                          <div className="flex items-center">
+                            <span className="text-[10px] text-slate-500 font-bold mr-1">Bs.</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.livePrice}
+                              onChange={(e) => handleUpdatePrice(item.id, Number(e.target.value))}
+                              className="w-16 px-2 py-1 rounded-lg border border-slate-200 font-black text-xs text-slate-900 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">Cupo Live</span>
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.stockReserved}
+                            onChange={(e) => handleUpdateStock(item.id, Number(e.target.value))}
+                            className="w-14 px-2 py-1 rounded-lg border border-slate-200 font-black text-xs text-slate-900 bg-white text-center"
+                          />
+                        </div>
+
+                        {/* Botón Pin / Destacar Producto */}
+                        <button
+                          type="button"
+                          onClick={() => handleFeatureProduct(item.id)}
+                          className={`px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1 shrink-0 ${
+                            isItemFeatured
+                              ? 'bg-amber-500 text-white shadow-xs'
+                              : 'bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-600'
+                          }`}
+                          title="Fijar este producto en la pantalla de los clientes"
+                        >
+                          <Flame className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">{isItemFeatured ? 'Mostrando' : 'Destacar'}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
