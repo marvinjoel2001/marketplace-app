@@ -17,6 +17,9 @@ export interface TikTokLiveItem {
   viewer_count: number;
   avatar_url: string | null;
   cover_image_url: string | null;
+  /** Signed, short-lived pull URLs for the in-card preview; null when TikTok didn't provide them. */
+  stream_hls_url: string | null;
+  stream_flv_url: string | null;
   tags: string[];
   category: string;
   is_selling: boolean;
@@ -25,13 +28,31 @@ export interface TikTokLiveItem {
   source: string;
   store_id: string | null;
   verified_at: string;
+  verification_status?: 'fresh' | 'refreshing';
   live_url: string;
+  /** Hints derived from the title: city mentioned, price written, WhatsApp number posted. */
+  city: string | null;
+  price_text: string | null;
+  whatsapp_url: string | null;
+  sales_score: number;
 }
 
 export interface TikTokLivesResponse {
   data: TikTokLiveItem[];
   pagination: { page: number; limit: number; total: number; total_pages: number };
-  meta: { cache: string; worker_enabled: boolean; freshness_seconds: number; country_code: string };
+  meta: {
+    cache: string;
+    worker_enabled: boolean;
+    freshness_seconds: number;
+    country_code: string;
+    retention_seconds?: number;
+    active_count?: number;
+    refreshing_count?: number;
+    status?: 'live' | 'refreshing' | 'searching' | 'disabled';
+    server_time?: string;
+    /** Cities with lives in the current category, for the filter chips. */
+    cities?: { name: string; count: number }[];
+  };
 }
 
 export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) {
@@ -144,14 +165,15 @@ export const marketplaceApi = {
 
   // TikTok LIVE discovery. Returns null when the backend is unreachable or rejects the query,
   // so the UI can tell "no lives right now" ({ data: [] }) apart from "could not check".
-  async getTikTokLives(params: { category?: string; page?: number; limit?: number } = {}): Promise<TikTokLivesResponse | null> {
+  async getTikTokLives(params: { category?: string; city?: string; page?: number; limit?: number } = {}): Promise<TikTokLivesResponse | null> {
     try {
       const query = new URLSearchParams();
       if (params.category) query.set('category', params.category);
+      if (params.city) query.set('city', params.city);
       if (params.page) query.set('page', String(params.page));
       if (params.limit) query.set('limit', String(params.limit));
       const qs = query.toString() ? `?${query.toString()}` : '';
-      const data = await fetchFromAPI(`/tiktok-lives/active${qs}`);
+      const data = await fetchFromAPI(`/tiktok-lives/active${qs}`, { signal: AbortSignal.timeout(8000) });
       if (data && Array.isArray(data.data) && data.pagination && data.meta) return data;
     } catch {
       // API not reachable or invalid filter

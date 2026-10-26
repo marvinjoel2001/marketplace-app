@@ -71,7 +71,7 @@ export function Navbar() {
   return (
     <>
       {/* Top Banner with Free Shipping & Language Switcher (Glassmorphism Frosted) */}
-      <div className="bg-white/50 backdrop-blur-md text-slate-700 text-xs font-semibold py-1.5 px-4 border-b border-white/40 shadow-xs">
+      <div data-marketplace-promo className="bg-white/50 backdrop-blur-md text-slate-700 text-xs font-semibold py-1.5 px-4 border-b border-white/40 shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           {/* Free Shipping & Live notice */}
           <div className="flex-1 flex items-center justify-center sm:justify-start space-x-2 text-center truncate">
@@ -141,7 +141,7 @@ export function Navbar() {
       </div>
 
       {/* Main Sticky Header (Frosted Glass Floating Container) */}
-      <header className="sticky top-0 z-40 bg-white/75 backdrop-blur-2xl border-b border-white/60 shadow-lg shadow-black/5">
+      <header data-marketplace-nav className="sticky top-0 z-40 bg-white/75 backdrop-blur-2xl border-b border-white/60 shadow-lg shadow-black/5">
         {/* BARRA SUPERIOR EXCLUSIVA PARA TIENDAS / PANEL ADMIN */}
         {isAuthenticated && isVendor && (
           <div className="bg-slate-950 text-white px-4 py-2 border-b border-slate-800 text-xs">
@@ -234,10 +234,10 @@ export function Navbar() {
         )}
 
         {/* Fila 1: Logo + Barra de Búsqueda Centrada y Proporcional + Acciones de Usuario */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+        <div data-marketplace-primary-row className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between gap-4 lg:gap-8">
             {/* Left: Mobile Menu Toggle & Brand Logo */}
-            <div className="flex items-center space-x-3 shrink-0">
+            <div data-marketplace-brand className="flex items-center space-x-3 shrink-0">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Menú móvil"
@@ -272,7 +272,7 @@ export function Navbar() {
             </div>
 
             {/* Right: TikTok Live Button, Mi Tienda Pill, Wishlist, Cart, Profile */}
-            <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            <div data-marketplace-actions className="flex items-center space-x-2 sm:space-x-3 shrink-0">
               {/* TikTok Live Shortcut with authentic chromatic TikTokIcon */}
               <Link
                 href="/live"
@@ -473,7 +473,7 @@ export function Navbar() {
         </div>
 
         {/* Fila 2: Sub-barra de Navegación y Categorías (Frosted Glass Pill Navigation) */}
-        <div className="hidden lg:block border-t border-white/40 bg-white/60 backdrop-blur-xl shadow-xs">
+        <div data-marketplace-secondary-row className="hidden lg:block border-t border-white/40 bg-white/60 backdrop-blur-xl shadow-xs">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between text-xs font-semibold text-slate-700">
             <nav className="flex items-center space-x-4 xl:space-x-6">
               {/* Categorías Dropdown - Botón blanco píldora esmerilado */}

@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="min-h-screen flex flex-col text-slate-900 antialiased selection:bg-indigo-500 selection:text-white bg-[url('/background.jpg')] bg-cover bg-center bg-fixed bg-no-repeat relative">
         {/* Subtle overlay for consistent light tone and optimal text contrast */}
-        <div className="fixed inset-0 bg-white/20 pointer-events-none z-0"></div>
+        <div data-marketplace-backdrop className="fixed inset-0 bg-white/20 pointer-events-none z-0"></div>
 
         <LanguageProvider>
           <DataModeProvider>
