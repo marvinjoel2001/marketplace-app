@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Scale, ChevronRight, Store, Truck, ShieldCheck, ArrowRight, Star } from 'lucide-react';
-import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { Scale, ChevronRight, Store, Truck, ShieldCheck, ArrowRight, Star, ShoppingBag } from 'lucide-react';
 import { formatBs } from '@/lib/utils';
 
 import { marketplaceApi } from '@/lib/api';
@@ -9,7 +8,7 @@ import { marketplaceApi } from '@/lib/api';
 export const dynamic = 'force-dynamic';
 
 export default async function CompareHubPage() {
-  let productsToDisplay: any[] = MOCK_PRODUCTS;
+  let productsToDisplay: any[] = [];
 
   try {
     const res = await marketplaceApi.getProducts();
@@ -31,11 +30,11 @@ export default async function CompareHubPage() {
             name: p.category?.name || 'General',
             slug: p.category?.slug || 'general',
           },
-          basePrice: p.minPrice || p.price || 199,
+          basePrice: p.minPrice || p.price || 0,
           offers: p.offers || [
             {
               id: `offer-${p.id}`,
-              price: p.minPrice || p.price || 199,
+              price: p.minPrice || p.price || 0,
               store: { name: 'Tienda Oficial Vitrina' },
             },
           ],
@@ -43,7 +42,7 @@ export default async function CompareHubPage() {
       });
     }
   } catch {
-    // fallback to MOCK_PRODUCTS
+    // Backend not reachable - show empty state
   }
 
   return (
@@ -82,6 +81,24 @@ export default async function CompareHubPage() {
           </div>
         </div>
 
+      {productsToDisplay.length === 0 ? (
+        <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200/80 text-center max-w-xl mx-auto">
+          <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4 border border-slate-200">
+            <ShoppingBag className="w-8 h-8 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-2">No hay productos para comparar</h3>
+          <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto leading-relaxed">
+            Aún no hay productos registrados en el marketplace. Los vendedores podrán publicar sus productos y podrás compararlos aquí.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center space-x-2 px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+          >
+            <span>Explorar el Catálogo</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {productsToDisplay.map((product) => {
             let img = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=300';
@@ -149,6 +166,7 @@ export default async function CompareHubPage() {
             );
           })}
         </div>
+      )}
       </div>
     </div>
   );

@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isVendor = Boolean(
-    user?.role === 'VENDOR' || user?.activeStoreId || (typeof window !== 'undefined' && localStorage.getItem(STORE_STORAGE_KEY))
+    user && (user.role === 'VENDOR' || user.role === 'ADMIN' || Boolean(user.activeStoreId))
   );
 
   const setUserRole = useCallback((role: 'CUSTOMER' | 'VENDOR') => {

@@ -5,9 +5,17 @@ import Link from 'next/link';
 import { ChevronRight, Radio } from 'lucide-react';
 import { MOCK_STORES } from '@/lib/mockData';
 import { useLanguage } from '@/context/LanguageContext';
+import { useDataMode } from '@/context/DataModeContext';
 
 export function LiveShoppingBar() {
   const { t } = useLanguage();
+  const { isRealMode } = useDataMode();
+
+  // In real mode, don't show hardcoded mock stores
+  if (isRealMode) {
+    return null;
+  }
+
   const liveStores = MOCK_STORES.filter((s) => s.isLive);
 
   return (

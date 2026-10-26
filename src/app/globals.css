@@ -27,6 +27,72 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+
+  /* Micro-sombreado imperceptible y refinado para títulos y encabezados */
+  h1 {
+    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 3px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  h2 {
+    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 2px 7px rgba(15, 23, 42, 0.035);
+  }
+
+  h3 {
+    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 2px 5px rgba(15, 23, 42, 0.03);
+  }
+
+  h4, h5, h6 {
+    text-shadow: 0 1px 1.5px rgba(15, 23, 42, 0.05);
+  }
+}
+
+/* ==========================================================================
+   SISTEMA DE SOMBREADO ELEGANTE E IMPERCEPTIBLE PARA TÍTULOS Y TEXTOS
+   Mejora el contraste, definición y nitidez visual sin alterar el diseño limpio
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  text-rendering: optimizeLegibility;
+}
+
+/* Sombreado de alta definición para títulos y textos en negrita sobre fondos claros */
+.font-black,
+.font-extrabold {
+  text-shadow: 0 1px 1.5px rgba(15, 23, 42, 0.06);
+}
+
+/* Micro-sombra nítida para textos blancos sobre botones, badges o gradientes */
+.text-white.font-black,
+.text-white.font-bold,
+.text-white.font-extrabold,
+.text-white.text-xs.font-bold,
+.text-white.text-xs.font-black {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+/* Utilidades para sombreados tipográficos específicos */
+.text-shadow-subtle {
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 2px 5px rgba(15, 23, 42, 0.035);
+}
+
+.text-shadow-title {
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.09), 0 3px 8px rgba(15, 23, 42, 0.045);
+}
+
+.text-shadow-hero {
+  text-shadow: 0 1px 3px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.text-shadow-brand {
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.09), 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.text-shadow-light {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.text-shadow-badge {
+  text-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.2);
 }
 
 /* Glassmorphism Design System Tokens */
@@ -362,65 +428,6 @@
   box-shadow: 0 20px 35px -8px rgba(79, 70, 229, 0.12), 0 10px 20px -4px rgba(15, 23, 42, 0.06);
 }
 
-/* Ambient Cursor Follower */
-.ambient-cursor-follower {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 1;
-  background: radial-gradient(
-    circle,
-    rgba(99, 102, 241, 0.08) 0%,
-    rgba(16, 185, 129, 0.04) 40%,
-    transparent 70%
-  );
-  transform: translate(-50%, -50%);
-  transition: opacity 0.4s ease, transform 0.12s ease-out, width 0.3s ease, height 0.3s ease;
-  mix-blend-mode: multiply;
-  will-change: transform, opacity;
-}
 
-.ambient-cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9999;
-  background: #4F46E5;
-  box-shadow: 0 0 10px rgba(79, 70, 229, 0.6);
-  transform: translate(-50%, -50%);
-  transition: transform 0.08s ease-out, width 0.25s ease, height 0.25s ease, background-color 0.25s ease;
-  will-change: transform;
-}
 
-.ambient-cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9998;
-  border: 1.5px solid rgba(79, 70, 229, 0.4);
-  transform: translate(-50%, -50%);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
-  will-change: transform;
-}
-
-/* Hide custom cursor on touch/mobile devices or when requested reduced motion */
-@media (hover: none) or (pointer: coarse), (prefers-reduced-motion: reduce) {
-  .ambient-cursor-follower,
-  .ambient-cursor-dot,
-  .ambient-cursor-ring {
-    display: none !important;
-  }
-}
 

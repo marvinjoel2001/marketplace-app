@@ -357,6 +357,8 @@ export function FeaturedProductsGrid({ products }: { products: ProductItem[] }) 
         }))
       : hasProductsArray && products.length === 0
       ? []
+      : isRealMode
+      ? []
       : demoFallbackProducts;
 
   if (!displayItems || displayItems.length === 0) {

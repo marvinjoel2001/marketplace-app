@@ -9,6 +9,31 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
+export interface TikTokLiveItem {
+  username: string;
+  room_id: string;
+  live_id: string;
+  title: string;
+  viewer_count: number;
+  avatar_url: string | null;
+  cover_image_url: string | null;
+  tags: string[];
+  category: string;
+  is_selling: boolean;
+  country_code: string;
+  geo_evidence: string;
+  source: string;
+  store_id: string | null;
+  verified_at: string;
+  live_url: string;
+}
+
+export interface TikTokLivesResponse {
+  data: TikTokLiveItem[];
+  pagination: { page: number; limit: number; total: number; total_pages: number };
+  meta: { cache: string; worker_enabled: boolean; freshness_seconds: number; country_code: string };
+}
+
 export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) {
   const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   try {
@@ -48,11 +73,11 @@ export const marketplaceApi = {
       if (params.slug) query.set('slug', params.slug);
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/products${qs}`);
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     } catch {
-      // Graceful offline/backend-less fallback
+      // Graceful offline fallback
     }
-    return getMockProducts(params);
+    return [];
   },
 
   async getProduct(idOrSlug: string) {
@@ -60,9 +85,9 @@ export const marketplaceApi = {
       const data = await fetchFromAPI(`/products/${encodeURIComponent(idOrSlug)}`);
       if (data && data.id) return data;
     } catch {
-      // Graceful offline/backend-less fallback
+      // Product not found in database
     }
-    return getMockProduct(idOrSlug);
+    return null;
   },
 
   async createProduct(data: any) {
@@ -98,9 +123,9 @@ export const marketplaceApi = {
       const data = await fetchFromAPI('/categories');
       if (Array.isArray(data) && data.length > 0) return data;
     } catch {
-      // Graceful offline fallback
+      // API not reachable
     }
-    return MOCK_CATEGORIES;
+    return [];
   },
 
   // Stores
@@ -110,14 +135,28 @@ export const marketplaceApi = {
       if (params.isLive) query.set('isLive', 'true');
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/stores${qs}`);
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     } catch {
-      // Graceful offline fallback
+      // API not reachable
     }
-    if (params.isLive) {
-      return MOCK_STORES.filter((s) => s.isLive);
+    return [];
+  },
+
+  // TikTok LIVE discovery. Returns null when the backend is unreachable or rejects the query,
+  // so the UI can tell "no lives right now" ({ data: [] }) apart from "could not check".
+  async getTikTokLives(params: { category?: string; page?: number; limit?: number } = {}): Promise<TikTokLivesResponse | null> {
+    try {
+      const query = new URLSearchParams();
+      if (params.category) query.set('category', params.category);
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+      const qs = query.toString() ? `?${query.toString()}` : '';
+      const data = await fetchFromAPI(`/tiktok-lives/active${qs}`);
+      if (data && Array.isArray(data.data) && data.pagination && data.meta) return data;
+    } catch {
+      // API not reachable or invalid filter
     }
-    return MOCK_STORES;
+    return null;
   },
 
   async getStore(idOrSlug: string) {
@@ -125,9 +164,9 @@ export const marketplaceApi = {
       const data = await fetchFromAPI(`/stores/${encodeURIComponent(idOrSlug)}`);
       if (data && data.id) return data;
     } catch {
-      // Graceful offline fallback
+      // Store not found in database
     }
-    return getMockStore(idOrSlug);
+    return null;
   },
 
   async createStore(data: any) {
@@ -195,11 +234,11 @@ export const marketplaceApi = {
       if (storeId) query.set('storeId', storeId);
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/live-streams${qs}`);
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     } catch {
-      // Graceful offline fallback
+      // API not reachable
     }
-    return MOCK_STORES.filter((s) => s.isLive).flatMap((s) => s.liveStreams || []);
+    return [];
   },
 
   async createLiveStream(data: any) {
@@ -315,11 +354,11 @@ export const marketplaceApi = {
       return await fetchFromAPI('/admin/stats');
     } catch {
       return {
-        totalOrders: 1284,
-        totalSales: 452900,
-        activeDrivers: 18,
-        activeStores: 42,
-        liveStreamsNow: 7,
+        totalOrders: 0,
+        totalSales: 0,
+        activeDrivers: 0,
+        activeStores: 0,
+        liveStreamsNow: 0,
       };
     }
   },

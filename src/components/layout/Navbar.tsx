@@ -288,14 +288,24 @@ export function Navbar() {
                 </span>
               </Link>
 
-              {/* Direct Store Portal Pill */}
-              <Link
-                href="/vendor"
-                className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/90 hover:bg-emerald-100 text-xs font-bold transition-all shadow-2xs whitespace-nowrap"
-              >
-                <Store className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                <span>{language === 'es' ? 'Mi Tienda' : 'My Store'}</span>
-              </Link>
+              {/* Direct Store Portal Pill - Only for vendors */}
+              {isAuthenticated && isVendor ? (
+                <Link
+                  href="/vendor"
+                  className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/90 hover:bg-emerald-100 text-xs font-bold transition-all shadow-2xs whitespace-nowrap"
+                >
+                  <Store className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                  <span>{language === 'es' ? 'Mi Tienda' : 'My Store'}</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/vendor/onboarding"
+                  className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 text-slate-700 border border-slate-200/90 hover:bg-slate-100 text-xs font-bold transition-all shadow-2xs whitespace-nowrap"
+                >
+                  <Store className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span>{language === 'es' ? 'Vender' : 'Sell'}</span>
+                </Link>
+              )}
 
               {/* Favorites / Wishlist */}
               <Link
@@ -369,45 +379,67 @@ export function Navbar() {
                       >
                         <MapPin className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Datos de Entrega
                       </button>
-                      <div className="border-t border-slate-100 my-1"></div>
-                      <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        {language === 'es' ? 'Portal de Tienda' : 'Store Portal'}
-                      </div>
-                      <Link
-                        href="/vendor"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        className="flex items-center px-4 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50"
-                      >
-                        <Store className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Mi Tienda (Hub)
-                      </Link>
-                      <Link
-                        href="/vendor/profile"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                      >
-                        <Store className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Perfil & Fotos de Tienda
-                      </Link>
-                      <Link
-                        href="/vendor/orders"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                      >
-                        <Truck className="w-3.5 h-3.5 mr-2 text-blue-600" /> Ventas & Despacho OpenDSP
-                      </Link>
-                      <Link
-                        href="/vendor/inventory"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                      >
-                        <Radio className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Catálogo & Stock
-                      </Link>
-                      <Link
-                        href="/vendor/live"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-red-500 mr-2.5 animate-pulse"></span> TikTok Live Studio
-                      </Link>
+                      {isVendor ? (
+                        <>
+                          <div className="border-t border-slate-100 my-1"></div>
+                          <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            {language === 'es' ? 'Portal de Tienda' : 'Store Portal'}
+                          </div>
+                          <Link
+                            href="/vendor"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50"
+                          >
+                            <Store className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Mi Tienda (Hub)
+                          </Link>
+                          <Link
+                            href="/vendor/profile"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <Store className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Perfil & Fotos de Tienda
+                          </Link>
+                          <Link
+                            href="/vendor/orders"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <Truck className="w-3.5 h-3.5 mr-2 text-blue-600" /> Ventas & Despacho OpenDSP
+                          </Link>
+                          <Link
+                            href="/vendor/inventory"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <Radio className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Catálogo & Stock
+                          </Link>
+                          <Link
+                            href="/vendor/live"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-red-500 mr-2.5 animate-pulse"></span> TikTok Live Studio
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <div className="border-t border-slate-100 my-1"></div>
+                          <Link
+                            href="/favorites"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <Heart className="w-3.5 h-3.5 mr-2 text-rose-500" /> Mis Favoritos
+                          </Link>
+                          <Link
+                            href="/vendor/onboarding"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="flex items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <Store className="w-3.5 h-3.5 mr-2 text-indigo-600" /> Vender en Vitrina Market
+                          </Link>
+                        </>
+                      )}
                       <div className="border-t border-slate-100 my-1"></div>
                       <button
                         onClick={() => {
@@ -607,14 +639,25 @@ export function Navbar() {
             >
               {t('nav_help', 'Centro de Ayuda y FAQ')}
             </Link>
-            <Link
-              href="/vendor"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block py-1.5 text-emerald-700 font-extrabold flex items-center gap-1.5"
-            >
-              <Store className="w-4 h-4" />
-              <span>{language === 'es' ? 'Mi Tienda (Portal Vendedor)' : 'Store Portal'}</span>
-            </Link>
+            {isVendor ? (
+              <Link
+                href="/vendor"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block py-1.5 text-emerald-700 font-extrabold flex items-center gap-1.5"
+              >
+                <Store className="w-4 h-4" />
+                <span>{language === 'es' ? 'Mi Tienda (Panel Vendedor)' : 'Store Portal'}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/vendor/onboarding"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block py-1.5 text-slate-700 font-medium flex items-center gap-1.5"
+              >
+                <Store className="w-4 h-4 text-indigo-600" />
+                <span>{language === 'es' ? 'Vender en Vitrina Market' : 'Sell on Vitrina Market'}</span>
+              </Link>
+            )}
 
             {/* Mobile City Selector */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
