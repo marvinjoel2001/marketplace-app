@@ -1,123 +1,87 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export interface CartItem {
-  productOfferId?: string;
+  productOfferId: string;
   productId: string;
   productTitle: string;
   productSlug: string;
   storeId: string;
   storeName: string;
-  storeSlug?: string;
-  storeAddress?: string;
-  storeLat?: number;
-  storeLng?: number;
   unitPrice: number;
   quantity: number;
   productImage: string;
-  shippingCost: number;
-  estimatedDelivery?: string;
-  hasInvoice?: boolean;
+  stock?: number;
 }
 
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (productOfferIdOrId: string) => void;
-  updateQuantity: (id: string, qty: number) => void;
-  clearCart: () => void;
+  removeFromCart: (productOfferId: string) => void;
+  updateQuantity: (productOfferId: string, qty: number) => void;
+  clearStore: (storeId: string) => void;
   totalItems: number;
   subtotal: number;
-  shippingFee: number;
-  totalAmount: number;
-  isCartDrawerOpen: boolean;
-  setIsCartDrawerOpen: (open: boolean) => void;
-  savedCity: string;
-  setSavedCity: (city: string) => void;
-  cartAnimationTrigger: number;
+  /** Bumps on every add so the cart icon can react. */
+  lastAddedAt: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_KEY = 'vitrina_cart';
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
-  const [savedCity, setSavedCity] = useState('Santa Cruz de la Sierra');
-  const [cartAnimationTrigger, setCartAnimationTrigger] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const [lastAddedAt, setLastAddedAt] = useState(0);
 
-  // Load from localStorage on client mount
+  // The saved cart is read after hydration so the server and first client render agree.
   useEffect(() => {
+    let saved: CartItem[] = [];
     try {
-      const saved = localStorage.getItem('compraya_cart');
-      if (saved) {
-        setCart(JSON.parse(saved));
-      }
-    } catch {
-      // ignore
-    }
+      const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+      // Items saved by older versions may lack an offer id; they can't be ordered.
+      if (Array.isArray(parsed)) saved = parsed.filter((it) => it && it.productOfferId && it.storeId);
+    } catch {}
+    Promise.resolve().then(() => {
+      setCart(saved);
+      setLoaded(true);
+    });
   }, []);
 
-  // Save to localStorage
   useEffect(() => {
+    if (!loaded) return;
     try {
-      localStorage.setItem('compraya_cart', JSON.stringify(cart));
-    } catch {
-      // ignore
-    }
-  }, [cart]);
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    } catch {}
+  }, [cart, loaded]);
 
-  const addToCart = (newItem: CartItem) => {
+  const addToCart = (item: CartItem) => {
     setCart((prev) => {
-      const index = prev.findIndex(
-        (it) =>
-          (newItem.productOfferId && it.productOfferId === newItem.productOfferId) ||
-          (it.productId === newItem.productId && it.storeId === newItem.storeId)
-      );
-
-      if (index > -1) {
-        const updated = [...prev];
-        updated[index].quantity += newItem.quantity;
-        return updated;
-      } else {
-        return [...prev, newItem];
+      const existing = prev.find((it) => it.productOfferId === item.productOfferId);
+      const cap = (qty: number) => Math.min(qty, item.stock ?? 99);
+      if (existing) {
+        return prev.map((it) =>
+          it.productOfferId === item.productOfferId
+            ? { ...it, unitPrice: item.unitPrice, quantity: cap(it.quantity + item.quantity) }
+            : it,
+        );
       }
+      return [...prev, { ...item, quantity: cap(item.quantity) }];
     });
-    setIsCartDrawerOpen(true);
-    setCartAnimationTrigger(Date.now());
+    setLastAddedAt(Date.now());
   };
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = (offerId: string) => setCart((prev) => prev.filter((it) => it.productOfferId !== offerId));
+
+  const updateQuantity = (offerId: string, qty: number) => {
+    if (qty <= 0) return removeFromCart(offerId);
     setCart((prev) =>
-      prev.filter((it) => it.productOfferId !== id && it.productId !== id)
+      prev.map((it) => (it.productOfferId === offerId ? { ...it, quantity: Math.min(qty, it.stock ?? 99) } : it)),
     );
   };
 
-  const updateQuantity = (id: string, qty: number) => {
-    if (qty <= 0) {
-      removeFromCart(id);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((it) => {
-        if (it.productOfferId === id || it.productId === id) {
-          return { ...it, quantity: qty };
-        }
-        return it;
-      })
-    );
-  };
-
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  const totalItems = cart.reduce((sum, it) => sum + it.quantity, 0);
-  const subtotal = cart.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
-  const shippingFee = cart.some((it) => it.shippingCost > 0)
-    ? Math.max(...cart.map((it) => it.shippingCost))
-    : 0;
-  const totalAmount = subtotal + shippingFee;
+  const clearStore = (storeId: string) => setCart((prev) => prev.filter((it) => it.storeId !== storeId));
 
   return (
     <CartContext.Provider
@@ -126,16 +90,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
-        clearCart,
-        totalItems,
-        subtotal,
-        shippingFee,
-        totalAmount,
-        isCartDrawerOpen,
-        setIsCartDrawerOpen,
-        savedCity,
-        setSavedCity,
-        cartAnimationTrigger,
+        clearStore,
+        totalItems: cart.reduce((sum, it) => sum + it.quantity, 0),
+        subtotal: cart.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0),
+        lastAddedAt,
       }}
     >
       {children}
@@ -145,8 +103,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
+}
+
+/** Cart items grouped by store, in the order they were added. */
+export function groupByStore(cart: CartItem[]) {
+  const groups = new Map<string, { storeId: string; storeName: string; items: CartItem[] }>();
+  for (const item of cart) {
+    const group = groups.get(item.storeId) ?? { storeId: item.storeId, storeName: item.storeName, items: [] };
+    group.items.push(item);
+    groups.set(item.storeId, group);
+  }
+  return [...groups.values()];
 }

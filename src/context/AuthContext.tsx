@@ -1,392 +1,201 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { marketplaceApi } from '@/lib/api';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
   role?: 'CUSTOMER' | 'VENDOR' | 'ADMIN';
-  avatar?: string;
+  avatar?: string | null;
   provider: string;
-  phone?: string;
-  city?: string;
-  zone?: string;
-  address?: string;
-  addressReference?: string;
-  nitOrCi?: string;
-  interestProfile?: string;
-  activeStoreId?: string;
-  activeStoreName?: string;
-  activeStoreSlug?: string;
+  phone?: string | null;
+  address?: string | null;
+  addressReference?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  storeId?: string | null;
 }
 
 export interface ProviderConfigInfo {
-  google: { enabled: boolean; clientId: string };
-  tiktok: { enabled: boolean; clientKey: string };
-  facebook: { enabled: boolean; appId: string };
+  google: { enabled: boolean };
+  tiktok: { enabled: boolean };
+}
+
+export interface SavedAddress {
+  address: string;
+  addressReference?: string;
+  lat: number;
+  lng: number;
+  phone?: string;
+  name?: string;
+}
+
+interface LoginRequest {
+  /** Shown at the top of the sheet: why we are asking to sign in. */
+  reason?: string;
+  onComplete?: (user: UserProfile) => void;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
+  ready: boolean;
   isAuthenticated: boolean;
-  isProfileComplete: boolean;
-  isAuthModalOpen: boolean;
-  authModalStep: 'login' | 'enrich';
-  providersConfig: ProviderConfigInfo | null;
-  openAuthModal: (options?: { onComplete?: () => void; initialStep?: 'login' | 'enrich' }) => void;
-  closeAuthModal: () => void;
-  socialLogin: (
-    provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK',
-    customProfile?: { email?: string; name?: string; avatar?: string }
-  ) => Promise<void>;
-  emailLogin: (identifier: string, password?: string, name?: string) => Promise<void>;
-  enrichProfile: (data: {
-    phone: string;
-    city?: string;
-    zone?: string;
-    address: string;
-    addressReference?: string;
-    nitOrCi?: string;
-  }) => Promise<void>;
-  isVendor: boolean;
-  setUserRole: (role: 'CUSTOMER' | 'VENDOR') => void;
-  setActiveStore: (store: { id: string; name: string; slug?: string }) => void;
+  hasAddress: boolean;
+  providers: ProviderConfigInfo | null;
+  loginRequest: LoginRequest | null;
+  requestLogin: (request?: LoginRequest) => void;
+  closeLogin: () => void;
+  loginWithProvider: (provider: 'GOOGLE' | 'TIKTOK') => Promise<void>;
+  loginWithPhone: (phone: string) => Promise<void>;
+  saveAddress: (address: SavedAddress) => Promise<UserProfile>;
+  setStoreId: (storeId: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 const USER_STORAGE_KEY = 'vitrina_auth_user';
-const STORE_STORAGE_KEY = 'vitrina_active_store';
+
+function persist(user: UserProfile | null) {
+  try {
+    if (user) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    else localStorage.removeItem(USER_STORAGE_KEY);
+  } catch {}
+}
+
+async function postJson(url: string, body: unknown) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || data.message || 'No se pudo completar la acción');
+  return data;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalStep, setAuthModalStep] = useState<'login' | 'enrich'>('login');
-  const [onCompleteCallback, setOnCompleteCallback] = useState<(() => void) | null>(null);
-  const [providersConfig, setProvidersConfig] = useState<ProviderConfigInfo | null>(null);
+  const [ready, setReady] = useState(false);
+  const [providers, setProviders] = useState<ProviderConfigInfo | null>(null);
+  const [loginRequest, setLoginRequest] = useState<LoginRequest | null>(null);
+  const requestRef = useRef<LoginRequest | null>(null);
 
-  // Cargar usuario persistido y estado de proveedores al montar
   useEffect(() => {
+    let stored: UserProfile | null = null;
     try {
-      const stored = localStorage.getItem(USER_STORAGE_KEY);
-      const storedStore = localStorage.getItem(STORE_STORAGE_KEY);
-      if (stored) {
-        const parsedUser = JSON.parse(stored);
-        if (storedStore && !parsedUser.activeStoreId) {
-          try {
-            const parsedStore = JSON.parse(storedStore);
-            parsedUser.activeStoreId = parsedStore.id;
-            parsedUser.activeStoreName = parsedStore.name;
-            parsedUser.activeStoreSlug = parsedStore.slug;
-          } catch {}
-        }
-        setUser(parsedUser);
-      }
+      const raw = localStorage.getItem(USER_STORAGE_KEY);
+      stored = raw ? JSON.parse(raw) : null;
     } catch {}
 
-    // Consultar proveedores activos según las variables de entorno
-    fetch('/api/auth/providers')
+    // The cookie session is the source of truth (it also covers returning from Google/TikTok).
+    fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.providers) {
-          setProvidersConfig(data.providers);
-        }
+        const fresh: UserProfile | null = data.user ?? null;
+        setUser(fresh ?? stored);
+        if (fresh) persist(fresh);
       })
+      .catch(() => setUser(stored))
+      .finally(() => setReady(true));
+
+    fetch('/api/auth/providers')
+      .then((res) => res.json())
+      .then((data) => data.providers && setProviders(data.providers))
       .catch(() => {});
   }, []);
 
-  const openAuthModal = useCallback(
-    (options?: { onComplete?: () => void; initialStep?: 'login' | 'enrich' }) => {
-      setAuthModalStep(options?.initialStep || 'login');
-      if (options?.onComplete) {
-        setOnCompleteCallback(() => options.onComplete);
-      } else {
-        setOnCompleteCallback(null);
+  const finishLogin = useCallback((logged: UserProfile) => {
+    setUser(logged);
+    persist(logged);
+    const request = requestRef.current;
+    requestRef.current = null;
+    setLoginRequest(null);
+    request?.onComplete?.(logged);
+  }, []);
+
+  const requestLogin = useCallback((request: LoginRequest = {}) => {
+    requestRef.current = request;
+    setLoginRequest(request);
+  }, []);
+
+  const closeLogin = useCallback(() => {
+    requestRef.current = null;
+    setLoginRequest(null);
+  }, []);
+
+  const loginWithProvider = useCallback(
+    async (provider: 'GOOGLE' | 'TIKTOK') => {
+      const enabled = provider === 'GOOGLE' ? providers?.google.enabled : providers?.tiktok.enabled;
+      if (enabled) {
+        const back = window.location.pathname + window.location.search;
+        // A full page load: the OAuth route redirects to Google/TikTok.
+        const url = new URL(`/api/auth/oauth/${provider.toLowerCase()}`, window.location.origin);
+        url.searchParams.set('returnUrl', back);
+        window.location.assign(url.href);
+        return;
       }
-      setIsAuthModalOpen(true);
+      // Without OAuth keys (local development) sign in with a demo account for that provider.
+      const data = await postJson('/api/auth/social-login', {
+        provider,
+        email: provider === 'GOOGLE' ? 'cliente.demo@gmail.com' : 'cliente.demo@tiktok.vitrina.bo',
+        name: provider === 'GOOGLE' ? 'Cliente Google (demo)' : 'Cliente TikTok (demo)',
+      });
+      finishLogin(data.user);
     },
-    []
+    [providers, finishLogin],
   );
 
-  const closeAuthModal = useCallback(() => {
-    setIsAuthModalOpen(false);
-    setOnCompleteCallback(null);
-  }, []);
-
-  const isVendor = Boolean(
-    user && (user.role === 'VENDOR' || user.role === 'ADMIN' || Boolean(user.activeStoreId))
+  const loginWithPhone = useCallback(
+    async (phone: string) => {
+      const data = await postJson('/api/auth/login', { phone });
+      finishLogin(data.user);
+    },
+    [finishLogin],
   );
 
-  const setUserRole = useCallback((role: 'CUSTOMER' | 'VENDOR') => {
+  const saveAddress = useCallback(
+    async (address: SavedAddress) => {
+      if (!user) throw new Error('Inicia sesión para guardar tu dirección');
+      const data = await postJson('/api/auth/enrich-profile', { userId: user.id, ...address });
+      const updated: UserProfile = { ...user, ...(data.user ?? address) };
+      setUser(updated);
+      persist(updated);
+      return updated;
+    },
+    [user],
+  );
+
+  const setStoreId = useCallback((storeId: string) => {
     setUser((prev) => {
-      if (!prev) return null;
-      const updated: UserProfile = { ...prev, role };
-      try {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
-      } catch {}
+      if (!prev) return prev;
+      const updated: UserProfile = { ...prev, storeId, role: 'VENDOR' };
+      persist(updated);
       return updated;
     });
   }, []);
 
-  const setActiveStore = useCallback((store: { id: string; name: string; slug?: string }) => {
-    try {
-      localStorage.setItem(STORE_STORAGE_KEY, JSON.stringify(store));
-    } catch {}
-
-    setUser((prev) => {
-      if (!prev) {
-        const tempUser: UserProfile = {
-          id: `usr_${Date.now().toString(36)}`,
-          email: `${store.slug || 'tienda'}@vitrinamarket.bo`,
-          name: store.name,
-          role: 'VENDOR',
-          provider: 'DIRECT',
-          activeStoreId: store.id,
-          activeStoreName: store.name,
-          activeStoreSlug: store.slug,
-        };
-        try {
-          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(tempUser));
-        } catch {}
-        return tempUser;
-      }
-      const updated: UserProfile = {
-        ...prev,
-        role: 'VENDOR',
-        activeStoreId: store.id,
-        activeStoreName: store.name,
-        activeStoreSlug: store.slug,
-      };
-      try {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  }, []);
-
-  // Login Social con soporte para OAuth real o inicio directo con cuenta elegida
-  const socialLogin = async (
-    provider: 'TIKTOK' | 'GOOGLE' | 'FACEBOOK',
-    customProfile?: { email?: string; name?: string; avatar?: string }
-  ) => {
-    const isGoogleEnabled = providersConfig?.google.enabled;
-    const isTikTokEnabled = providersConfig?.tiktok.enabled;
-
-    // Si las variables de entorno de producción están configuradas y no se pasa perfil directo, redirigir a OAuth
-    if (!customProfile) {
-      if (provider === 'GOOGLE' && isGoogleEnabled) {
-        window.location.href = `/api/auth/oauth/google?returnUrl=${encodeURIComponent(window.location.pathname)}`;
-        return;
-      }
-      if (provider === 'TIKTOK' && isTikTokEnabled) {
-        window.location.href = `/api/auth/oauth/tiktok?returnUrl=${encodeURIComponent(window.location.pathname)}`;
-        return;
-      }
-    }
-
-    // Perfiles con identidad real
-    const targetEmail = customProfile?.email || (
-      provider === 'GOOGLE'
-        ? 'marvin.rivera@gmail.com'
-        : provider === 'TIKTOK'
-        ? 'marvin.tiktok@vitrinamarket.bo'
-        : 'marvin.rivera@facebook.com'
-    );
-
-    const targetName = customProfile?.name || (
-      provider === 'GOOGLE'
-        ? 'Marvin Rivera'
-        : provider === 'TIKTOK'
-        ? '@marvin_bo (TikTok)'
-        : 'Marvin Rivera'
-    );
-
-    const targetAvatar = customProfile?.avatar || (
-      provider === 'GOOGLE'
-        ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
-        : provider === 'TIKTOK'
-        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
-    );
-
-    let localInterest = '';
-    let localCart = '';
-    let localVisitorId = '';
-    try {
-      localInterest = localStorage.getItem('compraya_interest_profile') || '';
-      localCart = localStorage.getItem('compraya_cart') || '';
-      localVisitorId = localStorage.getItem('compraya_visitor_id') || '';
-    } catch {}
-
-    try {
-      // Llamar al endpoint interno de Next.js
-      const res = await fetch('/api/auth/social-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: targetEmail,
-          name: targetName,
-          avatar: targetAvatar,
-          provider,
-          visitorId: localVisitorId,
-          interestProfile: localInterest,
-          cart: localCart,
-        }),
-      });
-
-      const response = await res.json();
-      if (!res.ok) throw new Error(response.error || 'Error al autenticar');
-
-      const loggedUser = response.user;
-
-      // Mantener activeStoreId si ya existía
-      try {
-        const storedStore = localStorage.getItem(STORE_STORAGE_KEY);
-        if (storedStore) {
-          const parsedStore = JSON.parse(storedStore);
-          loggedUser.activeStoreId = parsedStore.id;
-          loggedUser.activeStoreName = parsedStore.name;
-          loggedUser.activeStoreSlug = parsedStore.slug;
-        }
-      } catch {}
-
-      setUser(loggedUser);
-      try {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
-      } catch {}
-
-      // Si se abrió desde un flujo explícito que requiera enriquecimiento (ej. checkout)
-      if (authModalStep === 'enrich' && !response.isProfileComplete) {
-        setAuthModalStep('enrich');
-      } else {
-        closeAuthModal();
-        if (onCompleteCallback) {
-          onCompleteCallback();
-        }
-      }
-    } catch (error: any) {
-      console.error('Error en social login:', error);
-      throw error;
-    }
-  };
-
-  // Login Directo con Correo o Teléfono / WhatsApp
-  const emailLogin = async (identifier: string, password?: string, name?: string) => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, name }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al autenticar');
-
-      const loggedUser = data.user;
-
-      // Mantener activeStoreId si ya existía
-      try {
-        const storedStore = localStorage.getItem(STORE_STORAGE_KEY);
-        if (storedStore) {
-          const parsedStore = JSON.parse(storedStore);
-          loggedUser.activeStoreId = parsedStore.id;
-          loggedUser.activeStoreName = parsedStore.name;
-          loggedUser.activeStoreSlug = parsedStore.slug;
-        }
-      } catch {}
-
-      setUser(loggedUser);
-      try {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedUser));
-      } catch {}
-
-      if (authModalStep === 'enrich' && !data.isProfileComplete) {
-        setAuthModalStep('enrich');
-      } else {
-        closeAuthModal();
-        if (onCompleteCallback) {
-          onCompleteCallback();
-        }
-      }
-    } catch (error: any) {
-      console.error('Error en email login:', error);
-      throw error;
-    }
-  };
-
-  // Enriquecimiento de Datos de Entrega y Contacto
-  const enrichProfile = async (data: {
-    phone: string;
-    city?: string;
-    zone?: string;
-    address: string;
-    addressReference?: string;
-    nitOrCi?: string;
-  }) => {
-    if (!user) return;
-
-    try {
-      const res = await fetch('/api/auth/enrich-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          ...data,
-        }),
-      });
-
-      const response = await res.json();
-      const updatedUser = {
-        ...user,
-        ...data,
-      };
-
-      setUser(updatedUser);
-      try {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
-      } catch {}
-
-      closeAuthModal();
-      if (onCompleteCallback) {
-        onCompleteCallback();
-      }
-    } catch (error: any) {
-      console.error('Error en enriquecimiento de perfil:', error);
-      throw error;
-    }
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
-    try {
-      localStorage.removeItem(USER_STORAGE_KEY);
-      localStorage.removeItem(STORE_STORAGE_KEY);
-    } catch {}
-  };
-
-  const isAuthenticated = Boolean(user);
-  const isProfileComplete = Boolean(user && user.phone && user.address);
+    persist(null);
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
-        isProfileComplete,
-        isAuthModalOpen,
-        authModalStep,
-        providersConfig,
-        openAuthModal,
-        closeAuthModal,
-        socialLogin,
-        emailLogin,
-        enrichProfile,
-        isVendor,
-        setUserRole,
-        setActiveStore,
+        ready,
+        isAuthenticated: Boolean(user),
+        hasAddress: Boolean(user?.address && user.lat != null && user.lng != null && user.phone),
+        providers,
+        loginRequest,
+        requestLogin,
+        closeLogin,
+        loginWithProvider,
+        loginWithPhone,
+        saveAddress,
+        setStoreId,
         logout,
       }}
     >
@@ -397,8 +206,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

@@ -1,90 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authConfig } from '@/lib/authConfig';
+import { backend, errorResponse, withSession } from '@/lib/server/session';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-
+// Demo sign-in for Google/TikTok while their OAuth keys are not configured.
+// With keys set, sign-in goes through /api/auth/oauth/[provider] and this route refuses.
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { email, name, avatar, provider = 'TIKTOK', visitorId, interestProfile, cart } = body;
-
-    if (!email || !name) {
-      return NextResponse.json(
-        { error: 'Email y nombre son requeridos para la autenticación' },
-        { status: 400 }
-      );
+    const { provider, email, name } = await req.json();
+    const status = authConfig.getProviderStatus();
+    const key = provider === 'GOOGLE' ? 'google' : provider === 'TIKTOK' ? 'tiktok' : null;
+    if (!key) return NextResponse.json({ error: 'Proveedor no válido' }, { status: 400 });
+    if (status[key].enabled) {
+      return NextResponse.json({ error: 'Usa el botón para continuar con tu cuenta' }, { status: 403 });
     }
 
-    // 1. Intentar registrar en el backend NestJS si está activo
-    try {
-      const backendRes = await fetch(`${BACKEND_URL}/auth/social-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        cache: 'no-store',
-      });
-
-      if (backendRes.ok) {
-        const backendData = await backendRes.json();
-        const response = NextResponse.json({
-          success: true,
-          ...backendData,
-        });
-
-        // Set session cookie
-        response.cookies.set('chiringuito_auth_token', backendData.user.id, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 60 * 60 * 24 * 30, // 30 días
-        });
-
-        return response;
-      }
-    } catch {
-      // Backend no disponible, proceder con gestión autónoma de Next.js
-    }
-
-    // 2. Fallback autónomo en Next.js (Turnkey / Standalone)
-    const normalizedUser = {
-      id: `usr_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`,
-      email: email.toLowerCase(),
-      name: name.trim(),
-      avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-      provider: provider.toUpperCase(),
-      phone: body.phone || undefined,
-      city: body.city || 'Santa Cruz de la Sierra',
-      zone: body.zone || 'Equipetrol',
-      address: body.address || undefined,
-      addressReference: body.addressReference || undefined,
-      nitOrCi: body.nitOrCi || undefined,
-      interestProfile: interestProfile || null,
-      createdAt: new Date().toISOString(),
-    };
-
-    const isProfileComplete = Boolean(normalizedUser.phone && normalizedUser.address);
-
-    const response = NextResponse.json({
-      success: true,
-      user: normalizedUser,
-      isProfileComplete,
-      isNewUser: true,
+    const data = await backend('/auth/social-login', {
+      method: 'POST',
+      body: JSON.stringify({ provider, email, name }),
     });
-
-    response.cookies.set('chiringuito_auth_token', normalizedUser.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
-    return response;
-  } catch (err: any) {
-    console.error('Error in /api/auth/social-login:', err);
-    return NextResponse.json(
-      { error: err.message || 'Error en autenticación' },
-      { status: 500 }
-    );
+    return withSession(NextResponse.json({ user: data.user }), data.user.id);
+  } catch (err) {
+    return errorResponse(err, 'No pudimos iniciar sesión');
   }
 }

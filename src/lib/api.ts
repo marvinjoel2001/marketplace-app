@@ -1,13 +1,4 @@
-import {
-  MOCK_STORES,
-  MOCK_PRODUCTS,
-  MOCK_CATEGORIES,
-  getMockStore,
-  getMockProduct,
-  getMockProducts,
-} from './mockData';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export interface TikTokLiveItem {
   username: string;
@@ -55,6 +46,114 @@ export interface TikTokLivesResponse {
   };
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+}
+
+export interface Store {
+  id: string;
+  slug: string;
+  name: string;
+  logo: string;
+  description?: string | null;
+  category: string;
+  phone?: string | null;
+  address: string;
+  addressReference?: string | null;
+  latitude: number;
+  longitude: number;
+  tiktokUsername?: string | null;
+  tiktokLiveUrl?: string | null;
+  payoutQr?: string | null;
+  bankAccountInfo?: string | null;
+  deliveryDays: string;
+  deliveryStart: string;
+  deliveryEnd: string;
+  ownerId?: string | null;
+  isLiveNow?: boolean;
+}
+
+export interface Offer {
+  id: string;
+  productId: string;
+  storeId: string;
+  price: number;
+  stock: number;
+  isActive: boolean;
+  salePrice?: number | null;
+  discountPercent?: number | null;
+  isFlashSale?: boolean;
+  flashSaleEnd?: string | null;
+  store?: Store;
+  product?: Product;
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  basePrice: number;
+  images: string;
+  category?: Category;
+  offers?: Offer[];
+}
+
+export interface OrderItem {
+  id: string;
+  productTitle: string;
+  storeName: string;
+  storeId: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  productImage?: string | null;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  customerReference?: string | null;
+  paymentMethod: string;
+  paymentStatus: string;
+  subtotal: number;
+  shippingFee: number;
+  totalAmount: number;
+  status: string;
+  storeId?: string | null;
+  deliveryAt?: string | null;
+  deliveryWindow?: string | null;
+  dspDriverName?: string | null;
+  dspDriverPhone?: string | null;
+  createdAt: string;
+  items: OrderItem[];
+}
+
+export interface LiveStore {
+  store: Pick<Store, 'id' | 'slug' | 'name' | 'logo' | 'tiktokUsername'>;
+  title: string;
+  viewerCount: number;
+  coverImageUrl: string | null;
+  liveUrl: string | null;
+  startedAt: string | null;
+  offers: (Offer & { product: Product })[];
+}
+
+export interface StoreSummary {
+  today: { total: number; count: number };
+  week: { total: number; count: number };
+  month: { total: number; count: number };
+  upcoming: Order[];
+  products: number;
+  activeOffers: number;
+}
+
 export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) {
   const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   try {
@@ -69,80 +168,80 @@ export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) 
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Error en la petición' }));
-      throw new Error(err.error || `HTTP error ${res.status}`);
+      const err = await res.json().catch(() => ({ message: 'Error en la petición' }));
+      const message = Array.isArray(err.message) ? err.message[0] : err.message || err.error;
+      throw new Error(message || `HTTP error ${res.status}`);
     }
 
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error & { cause?: { code?: string } };
     // Suppress repeated verbose connection error logs in dev
-    if (error?.cause?.code !== 'ECONNREFUSED') {
-      console.warn(`API [${endpoint}] fetch failed:`, error.message);
+    if (err?.cause?.code !== 'ECONNREFUSED') {
+      console.warn(`API [${endpoint}] fetch failed:`, err.message);
     }
     throw error;
   }
 }
 
+const json = (method: string, body?: unknown): RequestInit => ({
+  method,
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+const id = encodeURIComponent;
+
 export const marketplaceApi = {
   // Products
-  async getProducts(params: { category?: string; flashSale?: boolean; q?: string; slug?: string } = {}) {
+  async getProducts(params: { category?: string; flashSale?: boolean; q?: string } = {}): Promise<Product[]> {
     try {
       const query = new URLSearchParams();
       if (params.category) query.set('category', params.category);
       if (params.flashSale) query.set('flashSale', 'true');
       if (params.q) query.set('q', params.q);
-      if (params.slug) query.set('slug', params.slug);
       const qs = query.toString() ? `?${query.toString()}` : '';
       const data = await fetchFromAPI(`/products${qs}`);
       if (Array.isArray(data)) return data;
     } catch {
-      // Graceful offline fallback
+      // Backend unreachable: the page shows its empty state
     }
     return [];
   },
 
-  async getProduct(idOrSlug: string) {
+  async getProduct(idOrSlug: string): Promise<Product | null> {
     try {
-      const data = await fetchFromAPI(`/products/${encodeURIComponent(idOrSlug)}`);
+      const data = await fetchFromAPI(`/products/${id(idOrSlug)}`);
       if (data && data.id) return data;
     } catch {
-      // Product not found in database
+      // Product not found
     }
     return null;
   },
 
-  async createProduct(data: any) {
-    return fetchFromAPI('/products', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async createProduct(data: {
+    title: string;
+    description?: string;
+    basePrice: number;
+    categoryId: string;
+    storeId: string;
+    images: string[];
+    stock: number;
+  }): Promise<Product> {
+    return fetchFromAPI('/products', json('POST', data));
   },
 
-  async updateProduct(id: string, data: any) {
-    return fetchFromAPI(`/products/${encodeURIComponent(id)}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async updateProduct(productId: string, data: Partial<{ title: string; description: string; images: string[]; categoryId: string }>) {
+    return fetchFromAPI(`/products/${id(productId)}`, json('PUT', data));
   },
 
-  async updateProductStock(id: string, data: { storeId: string; stock: number; price?: number }) {
-    return fetchFromAPI(`/products/${encodeURIComponent(id)}/stock`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async deleteProduct(id: string) {
-    return fetchFromAPI(`/products/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+  async deleteProduct(productId: string) {
+    return fetchFromAPI(`/products/${id(productId)}`, json('DELETE'));
   },
 
   // Categories
-  async getCategories() {
+  async getCategories(): Promise<Category[]> {
     try {
       const data = await fetchFromAPI('/categories');
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     } catch {
       // API not reachable
     }
@@ -150,12 +249,9 @@ export const marketplaceApi = {
   },
 
   // Stores
-  async getStores(params: { isLive?: boolean } = {}) {
+  async getLiveStores(): Promise<LiveStore[]> {
     try {
-      const query = new URLSearchParams();
-      if (params.isLive) query.set('isLive', 'true');
-      const qs = query.toString() ? `?${query.toString()}` : '';
-      const data = await fetchFromAPI(`/stores${qs}`);
+      const data = await fetchFromAPI('/stores/live');
       if (Array.isArray(data)) return data;
     } catch {
       // API not reachable
@@ -181,81 +277,61 @@ export const marketplaceApi = {
     return null;
   },
 
-  async getStore(idOrSlug: string) {
+  async getStore(idOrSlug: string): Promise<(Store & { offers: (Offer & { product: Product })[] }) | null> {
     try {
-      const data = await fetchFromAPI(`/stores/${encodeURIComponent(idOrSlug)}`);
+      const data = await fetchFromAPI(`/stores/${id(idOrSlug)}`);
       if (data && data.id) return data;
     } catch {
-      // Store not found in database
+      // Store not found
     }
     return null;
   },
 
-  async createStore(data: any) {
-    return fetchFromAPI('/stores', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // Store Offers & Promotions
-  async getStoreOffers(storeId: string) {
+  async getStoreByOwner(userId: string): Promise<Store | null> {
     try {
-      return await fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/offers`);
+      return await fetchFromAPI(`/stores/owner/${id(userId)}`);
     } catch {
-      return [];
+      return null;
     }
   },
 
-  async createFlashOffer(storeId: string, data: any) {
-    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/offers/flash`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async createStore(data: Omit<Partial<Store>, 'bankAccountInfo'> & { ownerId: string; bankAccountInfo?: unknown }): Promise<Store> {
+    return fetchFromAPI('/stores', json('POST', data));
   },
 
-  async toggleOfferPromo(storeId: string, offerId: string) {
-    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/offers/${encodeURIComponent(offerId)}/toggle`, {
-      method: 'PATCH',
-    });
+  async updateStore(storeId: string, data: Record<string, unknown>): Promise<Store> {
+    return fetchFromAPI(`/stores/${id(storeId)}`, json('PATCH', data));
   },
 
-  // Store Coupons
-  async getStoreCoupons(storeId: string) {
+  async getStoreOffers(storeId: string): Promise<(Offer & { product: Product })[]> {
+    return fetchFromAPI(`/stores/${id(storeId)}/offers`);
+  },
+
+  async updateOffer(storeId: string, offerId: string, data: { price?: number; stock?: number; isActive?: boolean }) {
+    return fetchFromAPI(`/stores/${id(storeId)}/offers/${id(offerId)}`, json('PATCH', data));
+  },
+
+  async applyBulkOffer(storeId: string, data: { offerIds: string[]; discountPercent: number; endsAt: string }) {
+    return fetchFromAPI(`/stores/${id(storeId)}/offers/bulk`, json('POST', data));
+  },
+
+  async endOffers(storeId: string, offerIds: string[]) {
+    return fetchFromAPI(`/stores/${id(storeId)}/offers/end`, json('POST', { offerIds }));
+  },
+
+  async getStoreOrders(storeId: string, since?: string): Promise<Order[]> {
+    const qs = since ? `?since=${id(since)}` : '';
+    return fetchFromAPI(`/stores/${id(storeId)}/orders${qs}`);
+  },
+
+  async getStoreSummary(storeId: string): Promise<StoreSummary> {
+    return fetchFromAPI(`/stores/${id(storeId)}/summary`);
+  },
+
+  // Live from the store panel
+  async getLiveStreams(storeId: string) {
     try {
-      return await fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/coupons`);
-    } catch {
-      return [];
-    }
-  },
-
-  async createStoreCoupon(storeId: string, data: any) {
-    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/coupons`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async deleteStoreCoupon(storeId: string, couponId: string) {
-    return fetchFromAPI(`/stores/${encodeURIComponent(storeId)}/coupons/${encodeURIComponent(couponId)}`, {
-      method: 'DELETE',
-    });
-  },
-
-  async validateCoupon(code: string, storeId?: string, amount?: number) {
-    const query = new URLSearchParams({ code });
-    if (storeId) query.set('storeId', storeId);
-    if (amount) query.set('amount', amount.toString());
-    return fetchFromAPI(`/stores/coupons/validate?${query.toString()}`);
-  },
-
-  // Live Streams
-  async getLiveStreams(storeId?: string) {
-    try {
-      const query = new URLSearchParams();
-      if (storeId) query.set('storeId', storeId);
-      const qs = query.toString() ? `?${query.toString()}` : '';
-      const data = await fetchFromAPI(`/live-streams${qs}`);
+      const data = await fetchFromAPI(`/live-streams?storeId=${id(storeId)}`);
       if (Array.isArray(data)) return data;
     } catch {
       // API not reachable
@@ -263,111 +339,58 @@ export const marketplaceApi = {
     return [];
   },
 
-  async createLiveStream(data: any) {
-    return fetchFromAPI('/live-streams', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async createLiveStream(data: { storeId: string; title: string; streamerName?: string; featuredProductIds: string[]; tiktokUrl?: string }) {
+    return fetchFromAPI('/live-streams', json('POST', data));
   },
 
-  async startLiveStream(id: string) {
-    return fetchFromAPI(`/live-streams/${encodeURIComponent(id)}/start`, {
-      method: 'POST',
-    });
-  },
-
-  async endLiveStream(id: string) {
-    return fetchFromAPI(`/live-streams/${encodeURIComponent(id)}/end`, {
-      method: 'POST',
-    });
-  },
-
-  async featureLiveProduct(id: string, productId: string) {
-    return fetchFromAPI(`/live-streams/${encodeURIComponent(id)}/feature`, {
-      method: 'POST',
-      body: JSON.stringify({ productId }),
-    });
+  async endLiveStream(streamId: string) {
+    return fetchFromAPI(`/live-streams/${id(streamId)}/end`, json('POST'));
   },
 
   // Orders
-  async getOrders(limit: number = 20) {
+  async getOrder(idOrNumber: string): Promise<Order | null> {
     try {
-      return await fetchFromAPI(`/orders?limit=${limit}`);
+      return await fetchFromAPI(`/orders/${id(idOrNumber)}`);
+    } catch {
+      return null;
+    }
+  },
+
+  async getUserOrders(userId: string): Promise<Order[]> {
+    try {
+      return await fetchFromAPI(`/orders/user/${id(userId)}`);
     } catch {
       return [];
     }
   },
 
-  async getOrder(idOrNumber: string) {
-    try {
-      return await fetchFromAPI(`/orders/${encodeURIComponent(idOrNumber)}`);
-    } catch {
-      return null;
-    }
+  async createOrder(data: {
+    userId?: string;
+    customerName: string;
+    customerEmail?: string;
+    customerPhone: string;
+    customerAddress: string;
+    customerReference?: string;
+    customerLat: number;
+    customerLng: number;
+    paymentMethod: string;
+    deliveryAt: string;
+    items: { productOfferId: string; quantity: number }[];
+  }): Promise<Order> {
+    return fetchFromAPI('/orders', json('POST', data));
   },
 
-  async createOrder(data: any) {
-    return fetchFromAPI('/orders', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async updateOrderStatus(orderId: string, status: string) {
+    return fetchFromAPI(`/orders/${id(orderId)}/status`, json('PATCH', { status }));
   },
 
-  async updateOrderStatus(id: string, status: string) {
-    return fetchFromAPI(`/orders/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async getShippingQuote(data: { pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number }): Promise<{ price: number; estimatedMinutes: number }> {
+    return fetchFromAPI('/dsp/quote', json('POST', data));
   },
 
-  // OpenDSP Integration
-  async getDSPQuote(data: { pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number }) {
-    return fetchFromAPI('/dsp/quote', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async getDSPTracking(token: string) {
-    try {
-      return await fetchFromAPI(`/dsp/track/${encodeURIComponent(token)}`);
-    } catch {
-      return null;
-    }
-  },
-
-  // Caja y Arqueo (Cash Register)
-  async openCashShift(data: { storeId: string; cashierName: string; initialCash: number; notes?: string }) {
-    return fetchFromAPI('/cash-register/shifts/open', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async getCurrentCashShift(storeId: string) {
-    return fetchFromAPI(`/cash-register/shifts/current/${encodeURIComponent(storeId)}`);
-  },
-
-  async addCashMovement(shiftId: string, data: { type: string; amount: number; description: string; referenceId?: string }) {
-    return fetchFromAPI(`/cash-register/shifts/${encodeURIComponent(shiftId)}/movements`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async closeCashShift(shiftId: string, data: { actualCash: number; notes?: string }) {
-    return fetchFromAPI(`/cash-register/shifts/${encodeURIComponent(shiftId)}/close`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // Subida de Imágenes (Media Upload)
-  async uploadImage(data: { base64Data: string; fileName?: string; folder?: string }) {
-    return fetchFromAPI('/upload/image', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  // Photos
+  async uploadImage(data: { base64Data: string; fileName?: string; folder?: 'products' | 'stores' }): Promise<{ url: string }> {
+    return fetchFromAPI('/upload/image', json('POST', data));
   },
 
   // Admin Stats
@@ -390,24 +413,16 @@ export const marketplaceApi = {
     return fetchFromAPI('/admin/stores');
   },
 
-  async updateStoreStatus(id: string, status: string) {
-    return fetchFromAPI(`/admin/stores/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async updateStoreStatus(storeId: string, status: string) {
+    return fetchFromAPI(`/admin/stores/${id(storeId)}/status`, json('PATCH', { status }));
   },
 
-  async updateStoreAdmin(id: string, data: any) {
-    return fetchFromAPI(`/admin/stores/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+  async updateStoreAdmin(storeId: string, data: Record<string, unknown>) {
+    return fetchFromAPI(`/admin/stores/${id(storeId)}`, json('PATCH', data));
   },
 
-  async deleteStoreAdmin(id: string) {
-    return fetchFromAPI(`/admin/stores/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+  async deleteStoreAdmin(storeId: string) {
+    return fetchFromAPI(`/admin/stores/${id(storeId)}`, json('DELETE'));
   },
 
   // Admin Users Management
@@ -415,24 +430,16 @@ export const marketplaceApi = {
     return fetchFromAPI('/admin/users');
   },
 
-  async updateUserRole(id: string, role: string) {
-    return fetchFromAPI(`/admin/users/${encodeURIComponent(id)}/role`, {
-      method: 'PATCH',
-      body: JSON.stringify({ role }),
-    });
+  async updateUserRole(userId: string, role: string) {
+    return fetchFromAPI(`/admin/users/${id(userId)}/role`, json('PATCH', { role }));
   },
 
-  async updateUserStatus(id: string, status: string) {
-    return fetchFromAPI(`/admin/users/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async updateUserStatus(userId: string, status: string) {
+    return fetchFromAPI(`/admin/users/${id(userId)}/status`, json('PATCH', { status }));
   },
 
-  async deleteUserAdmin(id: string) {
-    return fetchFromAPI(`/admin/users/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+  async deleteUserAdmin(userId: string) {
+    return fetchFromAPI(`/admin/users/${id(userId)}`, json('DELETE'));
   },
 
   // Admin Orders Management
@@ -444,11 +451,8 @@ export const marketplaceApi = {
     return fetchFromAPI(`/admin/orders${qs}`);
   },
 
-  async cancelOrderAdmin(id: string, reason?: string) {
-    return fetchFromAPI(`/admin/orders/${encodeURIComponent(id)}/cancel`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
+  async cancelOrderAdmin(orderId: string, reason?: string) {
+    return fetchFromAPI(`/admin/orders/${id(orderId)}/cancel`, json('POST', { reason }));
   },
 
   // Admin Products Moderation
@@ -456,17 +460,12 @@ export const marketplaceApi = {
     return fetchFromAPI('/admin/products');
   },
 
-  async moderateProductAdmin(id: string, status: string) {
-    return fetchFromAPI(`/admin/products/${encodeURIComponent(id)}/moderate`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async moderateProductAdmin(productId: string, status: string) {
+    return fetchFromAPI(`/admin/products/${id(productId)}/moderate`, json('PATCH', { status }));
   },
 
-  async deleteProductAdmin(id: string) {
-    return fetchFromAPI(`/admin/products/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+  async deleteProductAdmin(productId: string) {
+    return fetchFromAPI(`/admin/products/${id(productId)}`, json('DELETE'));
   },
 
   // Admin Payment Configs
@@ -474,56 +473,12 @@ export const marketplaceApi = {
     return fetchFromAPI('/admin/payment-configs');
   },
 
-  async updatePaymentConfig(key: string, data: any) {
-    return fetchFromAPI(`/admin/payment-configs/${encodeURIComponent(key)}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async updatePaymentConfig(key: string, data: Record<string, unknown>) {
+    return fetchFromAPI(`/admin/payment-configs/${id(key)}`, json('PUT', data));
   },
 
-  // Auth & Progressive Profiling
-  async socialLogin(data: {
-    email: string;
-    name: string;
-    avatar?: string;
-    provider?: string;
-    visitorId?: string;
-    interestProfile?: string;
-    cart?: string;
-  }) {
-    return fetchFromAPI('/auth/social-login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async enrichProfile(data: {
-    userId: string;
-    phone: string;
-    city?: string;
-    zone?: string;
-    address: string;
-    addressReference?: string;
-    nitOrCi?: string;
-  }) {
-    return fetchFromAPI('/auth/enrich-profile', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async syncInterests(data: {
-    userId: string;
-    interestProfile: string;
-    cart?: string;
-  }) {
-    return fetchFromAPI('/auth/sync-interests', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async getUser(id: string) {
-    return fetchFromAPI(`/auth/me/${encodeURIComponent(id)}`);
+  // Account
+  async getUser(userId: string) {
+    return fetchFromAPI(`/auth/me/${id(userId)}`);
   },
 };

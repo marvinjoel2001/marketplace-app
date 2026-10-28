@@ -1,50 +1,26 @@
+import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { authConfig } from '@/lib/authConfig';
+import { OAUTH_STATE_COOKIE, safeReturnUrl } from '@/lib/server/session';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ provider: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
-  const provLower = provider.toLowerCase();
-  const searchParams = req.nextUrl.searchParams;
-  const returnUrl = searchParams.get('returnUrl') || '/';
-
   const status = authConfig.getProviderStatus();
+  const state = randomBytes(16).toString('hex');
+  const returnUrl = safeReturnUrl(req.nextUrl.searchParams.get('returnUrl'));
 
-  if (provLower === 'google') {
-    if (status.google.enabled) {
-      const googleUrl = authConfig.getGoogleOAuthUrl();
-      return NextResponse.redirect(googleUrl);
-    } else {
-      // Mock / Dev fallback when env vars are pending
-      return NextResponse.redirect(
-        new URL(`/?auth_notice=pending_google_keys&returnUrl=${encodeURIComponent(returnUrl)}`, req.url)
-      );
-    }
-  }
+  let target: string | null = null;
+  if (provider === 'google' && status.google.enabled) target = authConfig.getGoogleOAuthUrl(state);
+  if (provider === 'tiktok' && status.tiktok.enabled) target = authConfig.getTikTokOAuthUrl(state);
+  if (!target) return NextResponse.redirect(new URL(`${returnUrl}`, req.url));
 
-  if (provLower === 'tiktok') {
-    if (status.tiktok.enabled) {
-      const tiktokUrl = authConfig.getTikTokOAuthUrl();
-      return NextResponse.redirect(tiktokUrl);
-    } else {
-      return NextResponse.redirect(
-        new URL(`/?auth_notice=pending_tiktok_keys&returnUrl=${encodeURIComponent(returnUrl)}`, req.url)
-      );
-    }
-  }
-
-  if (provLower === 'facebook') {
-    if (status.facebook.enabled) {
-      const fbUrl = authConfig.getFacebookOAuthUrl();
-      return NextResponse.redirect(fbUrl);
-    } else {
-      return NextResponse.redirect(
-        new URL(`/?auth_notice=pending_fb_keys&returnUrl=${encodeURIComponent(returnUrl)}`, req.url)
-      );
-    }
-  }
-
-  return NextResponse.json({ error: `Proveedor desconocido: ${provider}` }, { status: 400 });
+  const response = NextResponse.redirect(target);
+  response.cookies.set(OAUTH_STATE_COOKIE, JSON.stringify({ state, returnUrl }), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 600,
+  });
+  return response;
 }

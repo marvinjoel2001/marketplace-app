@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { backend, SESSION_COOKIE } from '@/lib/server/session';
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get('chiringuito_auth_token')?.value;
+  const userId = req.cookies.get(SESSION_COOKIE)?.value;
+  if (!userId) return NextResponse.json({ user: null });
 
-  if (!token) {
-    return NextResponse.json({ authenticated: false, user: null });
+  try {
+    const user = await backend(`/auth/me/${encodeURIComponent(userId)}`);
+    // Orders come along from the backend; the session only needs the profile.
+    delete user.orders;
+    return NextResponse.json({ user });
+  } catch {
+    return NextResponse.json({ user: null });
   }
-
-  return NextResponse.json({
-    authenticated: true,
-    user: {
-      id: token,
-      email: 'usuario@chiringuito.bo',
-      name: 'Usuario Autenticado',
-      city: 'Santa Cruz de la Sierra',
-    },
-  });
 }

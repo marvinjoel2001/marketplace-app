@@ -1,10 +1,12 @@
-import React from 'react';
-import { CheckoutFlow } from '@/components/checkout/CheckoutFlow';
+import { Suspense } from 'react';
+import { Checkout } from '@/components/shop/Checkout';
 
-export const metadata = {
-  title: 'Checkout Seguro — Vitrina Market & OpenDSP',
-};
+export const metadata = { title: 'Tu pedido — Vitrina' };
 
 export default function CheckoutPage() {
-  return <CheckoutFlow />;
+  return (
+    <Suspense fallback={<p className="py-10 text-center text-muted">Cargando tu pedido…</p>}>
+      <Checkout />
+    </Suspense>
+  );
 }

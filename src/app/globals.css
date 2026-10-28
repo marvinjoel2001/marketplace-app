@@ -1,299 +1,235 @@
 @import "tailwindcss";
 
+/*
+  Vitrina: a shop window for Santa Cruz stores.
+  Green from the Santa Cruz flag carries actions; market-tag yellow is reserved for prices.
+  One family (Archivo) speaks in two widths: expanded for prices and headings, normal for reading.
+*/
+@theme {
+  --color-ink: #12241c;
+  --color-ink-soft: #3d5248;
+  --color-muted: #5f7369;
+  --color-paper: #eef3f0;
+  --color-surface: #ffffff;
+  --color-line: #d8e2dc;
+  --color-verde: #0d7a4c;
+  --color-verde-dark: #095c39;
+  --color-verde-tint: #e2f1e9;
+  --color-tag: #ffd43b;
+  --color-tag-dark: #e9b800;
+  --color-live: #e3304b;
+  --color-danger: #c62f2f;
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --radius-card: 14px;
+}
+
 @layer base {
-  :root {
-    --canvas: #FAFAFC;
-    --surface: #FFFFFF;
-    --primary: #4F46E5;
-    --primary-hover: #4338CA;
-    --primary-light: #EEF2FF;
-    --accent-purple: #7C3AED;
-    --border-subtle: #F1F5F9;
-    --border-medium: #E2E8F0;
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-muted: #64748B;
-    --badge-bestseller: #4F46E5;
-    --badge-discount: #2563EB;
-    --badge-new: #0F172A;
-    --success-green: #10B981;
-    --live-red: #EF4444;
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    background-color: transparent;
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-variation-settings: "wdth" 100;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  /* Micro-sombreado imperceptible y refinado para títulos y encabezados */
-  h1 {
-    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 3px 10px rgba(15, 23, 42, 0.04);
+  :focus-visible {
+    outline: 3px solid var(--color-verde);
+    outline-offset: 2px;
   }
 
-  h2 {
-    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 2px 7px rgba(15, 23, 42, 0.035);
-  }
-
-  h3 {
-    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 2px 5px rgba(15, 23, 42, 0.03);
-  }
-
-  h4, h5, h6 {
-    text-shadow: 0 1px 1.5px rgba(15, 23, 42, 0.05);
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* keeps iOS from zooming into fields */
   }
 }
 
-/* ==========================================================================
-   SISTEMA DE SOMBREADO ELEGANTE E IMPERCEPTIBLE PARA TÍTULOS Y TEXTOS
-   Mejora el contraste, definición y nitidez visual sin alterar el diseño limpio
-   ========================================================================== */
-
-h1, h2, h3, h4, h5, h6 {
-  text-rendering: optimizeLegibility;
-}
-
-/* Sombreado de alta definición para títulos y textos en negrita sobre fondos claros */
-.font-black,
-.font-extrabold {
-  text-shadow: 0 1px 1.5px rgba(15, 23, 42, 0.06);
-}
-
-/* Micro-sombra nítida para textos blancos sobre botones, badges o gradientes */
-.text-white.font-black,
-.text-white.font-bold,
-.text-white.font-extrabold,
-.text-white.text-xs.font-bold,
-.text-white.text-xs.font-black {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
-}
-
-/* Utilidades para sombreados tipográficos específicos */
-.text-shadow-subtle {
-  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 2px 5px rgba(15, 23, 42, 0.035);
-}
-
-.text-shadow-title {
-  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.09), 0 3px 8px rgba(15, 23, 42, 0.045);
-}
-
-.text-shadow-hero {
-  text-shadow: 0 1px 3px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
-}
-
-.text-shadow-brand {
-  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.09), 0 2px 8px rgba(79, 70, 229, 0.1);
-}
-
-.text-shadow-light {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.text-shadow-badge {
-  text-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.2);
-}
-
-/* Glassmorphism Design System Tokens */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.07), 0 10px 20px -5px rgba(15, 23, 42, 0.04);
-}
-
-.glass-panel-subtle {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.05);
-}
-
-.glass-pill {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
-}
-
-.glass-pill:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 1);
-}
-
-.glass-input {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
-}
-
-.glass-input:focus-within,
-.glass-input:focus {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-/* Hero & Feature Soft Radial Backgrounds */
-.hero-gradient {
-  background: radial-gradient(circle at 75% 40%, rgba(237, 233, 254, 0.5) 0%, rgba(245, 243, 255, 0.3) 35%, rgba(255, 255, 255, 0.7) 70%);
-}
-
-.special-offer-gradient {
-  background: radial-gradient(circle at 65% 50%, rgba(237, 233, 254, 0.6) 0%, rgba(248, 247, 255, 0.4) 45%, rgba(255, 255, 255, 0.7) 100%);
-}
-
-/* Animations */
-@keyframes pulse-live {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
+@layer components {
+  /* Expanded width for headings and numbers that should read like shop signage. */
+  .type-sign {
+    font-variation-settings: "wdth" 118;
+    letter-spacing: -0.01em;
   }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.05);
+
+  /* The price tag: the one loud thing in the interface. A notched yellow label with a punched hole. */
+  .price-tag {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.28em 0.7em 0.28em 1.15em;
+    background: var(--color-tag);
+    color: var(--color-ink);
+    font-weight: 800;
+    font-variation-settings: "wdth" 122;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    clip-path: polygon(0.7em 0, 100% 0, 100% 100%, 0.7em 100%, 0 50%);
+    border-radius: 0 6px 6px 0;
+  }
+
+  .price-tag::before {
+    content: "";
+    position: absolute;
+    left: 0.55em;
+    top: 50%;
+    width: 0.32em;
+    height: 0.32em;
+    margin-top: -0.16em;
+    border-radius: 999px;
+    background: var(--color-paper);
+    box-shadow: inset 0 0 0 1px rgb(18 36 28 / 0.25);
+  }
+
+  .price-tag-sm {
+    font-size: 0.95rem;
+  }
+
+  .price-tag-lg {
+    font-size: 1.6rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 1.15rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background: var(--color-verde);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-verde-dark);
+  }
+
+  .btn-ghost {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-line);
+  }
+
+  .btn-ghost:hover {
+    box-shadow: inset 0 0 0 1px var(--color-ink-soft);
+  }
+
+  .field {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--color-verde);
+    box-shadow: 0 0 0 3px rgb(13 122 76 / 0.15);
+  }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-ink-soft);
+  }
+
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 38px;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .chip[aria-pressed="true"],
+  .chip[aria-current="page"] {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: #fff;
+  }
+
+  .scroll-row {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .scroll-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scroll-row > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Live ring around a store avatar, like a story that is happening now. */
+  .live-ring {
+    padding: 3px;
+    border-radius: 999px;
+    background: conic-gradient(from 200deg, var(--color-live), #ff7a59, var(--color-live));
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
-.animate-pulse-live {
-  animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes float-gentle {
-  0%, 100% {
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
     transform: translateY(0);
   }
-  50% {
-    transform: translateY(-8px);
-  }
 }
 
-.animate-float-gentle {
-  animation: float-gentle 4s ease-in-out infinite;
-}
-
-@keyframes float-heart {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(0.8);
-  }
-  50% {
-    opacity: 0.9;
-    transform: translateY(-50px) scale(1.1) translateX(10px);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-110px) scale(1.3) translateX(-10px);
-  }
-}
-
-.animate-float-heart {
-  animation: float-heart 2s ease-out forwards;
-}
-
-/* Cart Bounce Microinteraction */
-@keyframes cart-bounce {
-  0% {
-    transform: scale(1);
-  }
-  25% {
-    transform: scale(1.35) rotate(-6deg);
-  }
-  50% {
-    transform: scale(0.9) rotate(3deg);
-  }
-  75% {
-    transform: scale(1.15) rotate(-2deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-.animate-cart-bounce {
-  animation: cart-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Badge Scale-pop Microinteraction */
-@keyframes badge-pop {
-  0% {
-    transform: scale(0.6);
-  }
-  50% {
-    transform: scale(1.4);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.animate-badge-pop {
-  animation: badge-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* Shimmer Skeleton Loader */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(241, 245, 249, 0.7) 0%,
-    rgba(255, 255, 255, 0.95) 45%,
-    rgba(226, 232, 240, 0.9) 55%,
-    rgba(241, 245, 249, 0.7) 100%
-  );
-  background-size: 250% 100%;
-  animation: shimmer 1.6s infinite ease-in-out;
-}
-
-/* Glassmorphism Skeleton Container */
-.glass-skeleton {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  position: relative;
-  overflow: hidden;
-}
-
-.glass-skeleton::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.6) 50%,
-    transparent 100%
-  );
-  animation: shimmerWave 1.8s infinite;
-}
-
-@keyframes shimmerWave {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* Entrance Animations */
-@keyframes fadeInUp {
+@keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(-12px);
   }
   to {
     opacity: 1;
@@ -301,133 +237,36 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+.animate-sheet-up {
+  animation: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out both;
 }
 
-.animate-fade-in-down {
-  animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Slow Gentle Breathing Animation */
-@keyframes floatSlow {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
+@keyframes live-dot {
   50% {
-    transform: translateY(-6px) rotate(0.5deg);
+    opacity: 0.35;
   }
 }
 
-.animate-float-slow {
-  animation: floatSlow 5s ease-in-out infinite;
+.animate-live-dot {
+  animation: live-dot 1.4s ease-in-out infinite;
 }
 
-/* Glow Ring Pulse (for Live Streaming & Flash Sales) */
-@keyframes glowRing {
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-.animate-glow-ring {
-  animation: glowRing 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+/* Leaflet: keep the map under sheets and headers. */
+.leaflet-container {
+  font-family: var(--font-sans);
+  z-index: 0;
 }
-
-/* Stagger Delay Classes */
-.delay-50 { animation-delay: 50ms; }
-.delay-100 { animation-delay: 100ms; }
-.delay-150 { animation-delay: 150ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-250 { animation-delay: 250ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
-
-/* Layered Shadows & Modern Depth System */
-.shadow-card {
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-}
-
-.shadow-card-hover {
-  box-shadow: 0 20px 35px -8px rgba(15, 23, 42, 0.1), 0 6px 12px -2px rgba(15, 23, 42, 0.04);
-}
-
-.shadow-emerald-pill {
-  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.35), 0 4px 8px -2px rgba(5, 150, 105, 0.2);
-}
-
-.shadow-tiktok-badge {
-  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.15), 0 0 12px -2px rgba(37, 244, 238, 0.2), 0 0 12px -2px rgba(254, 44, 85, 0.2);
-}
-
-.hover-lift {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hover-lift:hover {
-  transform: translateY(-3px);
-}
-
-/* Modern Card 3D Lift */
-.hover-card-3d {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
-  will-change: transform, box-shadow;
-}
-
-.hover-card-3d:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 20px 35px -8px rgba(79, 70, 229, 0.12), 0 10px 20px -4px rgba(15, 23, 42, 0.06);
-}
-
-
-
-

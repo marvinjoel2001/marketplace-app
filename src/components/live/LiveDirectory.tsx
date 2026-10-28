@@ -7,6 +7,7 @@ import { AlertCircle, ArrowRight, Eye, ExternalLink, MapPin, Radio, RefreshCw } 
 import type { TikTokLivesResponse } from '@/lib/api';
 import { liveFreshness } from '@/lib/liveFreshness';
 import { LivePreview } from './LivePreview';
+import { TikTokConnect } from './TikTokConnect';
 
 const CATEGORIES = ['Ropa', 'Electrónica', 'Hogar', 'Belleza', 'Otros'];
 
@@ -142,6 +143,8 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
           </button>
           </div>
         </div>
+
+        <TikTokConnect onConnected={() => void refresh()} />
 
         {connectionError && cards.length > 0 && (
           <div className="live-connection-note" role="status">

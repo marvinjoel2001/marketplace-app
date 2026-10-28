@@ -1,283 +1,126 @@
 'use client';
 
-import React from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Store,
-  Package,
-  Truck,
-  Video,
-  Sparkles,
-  TrendingUp,
-  ShieldCheck,
-  ArrowRight,
-  CheckCircle2,
-  Users,
-  QrCode,
-  Flame,
-} from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
+import { Bell, ChevronRight, Package, Plus } from 'lucide-react';
+import { useVendor } from '@/context/VendorContext';
+import { marketplaceApi, type StoreSummary } from '@/lib/api';
+import { describeSchedule, describeWindow } from '@/lib/schedule';
+import { formatBs } from '@/lib/utils';
+import { TikTokIcon } from '@/components/common/TikTokIcon';
 
-export default function VendorHubPage() {
-  const { user, isAuthenticated, openAuthModal } = useAuth();
-  const { language } = useLanguage();
+function NotifyToggle() {
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  useEffect(() => {
+    const read = () => setPermission(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
+    const timer = setTimeout(read, 0);
+    return () => clearTimeout(timer);
+  }, []);
+  if (permission !== 'default') return null;
+  return (
+    <button
+      type="button"
+      onClick={() => Notification.requestPermission().then(setPermission)}
+      className="panel flex w-full items-center gap-3 p-4 text-left"
+    >
+      <Bell className="h-5 w-5 shrink-0 text-verde" />
+      <span className="flex-1 text-sm">
+        <span className="block font-semibold">Activa los avisos de venta</span>
+        <span className="text-muted">Te avisamos en este celular cada vez que vendas, con la hora de recojo.</span>
+      </span>
+    </button>
+  );
+}
+
+export default function VendorHomePage() {
+  const { store, unseenSales } = useVendor();
+  const [summary, setSummary] = useState<StoreSummary | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    marketplaceApi
+      .getStoreSummary(store.id)
+      .then((s) => active && setSummary(s))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // New sales change the totals.
+  }, [store.id, unseenSales]);
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] py-10 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header Hero */}
-        <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-100 shadow-xs relative overflow-hidden">
-          <div className="max-w-2xl space-y-4 relative z-10">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
-              <Store className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{language === 'es' ? 'Portal Oficial de Tiendas y Vendedores' : 'Official Stores & Vendors Portal'}</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-              {language === 'es'
-                ? 'Gestiona tus Ventas, Catálogo y Despacho Express OpenDSP'
-                : 'Manage your Sales, Catalog and OpenDSP Express Delivery'}
-            </h1>
-
-            <p className="text-sm text-slate-600 leading-relaxed">
-              {language === 'es'
-                ? 'Vitrina Market te conecta directamente con miles de compradores bolivianos a través de TikTok Live y entrega tus pedidos en 15-45 minutos con motorizados OpenDSP.'
-                : 'Vitrina Market connects you directly with thousands of Bolivian shoppers via TikTok Live and delivers your orders in 15-45 min with OpenDSP couriers.'}
-            </p>
-
-            <div className="pt-2 flex flex-wrap gap-3">
-              {isAuthenticated ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center space-x-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200">
-                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs">
-                      {user?.activeStoreName?.[0] || user?.name?.[0] || 'T'}
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">
-                        {user?.activeStoreName || user?.name}
-                      </span>
-                      <span className="text-[11px] text-emerald-700 font-bold">● Tienda Conectada</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/vendor/inventory${user?.activeStoreId ? `?storeId=${encodeURIComponent(user.activeStoreId)}` : ''}`}
-                    className="px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2"
-                  >
-                    <Package className="w-4 h-4" />
-                    <span>{language === 'es' ? 'Administrar Mi Tienda' : 'Manage My Store'}</span>
-                  </Link>
-
-                  <Link
-                    href="/vendor/onboarding"
-                    className="px-5 py-3 rounded-full bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center space-x-1.5"
-                  >
-                    <Store className="w-3.5 h-3.5" />
-                    <span>{language === 'es' ? 'Crear Otra Tienda' : 'Create Another Store'}</span>
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal()}
-                    className="px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2"
-                  >
-                    <Store className="w-4 h-4" />
-                    <span>{language === 'es' ? 'Iniciar Sesión como Tienda' : 'Sign In as Store'}</span>
-                  </button>
-
-                  <Link
-                    href="/vendor/onboarding"
-                    className="px-6 py-3 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center space-x-2"
-                  >
-                    <span>{language === 'es' ? 'Registrar Nueva Tienda' : 'Register New Store'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Core Pillars: Catálogo, Ofertas Flash, Perfil & Fotos, Pedidos OpenDSP, TikTok Live */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 1: Catálogo e Inventario */}
-          <Link
-            href="/vendor/inventory"
-            className="group bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Package className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-slate-900 mb-1">
-                  {language === 'es' ? 'Catálogo & Inventario' : 'Catalog & Inventory'}
-                </h2>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {language === 'es'
-                    ? 'Publica productos, define precios en Bs., controla el stock y organiza tus artículos.'
-                    : 'List products, set prices in Bs., manage stock and organize items.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 flex items-center text-xs font-bold text-emerald-700 space-x-1 group-hover:translate-x-1 transition-transform">
-              <span>{language === 'es' ? 'Gestionar productos' : 'Manage products'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Card: Ofertas Flash & Cupones */}
-          <Link
-            href="/vendor/offers"
-            className="group bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:border-orange-300 hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Flame className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <div className="flex items-center space-x-1.5 mb-1">
-                  <h2 className="text-base font-black text-slate-900">
-                    {language === 'es' ? 'Ofertas Flash & Cupones' : 'Flash Sales & Coupons'}
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700">
-                    HOT
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {language === 'es'
-                    ? 'Activa descuentos con reloj regresivo, insignias de liquidación y cupones de descuento.'
-                    : 'Activate countdown discounts, clearance badges and promo coupons.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 flex items-center text-xs font-bold text-orange-600 space-x-1 group-hover:translate-x-1 transition-transform">
-              <span>{language === 'es' ? 'Configurar ofertas' : 'Configure offers'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Card 2: Perfil & Fotos de la Tienda */}
-          <Link
-            href="/vendor/profile"
-            className="group bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:border-amber-300 hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Store className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-slate-900 mb-1">
-                  {language === 'es' ? 'Perfil & Fotos de Tienda' : 'Store Profile & Photos'}
-                </h2>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {language === 'es'
-                    ? 'Sube tu logo oficial, foto de portada/banner y datos de recogida para motorizados OpenDSP.'
-                    : 'Upload your official logo, cover banner and OpenDSP pickup address.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 flex items-center text-xs font-bold text-amber-700 space-x-1 group-hover:translate-x-1 transition-transform">
-              <span>{language === 'es' ? 'Subir fotos y editar' : 'Upload photos'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Card 3: Pedidos y Despacho OpenDSP */}
-          <Link
-            href="/vendor/orders"
-            className="group bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Truck className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-slate-900 mb-1">
-                  {language === 'es' ? 'Ventas & Despacho OpenDSP' : 'Sales & OpenDSP Dispatch'}
-                </h2>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {language === 'es'
-                    ? 'Revisa tus pedidos confirmados, visualiza al repartidor asignado con su placa de moto y rastrea la entrega.'
-                    : 'Review orders, check assigned courier motorcycle plate and track GPS delivery.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 flex items-center text-xs font-bold text-blue-700 space-x-1 group-hover:translate-x-1 transition-transform">
-              <span>{language === 'es' ? 'Ver ventas y pedidos' : 'View orders'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Card 4: TikTok Live Manager */}
-          <Link
-            href="/vendor/live"
-            className="group bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:border-red-300 hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Video className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-slate-900 mb-1">
-                  {language === 'es' ? 'TikTok Live Shopping' : 'TikTok Live Shopping'}
-                </h2>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {language === 'es'
-                    ? 'Conecta tu usuario de TikTok, detecta automáticamente cuando estés en vivo y fija productos flash.'
-                    : 'Connect TikTok username, detect stream automatically and pin flash items.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 flex items-center text-xs font-bold text-red-700 space-x-1 group-hover:translate-x-1 transition-transform">
-              <span>{language === 'es' ? 'Abrir estudio live' : 'Open live studio'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-        </div>
-
-        {/* OpenDSP Integration Explainer Section */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-xs space-y-6">
-          <div className="flex items-center space-x-2 text-slate-900 font-black text-lg">
-            <Truck className="w-5 h-5 text-emerald-600" />
-            <span>{language === 'es' ? '¿Cómo funciona la logística entre Vitrina Market y OpenDSP?' : 'How logistics work between Vitrina Market and OpenDSP?'}</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
-            <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-slate-100 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">1</div>
-              <p className="font-extrabold text-slate-900">{language === 'es' ? 'El Cliente Compra' : 'Customer Buys'}</p>
-              <p className="text-slate-500">{language === 'es' ? 'Paga con QR Simple o tarjeta en Vitrina Market o durante tu TikTok Live.' : 'Pays via QR Simple or card in Vitrina Market or during your TikTok Live.'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-slate-100 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">2</div>
-              <p className="font-extrabold text-slate-900">{language === 'es' ? 'OpenDSP Cotiza y Despacha' : 'OpenDSP Quotes & Dispatches'}</p>
-              <p className="text-slate-500">{language === 'es' ? 'El sistema calcula la ruta GPS y asigna al repartidor más cercano a tu local.' : 'The system calculates GPS route and assigns the nearest courier to your shop.'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-slate-100 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">3</div>
-              <p className="font-extrabold text-slate-900">{language === 'es' ? 'Recogida en tu Tienda' : 'Pickup at your Store'}</p>
-              <p className="text-slate-500">{language === 'es' ? 'El motorizado llega con su placa verificada y código de retiro para llevar el paquete.' : 'Courier arrives with verified plate and pickup code.'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-slate-100 space-y-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">4</div>
-              <p className="font-extrabold text-slate-900">{language === 'es' ? 'Entrega y Liquidación' : 'Delivery & Settlement'}</p>
-              <p className="text-slate-500">{language === 'es' ? 'El cliente recibe su pedido y los fondos se acreditan a tu cuenta bancaria registrada.' : 'Customer receives package and funds settle into your bank account.'}</p>
-            </div>
-          </div>
-        </div>
+    <div className="flex flex-col gap-5">
+      <div>
+        <p className="text-sm text-muted">Hola, {store.name}</p>
+        <h1 className="type-sign mt-0.5 text-[1.7rem] font-extrabold leading-tight">
+          Hoy vendiste <span className="tabular-nums">{summary ? formatBs(summary.today.total) : '…'}</span>
+        </h1>
+        {summary && (
+          <p className="mt-1 text-sm text-ink-soft">
+            {summary.today.count === 1 ? '1 pedido' : `${summary.today.count} pedidos`} hoy. Esta semana {formatBs(summary.week.total)}, este mes{' '}
+            {formatBs(summary.month.total)}.
+          </p>
+        )}
       </div>
+
+      <Link href="/vendor/tiktok" className="flex items-center gap-4 rounded-[var(--radius-card)] bg-ink p-4 text-white">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10">
+          <TikTokIcon className="h-6 w-6" />
+        </span>
+        <span className="flex-1">
+          <span className="type-sign block text-lg font-extrabold">Vender por TikTok</span>
+          <span className="text-sm text-white/75">Elige qué vas a mostrar en tu live y tus clientes lo compran aquí.</span>
+        </span>
+        <ChevronRight className="h-5 w-5 text-white/60" />
+      </Link>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/vendor/productos?nuevo=1" className="panel flex flex-col gap-2 p-4">
+          <Plus className="h-5 w-5 text-verde" />
+          <span className="font-semibold">Subir producto</span>
+        </Link>
+        <Link href="/vendor/productos" className="panel flex flex-col gap-2 p-4">
+          <Package className="h-5 w-5 text-verde" />
+          <span className="font-semibold">
+            {summary ? (summary.products === 1 ? '1 producto' : `${summary.products} productos`) : 'Mis productos'}
+            {summary && summary.activeOffers > 0 && <span className="block text-sm font-normal text-muted">{summary.activeOffers} en oferta</span>}
+          </span>
+        </Link>
+      </div>
+
+      <NotifyToggle />
+
+      <section aria-labelledby="upcoming-title">
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 id="upcoming-title" className="font-bold">
+            Próximos recojos
+          </h2>
+          <Link href="/vendor/ventas" className="text-sm font-semibold text-verde-dark">
+            Ver ventas
+          </Link>
+        </div>
+        {!summary ? (
+          <p className="text-sm text-muted">Cargando…</p>
+        ) : summary.upcoming.length === 0 ? (
+          <p className="panel px-4 py-5 text-sm text-muted">
+            No tienes pedidos por entregar. Entregas {describeSchedule(store).toLowerCase()}.
+          </p>
+        ) : (
+          <ul className="panel divide-y divide-line">
+            {summary.upcoming.map((o) => (
+              <li key={o.id} className="flex items-center gap-3 p-3.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">El repartidor recoge {describeWindow(o.deliveryAt, o.deliveryWindow).toLowerCase()}</p>
+                  <p className="truncate text-xs text-muted">
+                    {o.items.map((it) => `${it.quantity} × ${it.productTitle}`).join(', ')}
+                  </p>
+                </div>
+                <span className="text-sm font-semibold tabular-nums">{formatBs(o.subtotal)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
