@@ -3,26 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ArrowRight, Eye, ExternalLink, MapPin, Radio, RefreshCw } from 'lucide-react';
+import { ArrowRight, Eye, MapPin, Radio } from 'lucide-react';
 import type { TikTokLivesResponse } from '@/lib/api';
 import { liveFreshness } from '@/lib/liveFreshness';
 import { LivePreview } from './LivePreview';
-import { TikTokConnect } from './TikTokConnect';
 
 const CATEGORIES = ['Ropa', 'Electrónica', 'Hogar', 'Belleza', 'Otros'];
 
-function describeGeo(evidence: string): string {
-  if (evidence === 'registered_store') return 'Tienda registrada en Bolivia';
-  if (evidence === 'tiktok_country') return 'País informado por TikTok';
-  if (evidence === 'username:bo') return 'Referencia a Bolivia';
-  if (evidence === 'phone:bo') return 'Celular boliviano';
-  if (evidence.startsWith('keyword:')) {
-    const place = evidence.slice(8);
-    return place === '🇧🇴' || place === 'bolivia' ? 'Menciona Bolivia' : `Menciona ${place}`;
-  }
-  return 'Ubicación no verificada';
-}
-
+/** Selling lives, refreshed quietly in the background. */
 export function LiveDirectory({ initialData, category, page, initialNow }: {
   initialData: TikTokLivesResponse | null;
   category?: string;
@@ -31,9 +19,6 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
 }) {
   const [data, setData] = useState(initialData);
   const [now, setNow] = useState(initialNow);
-  const [updating, setUpdating] = useState(false);
-  const [connectionError, setConnectionError] = useState(!initialData);
-  const [lastSuccess, setLastSuccess] = useState(initialData ? initialNow : 0);
   const request = useRef<AbortController | null>(null);
   const query = useMemo(() => new URLSearchParams({ ...(category ? { category } : {}), page: String(page) }).toString(), [category, page]);
   const storageKey = `vitrina:live-directory:${query}`;
@@ -42,7 +27,6 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
     if (request.current) return;
     const controller = new AbortController();
     request.current = controller;
-    setUpdating(true);
     const timeout = setTimeout(() => controller.abort(), 12000);
     try {
       const response = await fetch(`/api/tiktok/lives?${query}`, { cache: 'no-store', signal: controller.signal });
@@ -50,20 +34,13 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
       const result: TikTokLivesResponse = await response.json();
       if (!Array.isArray(result.data) || !result.meta || !result.pagination) throw new Error('Respuesta incompleta');
       setData(result);
-      setConnectionError(false);
-      setLastSuccess(Date.now());
       setNow(Date.now());
       try { sessionStorage.setItem(storageKey, JSON.stringify(result)); } catch { /* Optional short-lived recovery. */ }
     } catch {
-      // A failed request does not erase the last successful response. Individual
-      // cards still expire using their original verified_at timestamps.
-      if (request.current === controller) setConnectionError(true);
+      // A failed request keeps the last list; cards still expire by their own verified_at.
     } finally {
       clearTimeout(timeout);
-      if (request.current === controller) {
-        request.current = null;
-        setUpdating(false);
-      }
+      if (request.current === controller) request.current = null;
     }
   }, [query, storageKey]);
 
@@ -98,94 +75,72 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
 
   const freshSeconds = data?.meta.freshness_seconds ?? 60;
   const retention = data?.meta.retention_seconds ?? 300;
-  const cards = (data?.data ?? []).map((live) => ({ live, status: liveFreshness(live, now, freshSeconds, retention) }))
-    .filter(({ status }) => status !== 'expired');
-  const fresh = cards.filter(({ status }) => status === 'fresh');
-  const pending = cards.length - fresh.length;
-  const liveCount = connectionError || pending ? fresh.length : data?.meta.active_count ?? fresh.length;
-  const viewers = fresh.reduce((sum, { live }) => sum + live.viewer_count, 0);
-  const updatedAgo = lastSuccess ? Math.max(0, Math.floor((now - lastSuccess) / 1000)) : null;
-  const lastUpdateText = updatedAgo === null ? 'Conectando al catálogo' : updatedAgo < 5 ? 'Actualizado ahora'
-    : updatedAgo < 60 ? `Actualizado hace ${updatedAgo} s` : `Actualizado hace ${Math.floor(updatedAgo / 60)} min`;
+  // Rooms waiting for re-verification still show as live: shoppers don't need that detail.
+  const cards = (data?.data ?? []).filter((live) => liveFreshness(live, now, freshSeconds, retention) !== 'expired');
+  const viewers = cards.reduce((sum, live) => sum + live.viewer_count, 0);
 
   return (
     <div className="live-content">
       <section className="live-hero" aria-labelledby="live-heading">
         <Image src="/images/tiktok-live-hero.png" alt="" fill priority sizes="(min-width: 1280px) 80vw, 100vw" className="live-hero-art" />
         <div className="live-hero-copy">
-          <span className="live-eyebrow"><Radio aria-hidden="true" size={15} /> EN VIVO AHORA</span>
+          <span className="live-eyebrow"><Radio aria-hidden="true" size={15} /> En vivo ahora</span>
           <h1 id="live-heading">Lives de venta en Bolivia</h1>
-          <p>Descubre algo nuevo. Mira, pregunta y compra en vivo.</p>
-          <div className="live-stats">
-            <span><Radio aria-hidden="true" size={17} /><strong>{liveCount}</strong> en vivo</span>
-            <span><Eye aria-hidden="true" size={17} /><strong>{viewers.toLocaleString('es-BO')}</strong> espectadores</span>
-          </div>
+          <p>Entra, mira lo que muestran y pregunta en el chat.</p>
+          {cards.length > 0 && (
+            <div className="live-stats">
+              <span><Radio aria-hidden="true" size={17} /><strong>{cards.length}</strong> en vivo</span>
+              {viewers > 0 && <span><Eye aria-hidden="true" size={17} /><strong>{viewers.toLocaleString('es-BO')}</strong> mirando</span>}
+            </div>
+          )}
         </div>
       </section>
 
       <section id="transmisiones" className="live-list-section" aria-labelledby="live-list-heading">
         <div className="live-list-toolbar">
-          <div>
-            <h2 id="live-list-heading">Transmisiones activas</h2>
-            <div className="live-updated"><span className={connectionError || pending ? 'live-status-dot pending' : 'live-status-dot'} />{lastUpdateText}{pending > 0 ? ` · ${pending} actualizando` : ''}</div>
-          </div>
-          <div className="live-list-controls">
-        <nav className="live-category-nav" aria-label="Categorías de transmisiones">
-          {[undefined, ...CATEGORIES].map((name) => (
-            <Link key={name ?? 'all'} href={name ? `/live?category=${encodeURIComponent(name)}` : '/live'}
-              className={category === name ? 'live-category selected' : 'live-category'} aria-current={category === name ? 'page' : undefined}>
-              {name ?? 'Todos'}
-            </Link>
-          ))}
-        </nav>
-          <button type="button" onClick={() => void refresh()} disabled={updating} className="live-refresh" aria-label="Actualizar transmisiones" title="Actualizar transmisiones">
-            <RefreshCw size={15} className={updating ? 'live-spin' : ''} />
-          </button>
-          </div>
+          <h2 id="live-list-heading">Transmisiones</h2>
+          <nav className="live-category-nav" aria-label="Categorías de transmisiones">
+            {[undefined, ...CATEGORIES].map((name) => (
+              <Link key={name ?? 'all'} href={name ? `/live?category=${encodeURIComponent(name)}` : '/live'}
+                className={category === name ? 'live-category selected' : 'live-category'} aria-current={category === name ? 'page' : undefined}>
+                {name ?? 'Todos'}
+              </Link>
+            ))}
+          </nav>
         </div>
-
-        <TikTokConnect onConnected={() => void refresh()} />
-
-        {connectionError && cards.length > 0 && (
-          <div className="live-connection-note" role="status">
-            <RefreshCw size={16} />
-            <p>La conexión está tardando. Conservamos la última actualización mientras reintentamos.</p>
-          </div>
-        )}
 
         {cards.length === 0 ? (
           <div className="live-empty" role="status">
-            {connectionError ? <AlertCircle size={30} /> : <Radio size={30} />}
-            <h3>{connectionError ? 'Estamos recuperando la conexión' : data?.meta.worker_enabled === false ? 'La detección está desactivada' : 'Buscando nuevas transmisiones'}</h3>
-            <p>{connectionError ? 'No pudimos actualizar el catálogo. Reintentamos automáticamente.'
-              : category ? `Aún no hay transmisiones verificadas de ${category.toLowerCase()}. Prueba con todas las categorías.`
-                : 'Las nuevas emisiones aparecerán aquí cuando se verifiquen.'}</p>
-            <button type="button" className="live-primary-button" onClick={() => void refresh()} disabled={updating}>
-              <RefreshCw size={16} className={updating ? 'live-spin' : ''} /> {updating ? 'Conectando…' : 'Reintentar'}
-            </button>
+            <Radio size={30} />
+            <h3>{category ? `Nadie vende ${category.toLowerCase()} en vivo ahora` : 'No hay lives de venta en este momento'}</h3>
+            <p>{category ? 'Mira las otras categorías o vuelve en un rato.' : 'Vuelve en un rato: esta página se actualiza sola.'}</p>
+            {category && <Link href="/live" className="live-primary-button">Ver todos los lives</Link>}
           </div>
         ) : (
           <div className="live-grid">
-            {cards.map(({ live, status }) => (
+            {cards.map((live) => (
               <article className="live-card" key={`${live.username}:${live.room_id}`}>
                 <div className="live-card-media">
                   <LivePreview roomId={live.room_id} hlsUrl={live.stream_hls_url ?? null} flvUrl={live.stream_flv_url ?? null}
-                    coverUrl={live.cover_image_url} avatarUrl={live.avatar_url} liveUrl={live.live_url} alt={live.title || `@${live.username}`} />
-                  <span className={status === 'fresh' ? 'live-card-badge' : 'live-card-badge verifying'}>{status === 'fresh' ? 'LIVE' : 'Actualizando'}</span>
-                  {status === 'fresh' && <span className="live-card-viewers"><Eye size={12} />{live.viewer_count.toLocaleString('es-BO')}</span>}
+                    coverUrl={live.cover_image_url} avatarUrl={live.avatar_url} href={`/live/${live.username}`} alt={live.title || `@${live.username}`} />
+                  <span className="live-card-badge">LIVE</span>
+                  {live.viewer_count > 0 && <span className="live-card-viewers"><Eye size={12} />{live.viewer_count.toLocaleString('es-BO')}</span>}
                   <span className="live-card-category">{live.category}</span>
                 </div>
-                <div className="live-card-copy">
+                <Link href={`/live/${live.username}`} className="live-card-copy block">
                   <div className="live-card-account">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     {live.avatar_url && <img src={live.avatar_url} alt="" referrerPolicy="no-referrer" loading="lazy" />}
                     <span title={`@${live.username}`}>@{live.username}</span>
                   </div>
-                  <p className="live-card-title">{live.title || 'Descubre lo nuevo en esta tienda'}</p>
-                  <div className="live-card-footer">
-                    <span title={describeGeo(live.geo_evidence)}><MapPin size={11} />{describeGeo(live.geo_evidence)}</span>
-                    <a href={live.live_url} target="_blank" rel="noopener noreferrer">TikTok <ExternalLink size={12} /></a>
-                  </div>
-                </div>
+                  <p className="live-card-title">{live.title || 'Mira lo que está mostrando'}</p>
+                  {(live.price_text || live.city) && (
+                    <div className="live-card-footer">
+                      {live.city && <span><MapPin size={11} />{live.city}</span>}
+                      {live.price_text && <span>{live.price_text}</span>}
+                    </div>
+                  )}
+                </Link>
               </article>
             ))}
           </div>
@@ -196,7 +151,6 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
           <span>{page} / {data.pagination.total_pages}</span>
           {page < data.pagination.total_pages && <Link href={`/live?${new URLSearchParams({ ...(category ? { category } : {}), page: String(page + 1) })}`}>Siguiente <ArrowRight size={14} /></Link>}
         </nav>}
-        <p className="live-location-note">Las referencias a Bolivia son indicios del perfil, no una ubicación verificada.</p>
       </section>
     </div>
   );

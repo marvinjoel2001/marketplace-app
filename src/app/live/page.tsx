@@ -29,7 +29,11 @@ function RegisteredLives({ lives }: { lives: LiveStore[] }) {
       {lives.map((live) => {
         const cover = live.coverImageUrl || (live.offers[0] ? productImages(live.offers[0].product)[0] : '');
         return (
-          <Link key={live.store.id} href={`/en-vivo/${live.store.slug}`} className="live-card block">
+          <Link
+            key={live.store.id}
+            href={live.store.tiktokUsername ? `/live/${live.store.tiktokUsername}` : `/en-vivo/${live.store.slug}`}
+            className="live-card block"
+          >
             <div className="live-card-media">
               {cover && (
                 // eslint-disable-next-line @next/next/no-img-element

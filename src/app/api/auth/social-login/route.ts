@@ -6,6 +6,10 @@ import { backend, errorResponse, withSession } from '@/lib/server/session';
 // With keys set, sign-in goes through /api/auth/oauth/[provider] and this route refuses.
 export async function POST(req: NextRequest) {
   try {
+    // A demo account lets anyone claim any email: it only exists for local development.
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Este inicio de sesión todavía no está disponible. Usa tu celular.' }, { status: 403 });
+    }
     const { provider, email, name } = await req.json();
     const status = authConfig.getProviderStatus();
     const key = provider === 'GOOGLE' ? 'google' : provider === 'TIKTOK' ? 'tiktok' : null;

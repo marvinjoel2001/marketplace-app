@@ -1,97 +1,80 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { marketplaceApi } from '@/lib/api';
 import { Logo } from '@/components/shop/Logo';
-import {
-  BasicsFields,
-  draftFromStore,
-  draftToPayload,
-  LocationFields,
-  missingFor,
-  PayoutFields,
-  ScheduleFields,
-  type StoreDraft,
-} from '@/components/vendor/StoreFields';
+import { BasicsFields, draftFromStore, draftToPayload, LocationFields, missingFor, PayoutFields, ScheduleFields, type StoreDraft } from '@/components/vendor/StoreFields';
 
 const STEPS = [
-  { key: 'basics', title: 'Tu tienda', Fields: BasicsFields },
-  { key: 'location', title: '¿Dónde está tu tienda?', Fields: LocationFields },
-  { key: 'schedule', title: '¿A qué hora entregas?', Fields: ScheduleFields },
-  { key: 'payout', title: '¿Dónde te pagamos?', Fields: PayoutFields },
+  { key: 'basics', title: 'Crea tu tienda', description: 'Completa la información básica para empezar a vender en Vitrina Market.', Fields: BasicsFields },
+  { key: 'location', title: '¿Dónde está tu tienda?', description: 'Ayuda a los clientes y repartidores a encontrarte más fácil.', Fields: LocationFields },
+  { key: 'schedule', title: '¿A qué hora entregas?', description: 'Indica los días y horarios en los que puedes entregar tus pedidos al repartidor.', Fields: ScheduleFields },
+  { key: 'payout', title: '¿Dónde te pagamos?', description: 'Agrega tu QR o cuenta bancaria para recibir el dinero de tus ventas.', Fields: PayoutFields },
 ] as const;
 
 export default function VendorOnboardingPage() {
+  const router = useRouter();
   const { user, setStoreId } = useAuth();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<StoreDraft>(() => draftFromStore({ phone: user?.phone ?? '' }));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-
+  const savingRef = useRef(false);
+  const heading = useRef<HTMLHeadingElement>(null);
   const set = (patch: Partial<StoreDraft>) => setDraft((d) => ({ ...d, ...patch }));
   const current = STEPS[step];
   const last = step === STEPS.length - 1;
+  const move = (to: number) => { setError(''); setStep(to); requestAnimationFrame(() => heading.current?.focus()); };
 
   const next = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
     const missing = missingFor(current.key, draft);
     if (missing) return setError(missing);
     setError('');
-    if (!last) return setStep(step + 1);
+    if (!last) return move(step + 1);
     if (!user) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const store = await marketplaceApi.createStore({ ...draftToPayload(draft), ownerId: user.id });
-      // The panel layout picks the new store up and leaves onboarding.
       setStoreId(store.id);
     } catch (err) {
       setError((err as Error).message);
+      savingRef.current = false;
       setSaving(false);
     }
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 pb-10 pt-6">
-      <div className="flex items-center justify-between gap-3">
-        <Logo href="/vendor" suffix="Registro de tienda" />
-        <span className="px-3 py-1 rounded-full bg-white/80 border border-white/80 text-xs font-bold text-slate-600 shadow-2xs shrink-0">
-          Paso {step + 1} de {STEPS.length}
-        </span>
-      </div>
-      <div className="mt-5 grid grid-cols-4 gap-1.5" aria-hidden>
-        {STEPS.map((s, i) => (
-          <span key={s.key} className={`h-1.5 rounded-full ${i <= step ? 'bg-[#5B4DF0]' : 'bg-white/70'}`} />
-        ))}
-      </div>
-
-      <form
-        onSubmit={next}
-        className="mt-5 flex flex-1 flex-col gap-5 rounded-[2rem] bg-white/80 backdrop-blur-2xl border border-white/80 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-5 sm:p-8"
-      >
-        <div>
-          <p className="eyebrow mb-1">Paso {step + 1}</p>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">{current.title}</h1>
+    <div className="flex min-h-dvh items-center justify-center px-3 py-6 sm:py-8">
+      <div className="vendor-onboarding">
+        <div className="flex items-center justify-between gap-3">
+          <Logo href="/vendor" suffix="Marketplace Bolivia" />
+          <span className="shrink-0 rounded-xl bg-[#f0f1f8] px-3 py-2 text-xs font-bold" aria-live="polite">Paso {step + 1} de 4</span>
         </div>
-        <current.Fields draft={draft} set={set} />
-        {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-danger">
-            {error}
-          </p>
-        )}
-        <div className="mt-auto flex gap-3 pt-2">
-          {step > 0 && (
-            <button type="button" className="btn btn-ghost" onClick={() => setStep(step - 1)} aria-label="Paso anterior">
-              <ArrowLeft className="h-5 w-5" />
+        <div className="mb-8 mt-7 grid grid-cols-4 gap-2" aria-label={`Registro completado al ${step * 25}%`}>
+          {STEPS.map((s, i) => <span key={s.key} className={`h-1.5 rounded-full ${i <= step ? 'bg-[#6248ff]' : 'bg-[#e9ecf5]'}`} />)}
+        </div>
+        <form onSubmit={next} className="flex min-h-[650px] flex-col gap-5">
+          <div>
+            <h1 ref={heading} tabIndex={-1} className="text-[29px] font-extrabold leading-tight tracking-tight outline-none sm:text-[32px]">{current.title}</h1>
+            <p className="mt-2 text-[15px] leading-6 text-slate-500">{current.description}</p>
+          </div>
+          <current.Fields draft={draft} set={set} />
+          {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+          <div className="mt-auto flex gap-3 pt-3">
+            <button type="button" className="btn btn-ghost !h-14 !w-16 !rounded-full" disabled={saving} onClick={() => step > 0 ? move(step - 1) : router.push('/vendor')} aria-label={step > 0 ? 'Paso anterior' : 'Volver'}><ArrowLeft className="h-5 w-5" /></button>
+            <button type="submit" className="btn btn-primary !h-14 flex-1 !rounded-full" disabled={saving}>
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : null}{last ? 'Abrir mi tienda' : 'Continuar'}{!saving && <ArrowRight className="h-5 w-5" />}
             </button>
-          )}
-          <button type="submit" className="btn btn-primary flex-1" disabled={saving}>
-            {saving && <Loader2 className="h-5 w-5 animate-spin" />}
-            {last ? 'Abrir mi tienda' : 'Continuar'}
-          </button>
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
+

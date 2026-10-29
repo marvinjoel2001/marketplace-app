@@ -5,8 +5,10 @@ import type { Store } from '@/lib/api';
 import { parseDays, WEEKDAYS_SHORT } from '@/lib/schedule';
 import { MapPicker, SANTA_CRUZ } from '@/components/shop/MapPicker';
 import { ImagePicker } from './ImagePicker';
+import { Shirt, Footprints, ShoppingBag, Sparkles, House, ToyBrick, Utensils, Smartphone, Dumbbell, PawPrint, Ellipsis, Store as StoreIcon, Phone, MapPin, MessageSquare, Clock3, CalendarDays, Truck } from 'lucide-react';
 
-export const STORE_CATEGORIES = ['Ropa', 'Calzado', 'Accesorios', 'Belleza', 'Electrónica', 'Hogar', 'Juguetes', 'Comida', 'Otros'];
+const CATEGORY_ICONS = { Ropa: Shirt, Calzado: Footprints, Accesorios: ShoppingBag, Belleza: Sparkles, Hogar: House, Juguetes: ToyBrick, Comida: Utensils, Electrónica: Smartphone, Deportes: Dumbbell, Mascotas: PawPrint, Otros: Ellipsis };
+export const STORE_CATEGORIES = Object.keys(CATEGORY_ICONS) as (keyof typeof CATEGORY_ICONS)[];
 export const BANKS = [
   'Banco Unión',
   'BNB',
@@ -53,7 +55,7 @@ export function draftFromStore(store?: Partial<Store> | null): StoreDraft {
     addressReference: store?.addressReference ?? '',
     latitude: store?.latitude ?? SANTA_CRUZ.lat,
     longitude: store?.longitude ?? SANTA_CRUZ.lng,
-    deliveryDays: parseDays(store?.deliveryDays ?? '1,2,3,4,5,6'),
+    deliveryDays: parseDays(store?.deliveryDays ?? '1,2,3,4,5'),
     deliveryStart: store?.deliveryStart ?? '09:00',
     deliveryEnd: store?.deliveryEnd ?? '18:00',
     payoutQr: store?.payoutQr ?? '',
@@ -88,33 +90,36 @@ export function BasicsFields({ draft, set }: FieldsProps) {
         <label htmlFor="store-name" className="field-label">
           Nombre de la tienda
         </label>
-        <input id="store-name" className="field" required maxLength={80} value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ej.: Moda Lupita" />
+        <div className="vendor-input-icon"><StoreIcon /><input id="store-name" className="field" required maxLength={80} autoComplete="organization" value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ej.: Moda Lupita" /></div>
       </div>
       <div>
         <p className="field-label">¿Qué vendes?</p>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Rubro de la tienda">
-          {STORE_CATEGORIES.map((c) => (
-            <button key={c} type="button" aria-pressed={draft.category === c} className="chip" onClick={() => set({ category: c })}>
-              {c}
-            </button>
-          ))}
+        <div className="grid grid-cols-4 gap-2.5" role="group" aria-label="Rubro de la tienda">
+          {STORE_CATEGORIES.map((c) => {
+            const Icon = CATEGORY_ICONS[c];
+            return <button key={c} type="button" aria-pressed={draft.category === c} className="vendor-category" onClick={() => set({ category: c })}><Icon />{c}</button>;
+          })}
         </div>
       </div>
       <div>
         <label htmlFor="store-phone" className="field-label">
-          Celular de la tienda
+          Celular de contacto
         </label>
-        <input
+        <div className="vendor-input-icon"><Phone /><input
           id="store-phone"
           className="field"
           inputMode="numeric"
+          autoComplete="tel-national"
+          required
+          pattern="[67][0-9]{7}"
+          title="Usa un celular boliviano de 8 dígitos que empiece con 6 o 7."
           maxLength={8}
           value={draft.phone}
           onChange={(e) => set({ phone: e.target.value.replace(/\D/g, '') })}
           placeholder="71234567"
-        />
+        /></div>
       </div>
-      <ImagePicker label="Logo o foto de la tienda (opcional)" value={draft.logo ? [draft.logo] : []} onChange={(urls) => set({ logo: urls[0] ?? '' })} max={1} folder="stores" />
+      <ImagePicker label="Logo de la tienda (opcional)" value={draft.logo ? [draft.logo] : []} onChange={(urls) => set({ logo: urls[0] ?? '' })} max={1} folder="stores" compact />
     </div>
   );
 }
@@ -124,7 +129,7 @@ export function LocationFields({ draft, set }: FieldsProps) {
     <div className="flex flex-col gap-4">
       <MapPicker
         kind="store"
-        className="h-80"
+        className="h-64"
         value={{ lat: draft.latitude, lng: draft.longitude }}
         onChange={(p) => set({ latitude: p.lat, longitude: p.lng })}
         onAddress={(a) => !draft.address && set({ address: a })}
@@ -133,20 +138,20 @@ export function LocationFields({ draft, set }: FieldsProps) {
         <label htmlFor="store-address" className="field-label">
           Dirección
         </label>
-        <input id="store-address" className="field" required value={draft.address} onChange={(e) => set({ address: e.target.value })} placeholder="Calle y número" />
+        <div className="vendor-input-icon"><MapPin /><input id="store-address" className="field" required value={draft.address} onChange={(e) => set({ address: e.target.value })} placeholder="Calle, número y zona" /></div>
       </div>
       <div>
         <label htmlFor="store-ref" className="field-label">
-          Referencias para el repartidor
+          Referencia (opcional)
         </label>
-        <textarea
+        <div className="relative"><MessageSquare className="absolute left-4 top-4 h-5 w-5 text-slate-500" /><textarea
           id="store-ref"
-          className="field min-h-[76px]"
+          className="field min-h-[88px] !pl-12"
           maxLength={300}
           value={draft.addressReference}
           onChange={(e) => set({ addressReference: e.target.value })}
           placeholder="Ej.: puesto 14 del pasillo B, al lado de la heladería"
-        />
+        /></div>
       </div>
     </div>
   );
@@ -158,11 +163,8 @@ export function ScheduleFields({ draft, set }: FieldsProps) {
   const endOptions = HOURS.filter((h) => h > draft.deliveryStart);
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-ink-soft">
-        Los clientes eligen una hora dentro de este horario y el repartidor pasa a recoger el pedido a esa hora.
-      </p>
       <div>
-        <p className="field-label">Días que entregas</p>
+        <p className="field-label flex items-center gap-2"><CalendarDays className="h-4 w-4" />Días de entrega</p>
         <div className="grid grid-cols-7 gap-1.5" role="group" aria-label="Días de entrega">
           {[1, 2, 3, 4, 5, 6, 0].map((d) => (
             <button
@@ -170,17 +172,17 @@ export function ScheduleFields({ draft, set }: FieldsProps) {
               type="button"
               aria-pressed={draft.deliveryDays.includes(d)}
               onClick={() => toggle(d)}
-              className="rounded-lg border border-line bg-surface py-2.5 text-sm font-semibold aria-pressed:border-verde aria-pressed:bg-verde aria-pressed:text-white"
+              className="vendor-day"
             >
               {WEEKDAYS_SHORT[d]}
             </button>
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-5">
         <div>
           <label htmlFor="start" className="field-label">
-            Desde
+            <span className="flex items-center gap-2"><Clock3 className="h-4 w-4" />Desde</span>
           </label>
           <select
             id="start"
@@ -198,7 +200,7 @@ export function ScheduleFields({ draft, set }: FieldsProps) {
         </div>
         <div>
           <label htmlFor="end" className="field-label">
-            Hasta
+            <span className="flex items-center gap-2"><Clock3 className="h-4 w-4" />Hasta</span>
           </label>
           <select id="end" className="field" value={draft.deliveryEnd} onChange={(e) => set({ deliveryEnd: e.target.value })}>
             {endOptions.map((h) => (
@@ -206,6 +208,10 @@ export function ScheduleFields({ draft, set }: FieldsProps) {
             ))}
           </select>
         </div>
+      </div>
+      <div className="mt-5 flex items-start gap-3 rounded-2xl bg-[#f5f3fc] p-5">
+        <Truck className="mt-1 h-6 w-6 shrink-0 text-[#6248ff]" />
+        <div><h3 className="text-sm font-bold">Tiempo de preparación</h3><p className="mt-2 text-xs leading-5 text-slate-500">Los clientes reservan con al menos 1 hora de anticipación para que puedas preparar el pedido antes del recojo.</p><p className="mt-3 flex items-center gap-2 text-sm font-semibold"><Clock3 className="h-4 w-4 text-[#6248ff]" />1 hora como mínimo</p></div>
       </div>
     </div>
   );
@@ -254,9 +260,9 @@ export function PayoutFields({ draft, set }: FieldsProps) {
 
 /** Which onboarding steps still block publishing. */
 export function missingFor(step: 'basics' | 'location' | 'schedule' | 'payout', d: StoreDraft): string | null {
-  if (step === 'basics') return !d.name.trim() ? 'Escribe el nombre de tu tienda.' : !d.category ? 'Elige qué vendes.' : null;
+  if (step === 'basics') return !d.name.trim() ? 'Escribe el nombre de tu tienda.' : !d.category ? 'Elige qué vendes.' : !/^[67]\d{7}$/.test(d.phone) ? 'Escribe un celular boliviano válido de 8 dígitos.' : null;
   if (step === 'location') return !d.address.trim() ? 'Escribe la dirección de tu tienda.' : null;
-  if (step === 'schedule') return d.deliveryDays.length === 0 ? 'Elige al menos un día de entrega.' : null;
+  if (step === 'schedule') return d.deliveryDays.length === 0 ? 'Elige al menos un día de entrega.' : d.deliveryEnd <= d.deliveryStart ? 'La hora de cierre debe ser posterior a la de apertura.' : null;
   const hasBank = d.bank.bank && d.bank.account && d.bank.holder;
   return !d.payoutQr && !hasBank ? 'Sube tu QR o completa tu cuenta para recibir tus pagos.' : null;
 }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backend, SESSION_COOKIE } from '@/lib/server/session';
+import { backend, readSession } from '@/lib/server/session';
 
 export async function GET(req: NextRequest) {
-  const userId = req.cookies.get(SESSION_COOKIE)?.value;
+  const userId = readSession(req);
   if (!userId) return NextResponse.json({ user: null });
 
   try {

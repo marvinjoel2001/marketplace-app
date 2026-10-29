@@ -1,8 +1,21 @@
-import { NextResponse } from 'next/server';
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 export const SESSION_COOKIE = 'vitrina_session';
 export const OAUTH_STATE_COOKIE = 'vitrina_oauth';
+
+/** Signs cookies. Required in production; development falls back to a fixed key so `npm run dev` works untouched. */
+function sessionSecret() {
+  const secret = process.env.SESSION_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Falta la variable SESSION_SECRET en el servidor web');
+  }
+  return 'vitrina-dev-only-session-secret';
+}
+
+const sign = (value: string) => createHmac('sha256', sessionSecret()).update(value).digest('base64url');
 
 /** Only same-site paths are allowed as the place to come back to after signing in. */
 export function safeReturnUrl(raw: string | null): string {
@@ -13,7 +26,12 @@ export function safeReturnUrl(raw: string | null): string {
 export async function backend(path: string, init: RequestInit = {}) {
   const res = await fetch(`${BACKEND_URL}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      // Identity endpoints on the backend only answer to this server.
+      ...(process.env.AUTH_INTERNAL_KEY ? { 'x-internal-key': process.env.AUTH_INTERNAL_KEY } : {}),
+      ...(init.headers || {}),
+    },
     cache: 'no-store',
   });
   const data = await res.json().catch(() => ({}));
@@ -24,8 +42,9 @@ export async function backend(path: string, init: RequestInit = {}) {
   return data;
 }
 
+/** The session cookie is `userId.signature`: knowing a user id is not enough to act as that user. */
 export function withSession(response: NextResponse, userId: string) {
-  response.cookies.set(SESSION_COOKIE, userId, {
+  response.cookies.set(SESSION_COOKIE, `${userId}.${sign(userId)}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -33,6 +52,17 @@ export function withSession(response: NextResponse, userId: string) {
     maxAge: 60 * 60 * 24 * 30,
   });
   return response;
+}
+
+/** The signed-in user id, or null for a missing, malformed or forged cookie. */
+export function readSession(req: NextRequest): string | null {
+  const raw = req.cookies.get(SESSION_COOKIE)?.value;
+  const dot = raw?.lastIndexOf('.') ?? -1;
+  if (!raw || dot < 1) return null;
+  const userId = raw.slice(0, dot);
+  const given = Buffer.from(raw.slice(dot + 1));
+  const expected = Buffer.from(sign(userId));
+  return given.length === expected.length && timingSafeEqual(given, expected) ? userId : null;
 }
 
 export function errorResponse(err: unknown, fallback: string) {

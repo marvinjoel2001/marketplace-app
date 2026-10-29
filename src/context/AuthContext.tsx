@@ -32,6 +32,7 @@ export interface SavedAddress {
 }
 
 interface LoginRequest {
+  title?: string;
   /** Shown at the top of the sheet: why we are asking to sign in. */
   reason?: string;
   onComplete?: (user: UserProfile) => void;
@@ -43,14 +44,18 @@ interface AuthContextType {
   isAuthenticated: boolean;
   hasAddress: boolean;
   providers: ProviderConfigInfo | null;
+  /** True when Google/TikTok buttons fall back to a throwaway account (local development only). */
+  demoLogin: boolean;
   loginRequest: LoginRequest | null;
   requestLogin: (request?: LoginRequest) => void;
   closeLogin: () => void;
   loginWithProvider: (provider: 'GOOGLE' | 'TIKTOK') => Promise<void>;
-  loginWithPhone: (phone: string) => Promise<void>;
+  /** Sends a six-digit code to the number's WhatsApp. `devCode` is only present in local development. */
+  requestPhoneCode: (phone: string) => Promise<{ devCode?: string }>;
+  verifyPhoneCode: (phone: string, code: string) => Promise<void>;
   saveAddress: (address: SavedAddress) => Promise<UserProfile>;
   setStoreId: (storeId: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,8 +83,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [ready, setReady] = useState(false);
   const [providers, setProviders] = useState<ProviderConfigInfo | null>(null);
+  const [demoLogin, setDemoLogin] = useState(false);
   const [loginRequest, setLoginRequest] = useState<LoginRequest | null>(null);
   const requestRef = useRef<LoginRequest | null>(null);
+
+  useEffect(() => {
+    const syncLogout = (event: StorageEvent) => {
+      if (event.key === USER_STORAGE_KEY && event.newValue === null) {
+        setUser(null);
+        requestRef.current = null;
+        setLoginRequest(null);
+      }
+    };
+    window.addEventListener('storage', syncLogout);
+    return () => window.removeEventListener('storage', syncLogout);
+  }, []);
 
   useEffect(() => {
     let stored: UserProfile | null = null;
@@ -93,15 +111,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((res) => res.json())
       .then((data) => {
         const fresh: UserProfile | null = data.user ?? null;
-        setUser(fresh ?? stored);
-        if (fresh) persist(fresh);
+        setUser(fresh);
+        persist(fresh);
       })
       .catch(() => setUser(stored))
       .finally(() => setReady(true));
 
     fetch('/api/auth/providers')
       .then((res) => res.json())
-      .then((data) => data.providers && setProviders(data.providers))
+      .then((data) => {
+        if (data.providers) setProviders(data.providers);
+        setDemoLogin(Boolean(data.demo));
+      })
       .catch(() => {});
   }, []);
 
@@ -146,9 +167,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [providers, finishLogin],
   );
 
-  const loginWithPhone = useCallback(
-    async (phone: string) => {
-      const data = await postJson('/api/auth/login', { phone });
+  const requestPhoneCode = useCallback(async (phone: string) => postJson('/api/auth/otp/request', { phone }), []);
+
+  const verifyPhoneCode = useCallback(
+    async (phone: string, code: string) => {
+      const data = await postJson('/api/auth/otp/verify', { phone, code });
       finishLogin(data.user);
     },
     [finishLogin],
@@ -175,10 +198,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const res = await fetch('/api/auth/logout', { method: 'POST' });
+    if (!res.ok) throw new Error('No se pudo cerrar sesión. Inténtalo otra vez.');
+    requestRef.current = null;
+    setLoginRequest(null);
     setUser(null);
     persist(null);
-    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
   }, []);
 
   return (
@@ -189,11 +215,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: Boolean(user),
         hasAddress: Boolean(user?.address && user.lat != null && user.lng != null && user.phone),
         providers,
+        demoLogin,
         loginRequest,
         requestLogin,
         closeLogin,
         loginWithProvider,
-        loginWithPhone,
+        requestPhoneCode,
+        verifyPhoneCode,
         saveAddress,
         setStoreId,
         logout,

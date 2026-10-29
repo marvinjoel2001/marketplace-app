@@ -28,7 +28,7 @@ function bubbles(lives: LiveStore[], tiktok: TikTokLiveItem[]): LiveBubble[] {
     name: l.store.name,
     sub: 'Compra aquí',
     avatar: l.store.logo,
-    href: `/en-vivo/${l.store.slug}`,
+    href: l.store.tiktokUsername ? `/live/${l.store.tiktokUsername}` : `/en-vivo/${l.store.slug}`,
   }));
   const seen = new Set(lives.map((l) => l.store.tiktokUsername?.toLowerCase()).filter(Boolean));
   const scraped = tiktok
@@ -38,7 +38,7 @@ function bubbles(lives: LiveStore[], tiktok: TikTokLiveItem[]): LiveBubble[] {
       name: `@${t.username}`,
       sub: t.viewer_count > 0 ? `${t.viewer_count.toLocaleString('es-BO')} viendo` : null,
       avatar: t.avatar_url,
-      href: '/live',
+      href: `/live/${t.username}`,
     }));
   return [...own, ...scraped].slice(0, 16);
 }

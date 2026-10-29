@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backend, errorResponse, SESSION_COOKIE } from '@/lib/server/session';
+import { backend, errorResponse, readSession } from '@/lib/server/session';
 
 // Saves the customer's delivery address (and phone, if the account has none yet).
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const userId = req.cookies.get(SESSION_COOKIE)?.value;
+    const userId = readSession(req);
     if (!userId || userId !== body.userId) {
       return NextResponse.json({ error: 'Inicia sesión de nuevo para guardar tu dirección' }, { status: 401 });
     }

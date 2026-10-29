@@ -86,6 +86,7 @@ export function MapPicker({
 
   useEffect(() => {
     let cancelled = false;
+    const reverseController = new AbortController();
     let reverseTimer: ReturnType<typeof setTimeout> | undefined;
     let leaflet: LeafletMap | null = null;
 
@@ -101,16 +102,18 @@ export function MapPicker({
       map.current = leaflet;
 
       leaflet.on('moveend', () => {
+        if (cancelled || !leaflet) return;
         const c = leaflet!.getCenter();
         callbacks.current.onChange({ lat: c.lat, lng: c.lng });
         clearTimeout(reverseTimer);
         // Nominatim allows about one request per second; wait until the map settles.
         reverseTimer = setTimeout(() => {
           fetch(`${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=${c.lat}&lon=${c.lng}`, {
+            signal: reverseController.signal,
             headers: { 'Accept-Language': 'es' },
           })
             .then((r) => r.json())
-            .then((place: Place) => place?.display_name && callbacks.current.onAddress?.(shortAddress(place)))
+            .then((place: Place) => !cancelled && place?.display_name && callbacks.current.onAddress?.(shortAddress(place)))
             .catch(() => {});
         }, 900);
       });
@@ -120,7 +123,9 @@ export function MapPicker({
 
     return () => {
       cancelled = true;
+      reverseController.abort();
       clearTimeout(reverseTimer);
+      leaflet?.off('moveend');
       leaflet?.remove();
       map.current = null;
     };

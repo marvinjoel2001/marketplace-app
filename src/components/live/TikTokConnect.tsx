@@ -12,7 +12,7 @@ interface SessionStatus {
 
 // The TikTok account is the operator's (whoever runs the backend): discovery reads the LIVE feed
 // TikTok recommends to that account and keeps only sellers. Visitors never sign in here.
-export function TikTokConnect({ onConnected }: { onConnected: () => void }) {
+export function TikTokConnect({ onConnected }: { onConnected?: () => void }) {
   const [status, setStatus] = useState<SessionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -51,7 +51,7 @@ export function TikTokConnect({ onConnected }: { onConnected: () => void }) {
   useEffect(() => {
     if (wasWaiting.current && status && !status.login_in_progress && status.logged_in) {
       wasWaiting.current = false;
-      onConnected();
+      onConnected?.();
     }
   }, [status, onConnected]);
 

@@ -33,12 +33,14 @@ export function ImagePicker({
   max = 5,
   folder = 'products',
   label = 'Fotos',
+  compact = false,
 }: {
   value: string[];
   onChange: (urls: string[]) => void;
   max?: number;
   folder?: 'products' | 'stores';
   label?: string;
+  compact?: boolean;
 }) {
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
@@ -54,9 +56,11 @@ export function ImagePicker({
     const urls: string[] = [];
     for (const file of picked) {
       try {
+        if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.');
+        if (file.size > 5 * 1024 * 1024) throw new Error('La imagen debe pesar menos de 5 MB.');
         urls.push(await uploadPhoto(file, folder));
-      } catch {
-        setError('Una foto no se pudo subir. Prueba de nuevo.');
+      } catch (err) {
+        setError((err as Error).message || 'Una foto no se pudo subir. Prueba de nuevo.');
       }
       setUploading((n) => n - 1);
     }
@@ -91,7 +95,13 @@ export function ImagePicker({
           </div>
         ))}
       </div>
-      {!full && (
+      {!full && compact && (
+        <button type="button" disabled={uploading > 0} onClick={() => gallery.current?.click()} className="mt-1 flex min-h-20 w-full items-center justify-center gap-4 rounded-2xl border border-dashed border-[#dcd8fa] bg-[#fafaff] p-3 text-left">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eeebff] text-[#6248ff]">{uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <ImagePlus className="h-6 w-6" />}</span>
+          <span><span className="block text-sm font-semibold">Sube tu logo</span><span className="mt-1 block text-xs text-slate-500">JPG o PNG · Máx. 5 MB</span></span>
+        </button>
+      )}
+      {!full && !compact && (
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button type="button" className="btn btn-ghost" onClick={() => camera.current?.click()}>
             <Camera className="h-5 w-5 text-verde" /> Tomar foto

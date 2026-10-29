@@ -145,6 +145,40 @@ export interface LiveStore {
   offers: (Offer & { product: Product })[];
 }
 
+export interface FeedComment {
+  id: string;
+  name: string;
+  handle: string | null;
+  avatar: string | null;
+  text: string;
+  at: number;
+}
+
+export interface LiveFeed {
+  status: 'connecting' | 'live' | 'ended' | 'unavailable';
+  viewers: number | null;
+  likes: number | null;
+  shares: number;
+  comments: FeedComment[];
+  pins: { id: string; name: string; text: string; at: number }[];
+  products: { title: string; price: string | null; image: string | null; url: string | null }[];
+}
+
+/** One seller's live room: the TikTok live, the Vitrina store (if registered) and the chat feed. */
+export interface LiveRoomData {
+  username: string;
+  isLive: boolean;
+  live: TikTokLiveItem | null;
+  store:
+    | (Pick<Store, 'id' | 'slug' | 'name' | 'logo' | 'deliveryDays' | 'deliveryStart' | 'deliveryEnd'> & {
+        liveTitle: string | null;
+        featuredProductIds: string[];
+        offers: (Offer & { product: Product })[];
+      })
+    | null;
+  feed: LiveFeed | null;
+}
+
 export interface StoreSummary {
   today: { total: number; count: number };
   week: { total: number; count: number };
@@ -275,6 +309,19 @@ export const marketplaceApi = {
       // API not reachable or invalid filter
     }
     return null;
+  },
+
+  async getLiveRoom(username: string): Promise<LiveRoomData | null> {
+    try {
+      return await fetchFromAPI(`/tiktok-lives/room/${id(username)}`, { signal: AbortSignal.timeout(8000) });
+    } catch {
+      return null;
+    }
+  },
+
+  async getLiveFeed(username: string, after?: string): Promise<LiveFeed> {
+    const qs = after ? `?after=${id(after)}` : '';
+    return fetchFromAPI(`/tiktok-lives/room/${id(username)}/feed${qs}`);
   },
 
   async getStore(idOrSlug: string): Promise<(Store & { offers: (Offer & { product: Product })[] }) | null> {
