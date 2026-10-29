@@ -8,6 +8,7 @@ import { marketplaceApi, type StoreSummary } from '@/lib/api';
 import { describeSchedule, describeWindow } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
 import { TikTokIcon } from '@/components/common/TikTokIcon';
+import { ListSkeleton } from '@/components/shop/Skeleton';
 
 function NotifyToggle() {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
@@ -100,7 +101,7 @@ export default function VendorHomePage() {
           </Link>
         </div>
         {!summary ? (
-          <p className="text-sm text-muted">Cargando…</p>
+          <ListSkeleton rows={2} />
         ) : summary.upcoming.length === 0 ? (
           <p className="panel px-4 py-5 text-sm text-muted">
             No tienes pedidos por entregar. Entregas {describeSchedule(store).toLowerCase()}.

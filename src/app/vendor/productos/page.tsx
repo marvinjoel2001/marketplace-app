@@ -11,6 +11,7 @@ import { formatBs } from '@/lib/utils';
 import { Sheet } from '@/components/shop/Sheet';
 import { ProductForm } from '@/components/vendor/ProductForm';
 import { useStoreOffers, type StoreOffer } from '@/components/vendor/useStoreOffers';
+import { ListSkeleton } from '@/components/shop/Skeleton';
 
 function ProductsScreen() {
   const { store } = useVendor();
@@ -57,7 +58,7 @@ function ProductsScreen() {
 
       {error && <p className="text-sm text-danger">{error}</p>}
       {offers === null ? (
-        <p className="text-sm text-muted">Cargando productos…</p>
+        <ListSkeleton rows={4} />
       ) : offers.length === 0 ? (
         <div className="panel px-5 py-8 text-center">
           <p className="font-semibold">Todavía no subiste productos.</p>
@@ -127,7 +128,7 @@ function ProductsScreen() {
 
 export default function VendorProductsPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Cargando productos…</p>}>
+    <Suspense fallback={<ListSkeleton rows={4} />}>
       <ProductsScreen />
     </Suspense>
   );

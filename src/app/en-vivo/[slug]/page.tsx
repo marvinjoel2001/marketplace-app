@@ -63,7 +63,7 @@ export default async function StoreLivePage({ params }: { params: Promise<{ slug
         )}
       </section>
 
-      <Link href="/en-vivo" className="text-sm font-semibold text-verde-dark">
+      <Link href="/live" className="text-sm font-semibold text-verde-dark">
         Ver otras tiendas en vivo
       </Link>
     </div>

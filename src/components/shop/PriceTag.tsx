@@ -1,6 +1,6 @@
 import { formatBs } from '@/lib/utils';
 
-/** Yellow market tag with the price that applies today; the regular price sits beside it when on sale. */
+/** Price as on the product cards: bold indigo, with the regular price struck through when on sale. */
 export function PriceTag({
   price,
   regular,
@@ -12,10 +12,10 @@ export function PriceTag({
 }) {
   const onSale = regular !== undefined && regular > price;
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+    <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
       <span className={`price-tag ${size === 'lg' ? 'price-tag-lg' : 'price-tag-sm'}`}>{formatBs(price)}</span>
       {onSale && (
-        <span className={`${size === 'lg' ? 'text-base' : 'text-xs'} font-medium text-muted line-through`}>
+        <span className={`${size === 'lg' ? 'text-base' : 'text-[11px] sm:text-xs'} font-semibold text-slate-400 line-through`}>
           {formatBs(regular)}
         </span>
       )}
@@ -26,6 +26,6 @@ export function PriceTag({
 export function DiscountBadge({ percent }: { percent: number }) {
   if (percent <= 0) return null;
   return (
-    <span className="type-sign rounded-md bg-ink px-1.5 py-0.5 text-xs font-extrabold text-tag">-{percent}%</span>
+    <span className="px-2 py-0.5 rounded-md bg-[#5B4DF0] text-white text-[10px] font-black leading-none shadow-xs">-{percent}%</span>
   );
 }

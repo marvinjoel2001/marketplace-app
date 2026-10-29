@@ -10,6 +10,7 @@ import { VendorContext } from '@/context/VendorContext';
 import { marketplaceApi, type Order, type Store } from '@/lib/api';
 import { describeWindow } from '@/lib/schedule';
 import { Logo } from '@/components/shop/Logo';
+import { Bone, ListSkeleton, PanelSkeleton } from '@/components/shop/Skeleton';
 
 const NAV = [
   { href: '/vendor', label: 'Inicio', icon: Home },
@@ -27,20 +28,27 @@ function saleText(order: Order) {
 
 function Welcome({ onLogin }: { onLogin: () => void }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10">
-      <Logo suffix="Tiendas" />
-      <div>
-        <h1 className="type-sign text-3xl font-extrabold leading-tight">Vende tus productos en Vitrina</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-          Sube tus productos con una foto, recibe pedidos y elige a qué hora entregas. Nosotros llevamos el pedido al cliente.
-        </p>
+    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md rounded-[2.5rem] bg-white/80 backdrop-blur-2xl border border-white/80 shadow-[0_20px_50px_rgba(0,0,0,0.08)] p-7 sm:p-10 flex flex-col gap-6">
+        <Logo suffix="Panel de tienda" />
+        <div>
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-100">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Vende en Vitrina Market
+          </span>
+          <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900 leading-tight">
+            Tu tienda, <span className="text-[#5B4DF0]">en todos los celulares</span>
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-500">
+            Sube tus productos con una foto, recibe pedidos y elige a qué hora entregas. Nosotros llevamos el pedido al cliente.
+          </p>
+        </div>
+        <button type="button" className="btn btn-primary w-full" onClick={onLogin}>
+          Entrar a mi tienda
+        </button>
+        <Link href="/" className="text-center text-xs font-bold text-indigo-600 hover:text-indigo-800">
+          Volver a Vitrina Market
+        </Link>
       </div>
-      <button type="button" className="btn btn-primary w-full" onClick={onLogin}>
-        Entrar a mi tienda
-      </button>
-      <Link href="/" className="text-center text-sm font-semibold text-muted">
-        Volver a la tienda para compradores
-      </Link>
     </div>
   );
 }
@@ -100,7 +108,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const markSalesSeen = useCallback(() => setUnseenSales(0), []);
 
   if (!ready || (user && store === undefined)) {
-    return <p className="py-20 text-center text-muted">Cargando tu tienda…</p>;
+    return <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-4"><Bone className="h-14 w-full rounded-2xl" /><Bone className="h-9 w-64" /><PanelSkeleton lines={3} /><ListSkeleton rows={3} /></div>;
   }
   if (!user) {
     return <Welcome onLogin={() => requestLogin({ reason: 'Entra con la cuenta que usarás para tu tienda.' })} />;
@@ -113,33 +121,55 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
   return (
     <VendorContext.Provider value={{ store, setStore, unseenSales, markSalesSeen }}>
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
-          <Logo href="/vendor" suffix="Tiendas" />
-          <nav className="ml-6 hidden gap-1 md:flex" aria-label="Panel de la tienda">
-            {NAV.map(({ href, label }) => (
+      <header className="sticky top-0 z-40 bg-white/75 backdrop-blur-2xl border-b border-white/60 shadow-lg shadow-black/5">
+        {/* Barra del panel de tienda */}
+        <div className="bg-slate-950 text-white px-4 py-2 border-b border-slate-800 text-xs">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center space-x-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span className="font-black text-emerald-400 uppercase tracking-widest text-[10px] shrink-0">Panel de tienda</span>
+              <span className="text-slate-600">•</span>
+              <span className="font-bold text-slate-200 truncate">{store.name}</span>
+            </div>
+            <nav className="hidden md:flex items-center space-x-1 sm:space-x-2" aria-label="Panel de la tienda">
+              {NAV.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active(href) ? 'page' : undefined}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${active(href) ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+                >
+                  {label}
+                  {href === '/vendor/ventas' && unseenSales > 0 && (
+                    <span className="ml-1.5 rounded-full bg-[#FE2C55] px-1.5 text-[10px] font-black text-white">{unseenSales}</span>
+                  )}
+                </Link>
+              ))}
               <Link
-                key={href}
-                href={href}
-                aria-current={active(href) ? 'page' : undefined}
-                className="relative rounded-lg px-3 py-2 text-sm font-semibold text-ink-soft hover:bg-paper aria-[current=page]:bg-verde-tint aria-[current=page]:text-verde-dark"
+                href="/vendor/tiktok"
+                aria-current={active('/vendor/tiktok') ? 'page' : undefined}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${active('/vendor/tiktok') ? 'bg-[#FE2C55] text-white shadow-xs' : 'bg-[#FE2C55]/20 text-[#FE2C55] hover:bg-[#FE2C55] hover:text-white'}`}
               >
-                {label}
-                {href === '/vendor/ventas' && unseenSales > 0 && (
-                  <span className="ml-1.5 rounded-full bg-live px-1.5 text-[11px] font-bold text-white">{unseenSales}</span>
-                )}
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping"></span>
+                <span>Vender por TikTok</span>
               </Link>
-            ))}
-          </nav>
-          <Link href="/" className="ml-auto flex items-center gap-1 text-sm font-semibold text-muted">
-            <ArrowLeft className="h-4 w-4" /> Ver tienda
+            </nav>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
+          <Logo href="/vendor" suffix="Panel de tienda" />
+          <Link
+            href="/"
+            className="px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-slate-700 border border-white/80 font-bold text-xs transition-all shadow-2xs flex items-center gap-1"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Ver Vitrina
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-5 md:pb-12">{children}</main>
+      <main className="max-w-7xl w-full mx-auto flex-1 px-4 sm:px-6 lg:px-8 pb-28 pt-6 md:pb-12">{children}</main>
 
-      <nav aria-label="Panel de la tienda" className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface md:hidden">
+      <nav aria-label="Panel de la tienda" className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-white/60 bg-white/85 backdrop-blur-2xl shadow-[0_-8px_24px_rgba(15,23,42,0.06)] md:hidden">
         <ul className="grid grid-cols-5">
           {NAV.map(({ href, label, icon: Icon }) => {
             const on = active(href);
@@ -148,12 +178,12 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 <Link
                   href={href}
                   aria-current={on ? 'page' : undefined}
-                  className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold ${on ? 'text-verde' : 'text-muted'}`}
+                  className={`flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10.5px] font-bold ${on ? 'text-[#5B4DF0]' : 'text-slate-500'}`}
                 >
                   <span className="relative">
-                    <Icon className="h-[22px] w-[22px]" strokeWidth={on ? 2.4 : 1.8} />
+                    <Icon className="h-[18px] w-[18px]" strokeWidth={on ? 2.5 : 2} />
                     {href === '/vendor/ventas' && unseenSales > 0 && (
-                      <span className="absolute -right-2 -top-1 min-w-[17px] rounded-full bg-live px-1 text-center text-[10px] font-bold leading-[17px] text-white">
+                      <span className="absolute -right-2.5 -top-2 min-w-[17px] rounded-full bg-[#FE2C55] px-1 text-center text-[9px] font-black leading-[17px] text-white border-2 border-white">
                         {unseenSales}
                       </span>
                     )}

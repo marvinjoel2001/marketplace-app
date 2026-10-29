@@ -53,21 +53,27 @@ export default function VendorOnboardingPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-10 pt-4">
-      <div className="flex items-center justify-between">
-        <Logo href="/vendor" suffix="Tiendas" />
-        <span className="text-sm font-semibold text-muted">
+    <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 pb-10 pt-6">
+      <div className="flex items-center justify-between gap-3">
+        <Logo href="/vendor" suffix="Registro de tienda" />
+        <span className="px-3 py-1 rounded-full bg-white/80 border border-white/80 text-xs font-bold text-slate-600 shadow-2xs shrink-0">
           Paso {step + 1} de {STEPS.length}
         </span>
       </div>
-      <div className="mt-4 grid grid-cols-4 gap-1.5" aria-hidden>
+      <div className="mt-5 grid grid-cols-4 gap-1.5" aria-hidden>
         {STEPS.map((s, i) => (
-          <span key={s.key} className={`h-1.5 rounded-full ${i <= step ? 'bg-verde' : 'bg-line'}`} />
+          <span key={s.key} className={`h-1.5 rounded-full ${i <= step ? 'bg-[#5B4DF0]' : 'bg-white/70'}`} />
         ))}
       </div>
 
-      <form onSubmit={next} className="mt-6 flex flex-1 flex-col gap-5">
-        <h1 className="type-sign text-2xl font-extrabold">{current.title}</h1>
+      <form
+        onSubmit={next}
+        className="mt-5 flex flex-1 flex-col gap-5 rounded-[2rem] bg-white/80 backdrop-blur-2xl border border-white/80 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-5 sm:p-8"
+      >
+        <div>
+          <p className="eyebrow mb-1">Paso {step + 1}</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">{current.title}</h1>
+        </div>
         <current.Fields draft={draft} set={set} />
         {error && (
           <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-danger">

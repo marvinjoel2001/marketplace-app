@@ -10,6 +10,7 @@ import { formatBs } from '@/lib/utils';
 import { ORDER_STATUS, STATUS_TONE_CLASS } from '@/lib/orderStatus';
 import { Sheet } from '@/components/shop/Sheet';
 import { AddressForm } from '@/components/shop/AddressForm';
+import { ListSkeleton, PanelSkeleton } from '@/components/shop/Skeleton';
 
 export default function AccountPage() {
   const { user, ready, requestLogin, logout } = useAuth();
@@ -26,11 +27,11 @@ export default function AccountPage() {
     };
   }, [userId]);
 
-  if (!ready) return <p className="py-10 text-center text-muted">Cargando…</p>;
+  if (!ready) return <div className="mx-auto max-w-xl space-y-4"><PanelSkeleton lines={2} /><ListSkeleton rows={3} /></div>;
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-md py-10 text-center">
+      <div className="mx-auto my-8 max-w-xl rounded-[2rem] border border-white/80 bg-white/80 p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-2xl sm:p-12">
         <h1 className="type-sign text-2xl font-extrabold">Tu cuenta</h1>
         <p className="mt-2 text-muted">Inicia sesión para ver tus pedidos y tu dirección guardada.</p>
         <button type="button" className="btn btn-primary mt-6" onClick={() => requestLogin()}>
@@ -71,7 +72,7 @@ export default function AccountPage() {
           Mis pedidos
         </h2>
         {orders === null ? (
-          <p className="text-sm text-muted">Cargando pedidos…</p>
+          <ListSkeleton rows={3} />
         ) : orders.length === 0 ? (
           <p className="panel px-4 py-5 text-sm text-muted">Todavía no hiciste pedidos.</p>
         ) : (

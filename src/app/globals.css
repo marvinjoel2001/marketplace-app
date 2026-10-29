@@ -1,97 +1,447 @@
 @import "tailwindcss";
 
-/*
-  Vitrina: a shop window for Santa Cruz stores.
-  Green from the Santa Cruz flag carries actions; market-tag yellow is reserved for prices.
-  One family (Archivo) speaks in two widths: expanded for prices and headings, normal for reading.
-*/
-@theme {
-  --color-ink: #12241c;
-  --color-ink-soft: #3d5248;
-  --color-muted: #5f7369;
-  --color-paper: #eef3f0;
-  --color-surface: #ffffff;
-  --color-line: #d8e2dc;
-  --color-verde: #0d7a4c;
-  --color-verde-dark: #095c39;
-  --color-verde-tint: #e2f1e9;
-  --color-tag: #ffd43b;
-  --color-tag-dark: #e9b800;
-  --color-live: #e3304b;
-  --color-danger: #c62f2f;
-  --font-sans: var(--font-archivo), system-ui, sans-serif;
-  --radius-card: 14px;
-}
-
 @layer base {
-  html {
-    -webkit-tap-highlight-color: transparent;
+  :root {
+    --canvas: #FAFAFC;
+    --surface: #FFFFFF;
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --primary-light: #EEF2FF;
+    --accent-purple: #7C3AED;
+    --border-subtle: #F1F5F9;
+    --border-medium: #E2E8F0;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+    --badge-bestseller: #4F46E5;
+    --badge-discount: #2563EB;
+    --badge-new: #0F172A;
+    --success-green: #10B981;
+    --live-red: #EF4444;
   }
 
   body {
-    background: var(--color-paper);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
-    font-variation-settings: "wdth" 100;
+    background-color: transparent;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  :focus-visible {
-    outline: 3px solid var(--color-verde);
-    outline-offset: 2px;
-  }
+}
 
-  input,
-  select,
-  textarea {
-    font-size: 16px; /* keeps iOS from zooming into fields */
+/* ==========================================================================
+   SISTEMA DE SOMBREADO ELEGANTE E IMPERCEPTIBLE PARA TÍTULOS Y TEXTOS
+   Mejora el contraste, definición y nitidez visual sin alterar el diseño limpio
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  text-rendering: optimizeLegibility;
+}
+
+
+/* Micro-sombra nítida para textos blancos sobre botones, badges o gradientes */
+.text-white.font-black,
+.text-white.font-bold,
+.text-white.font-extrabold,
+.text-white.text-xs.font-bold,
+.text-white.text-xs.font-black {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+/* Utilidades para sombreados tipográficos específicos */
+.text-shadow-subtle {
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 2px 5px rgba(15, 23, 42, 0.035);
+}
+
+.text-shadow-title {
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.09), 0 3px 8px rgba(15, 23, 42, 0.045);
+}
+
+.text-shadow-hero {
+  text-shadow: 0 1px 3px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.text-shadow-brand {
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.09), 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.text-shadow-light {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.text-shadow-badge {
+  text-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.2);
+}
+
+/* Glassmorphism Design System Tokens */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.07), 0 10px 20px -5px rgba(15, 23, 42, 0.04);
+}
+
+.glass-panel-subtle {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.05);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 1);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+}
+
+.glass-input:focus-within,
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* Hero & Feature Soft Radial Backgrounds */
+.hero-gradient {
+  background: radial-gradient(circle at 75% 40%, rgba(237, 233, 254, 0.5) 0%, rgba(245, 243, 255, 0.3) 35%, rgba(255, 255, 255, 0.7) 70%);
+}
+
+.special-offer-gradient {
+  background: radial-gradient(circle at 65% 50%, rgba(237, 233, 254, 0.6) 0%, rgba(248, 247, 255, 0.4) 45%, rgba(255, 255, 255, 0.7) 100%);
+}
+
+/* Animations */
+@keyframes pulse-live {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
   }
 }
 
+.animate-pulse-live {
+  animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+@keyframes float-heart {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(-50px) scale(1.1) translateX(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-110px) scale(1.3) translateX(-10px);
+  }
+}
+
+.animate-float-heart {
+  animation: float-heart 2s ease-out forwards;
+}
+
+/* Cart Bounce Microinteraction */
+@keyframes cart-bounce {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.35) rotate(-6deg);
+  }
+  50% {
+    transform: scale(0.9) rotate(3deg);
+  }
+  75% {
+    transform: scale(1.15) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.animate-cart-bounce {
+  animation: cart-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Badge Scale-pop Microinteraction */
+@keyframes badge-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-badge-pop {
+  animation: badge-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Shimmer Skeleton Loader */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 245, 249, 0.7) 0%,
+    rgba(255, 255, 255, 0.95) 45%,
+    rgba(226, 232, 240, 0.9) 55%,
+    rgba(241, 245, 249, 0.7) 100%
+  );
+  background-size: 250% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+
+/* Glassmorphism Skeleton Container */
+.glass-skeleton {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  animation: shimmerWave 1.8s infinite;
+}
+
+@keyframes shimmerWave {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Entrance Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Slow Gentle Breathing Animation */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0.5deg);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+/* Glow Ring Pulse (for Live Streaming & Flash Sales) */
+@keyframes glowRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-glow-ring {
+  animation: glowRing 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Stagger Delay Classes */
+.delay-50 { animation-delay: 50ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Layered Shadows & Modern Depth System */
+.shadow-card {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 20px 35px -8px rgba(15, 23, 42, 0.1), 0 6px 12px -2px rgba(15, 23, 42, 0.04);
+}
+
+.shadow-emerald-pill {
+  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.35), 0 4px 8px -2px rgba(5, 150, 105, 0.2);
+}
+
+.shadow-tiktok-badge {
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.15), 0 0 12px -2px rgba(37, 244, 238, 0.2), 0 0 12px -2px rgba(254, 44, 85, 0.2);
+}
+
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* Modern Card 3D Lift */
+.hover-card-3d {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  will-change: transform, box-shadow;
+}
+
+.hover-card-3d:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 35px -8px rgba(79, 70, 229, 0.12), 0 10px 20px -4px rgba(15, 23, 42, 0.06);
+}
+
+/* ==========================================================================
+   COMPONENTES DEL FLUJO DE COMPRA Y PANEL DE TIENDA
+   Mismo lenguaje visual de Vitrina Market: vidrio esmerilado, índigo #5B4DF0,
+   tarjetas muy redondeadas y títulos en negrita.
+   ========================================================================== */
+@theme {
+  --color-ink: #0f172a;
+  --color-ink-soft: #475569;
+  --color-muted: #64748b;
+  --color-paper: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-line: #e2e8f0;
+  --color-verde: #5b4df0;
+  --color-verde-dark: #4e3fe0;
+  --color-verde-tint: #eef2ff;
+  --color-tag: #f59e0b;
+  --color-tag-dark: #d97706;
+  --color-live: #fe2c55;
+  --color-danger: #dc2626;
+  --radius-card: 1.75rem;
+}
+
 @layer components {
-  /* Expanded width for headings and numbers that should read like shop signage. */
   .type-sign {
-    font-variation-settings: "wdth" 118;
-    letter-spacing: -0.01em;
+    font-weight: 900;
+    letter-spacing: -0.025em;
   }
 
-  /* The price tag: the one loud thing in the interface. A notched yellow label with a punched hole. */
-  .price-tag {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35em;
-    padding: 0.28em 0.7em 0.28em 1.15em;
-    background: var(--color-tag);
-    color: var(--color-ink);
-    font-weight: 800;
-    font-variation-settings: "wdth" 122;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    clip-path: polygon(0.7em 0, 100% 0, 100% 100%, 0.7em 100%, 0 50%);
-    border-radius: 0 6px 6px 0;
-  }
-
-  .price-tag::before {
-    content: "";
-    position: absolute;
-    left: 0.55em;
-    top: 50%;
-    width: 0.32em;
-    height: 0.32em;
-    margin-top: -0.16em;
-    border-radius: 999px;
-    background: var(--color-paper);
-    box-shadow: inset 0 0 0 1px rgb(18 36 28 / 0.25);
-  }
-
-  .price-tag-sm {
-    font-size: 0.95rem;
-  }
-
-  .price-tag-lg {
-    font-size: 1.6rem;
+  .panel {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 1.75rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
   }
 
   .btn {
@@ -99,17 +449,18 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    min-height: 48px;
-    padding: 0 1.15rem;
-    border-radius: 12px;
+    min-height: 46px;
+    padding: 0 1.4rem;
+    border-radius: 9999px;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.875rem;
     white-space: nowrap;
-    transition: background-color 0.15s ease, transform 0.1s ease;
+    transition: all 0.2s ease;
+    cursor: pointer;
   }
 
   .btn:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 
   .btn:disabled {
@@ -118,82 +469,131 @@
   }
 
   .btn-primary {
-    background: var(--color-verde);
+    background-image: linear-gradient(to right, #5b4df0, #794ef5);
     color: #fff;
+    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.25);
   }
 
   .btn-primary:hover {
-    background: var(--color-verde-dark);
+    background-image: linear-gradient(to right, #4e3fe0, #6c40e5);
   }
 
   .btn-ghost {
-    background: var(--color-surface);
-    color: var(--color-ink);
-    box-shadow: inset 0 0 0 1px var(--color-line);
+    background: rgba(255, 255, 255, 0.85);
+    color: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   }
 
   .btn-ghost:hover {
-    box-shadow: inset 0 0 0 1px var(--color-ink-soft);
+    background: #fff;
   }
 
   .field {
     width: 100%;
-    min-height: 48px;
-    padding: 0.7rem 0.9rem;
-    border-radius: 12px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    color: var(--color-ink);
+    min-height: 46px;
+    padding: 0.65rem 1rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    color: #0f172a;
+    font-size: 16px;
   }
 
   .field:focus {
     outline: none;
-    border-color: var(--color-verde);
-    box-shadow: 0 0 0 3px rgb(13 122 76 / 0.15);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
   }
 
   .field-label {
     display: block;
     margin-bottom: 0.35rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-ink-soft);
-  }
-
-  .panel {
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
   }
 
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 38px;
-    padding: 0 0.95rem;
-    border-radius: 999px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    font-size: 0.9rem;
-    font-weight: 600;
+    min-height: 36px;
+    padding: 0 1rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
     white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .chip:hover {
+    background: #fff;
   }
 
   .chip[aria-pressed="true"],
   .chip[aria-current="page"] {
-    background: var(--color-ink);
-    border-color: var(--color-ink);
+    background: #5b4df0;
+    border-color: #5b4df0;
     color: #fff;
+    box-shadow: 0 8px 18px -6px rgba(91, 77, 240, 0.55);
+  }
+
+  /* Precio: índigo en negrita como en las tarjetas de producto. */
+  .price-tag {
+    display: inline-flex;
+    align-items: baseline;
+    font-weight: 900;
+    color: #5b4df0;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .price-tag-sm {
+    font-size: 1.05rem;
+  }
+
+  .price-tag-lg {
+    font-size: 1.9rem;
+  }
+
+  /* Eyebrow morado de las secciones: punto + texto en versalitas. */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: currentColor;
   }
 
   .scroll-row {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.9rem;
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
   }
 
   .scroll-row::-webkit-scrollbar {
@@ -205,11 +605,10 @@
     flex-shrink: 0;
   }
 
-  /* Live ring around a store avatar, like a story that is happening now. */
   .live-ring {
-    padding: 3px;
-    border-radius: 999px;
-    background: conic-gradient(from 200deg, var(--color-live), #ff7a59, var(--color-live));
+    padding: 2.5px;
+    border-radius: 9999px;
+    background-image: linear-gradient(to top right, #f43f5e, #ef4444, #f59e0b);
   }
 
   .safe-bottom {
@@ -265,8 +664,14 @@
   }
 }
 
-/* Leaflet: keep the map under sheets and headers. */
+/* Leaflet: el mapa queda debajo de hojas y encabezados. */
 .leaflet-container {
-  font-family: var(--font-sans);
+  font-family: inherit;
   z-index: 0;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* evita el zoom automático en iPhone */
 }

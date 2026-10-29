@@ -11,6 +11,7 @@ import { groupByStore, useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AddressForm } from './AddressForm';
+import { Bone } from './Skeleton';
 
 const PAYMENTS = [
   { key: 'CASH_ON_DELIVERY', label: 'Efectivo al recibir', icon: Banknote },
@@ -90,7 +91,7 @@ export function Checkout() {
 
   if (!group) {
     return (
-      <div className="mx-auto max-w-md py-10 text-center">
+      <div className="mx-auto my-8 max-w-xl rounded-[2rem] border border-white/80 bg-white/80 p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-2xl sm:p-12">
         <h1 className="type-sign text-2xl font-extrabold">No hay nada para pedir</h1>
         <p className="mt-2 text-muted">Tu carrito está vacío.</p>
         <Link href="/" className="btn btn-primary mt-6">
@@ -175,7 +176,7 @@ export function Checkout() {
 
           <Step n={2} title="¿Cuándo lo quieres?">
             {!store ? (
-              <p className="text-sm text-muted">Cargando horarios de la tienda…</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-busy="true" aria-label="Cargando horarios">{Array.from({ length: 6 }).map((_, i) => <Bone key={i} className="h-11 w-full" />)}</div>
             ) : days.length === 0 ? (
               <p className="text-sm text-ink-soft">Esta tienda no tiene horarios libres esta semana.</p>
             ) : (

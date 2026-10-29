@@ -12,6 +12,7 @@ import { Sheet } from '@/components/shop/Sheet';
 import { ProductForm } from '@/components/vendor/ProductForm';
 import { useStoreOffers } from '@/components/vendor/useStoreOffers';
 import { TikTokIcon } from '@/components/common/TikTokIcon';
+import { ListSkeleton, PanelSkeleton } from '@/components/shop/Skeleton';
 
 interface LiveStream {
   id: string;
@@ -98,7 +99,7 @@ export default function SellOnTikTokPage() {
       </div>
 
       {live === undefined ? (
-        <p className="text-sm text-muted">Cargando…</p>
+        <PanelSkeleton lines={3} />
       ) : live ? (
         <div className="flex flex-col gap-4">
           <div className="panel border-live/40 p-4">
@@ -160,7 +161,7 @@ export default function SellOnTikTokPage() {
               </button>
             </div>
             {offers === null ? (
-              <p className="text-sm text-muted">Cargando productos…</p>
+              <ListSkeleton rows={3} />
             ) : active.length === 0 ? (
               <div className="panel px-4 py-6 text-center text-sm">
                 <p className="text-muted">Sube los productos que vas a mostrar en tu live.</p>

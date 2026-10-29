@@ -9,6 +9,7 @@ import { isPromoActive, offerPrice, productImages, promoEndsLabel } from '@/lib/
 import { formatBs } from '@/lib/utils';
 import { useStoreOffers } from '@/components/vendor/useStoreOffers';
 import { PriceTag } from '@/components/shop/PriceTag';
+import { ListSkeleton } from '@/components/shop/Skeleton';
 
 const PERCENTS = [10, 15, 20, 30, 50];
 
@@ -105,7 +106,7 @@ export default function VendorOffersPage() {
           <input className="field pl-10" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Busca tus productos" aria-label="Buscar productos para la oferta" />
         </div>
         {offers === null ? (
-          <p className="text-sm text-muted">Cargando productos…</p>
+          <ListSkeleton rows={4} />
         ) : candidates.length === 0 ? (
           <p className="panel px-4 py-5 text-sm text-muted">{offers.length === 0 ? 'Primero sube productos.' : 'Ningún producto coincide con la búsqueda.'}</p>
         ) : (

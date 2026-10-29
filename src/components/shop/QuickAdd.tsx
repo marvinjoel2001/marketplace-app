@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import type { Offer, Product } from '@/lib/api';
 import { offerPrice, productImages } from '@/lib/catalog';
 import { useCart } from '@/context/CartContext';
@@ -21,20 +21,26 @@ export function toCartItem(product: Product, offer: Offer, quantity = 1) {
   };
 }
 
-export function QuickAdd({ product, offer }: { product: Product; offer: Offer }) {
+/** Indigo cart button of the product cards; `light` is the white variant used on the offer tiles. */
+export function QuickAdd({ product, offer, light = false }: { product: Product; offer: Offer; light?: boolean }) {
   const { addToCart } = useCart();
   const toast = useToast();
   return (
     <button
       type="button"
-      onClick={() => {
+      onClick={(e) => {
+        e.preventDefault();
         addToCart(toCartItem(product, offer));
-        toast(`Agregaste ${product.title}`);
+        toast(`Agregaste ${product.title} al carrito`);
       }}
       aria-label={`Agregar ${product.title} al carrito`}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-verde text-white hover:bg-verde-dark active:scale-95"
+      className={
+        light
+          ? 'p-1.5 rounded-lg bg-white hover:bg-[#4F46E5] text-slate-700 hover:text-white border border-slate-200 shadow-2xs transition-colors cursor-pointer'
+          : 'w-9 h-9 shrink-0 rounded-xl bg-[#5B4DF0] hover:bg-[#4E3FE0] text-white flex items-center justify-center shadow-md shadow-indigo-500/25 transition-all active:scale-90 cursor-pointer'
+      }
     >
-      <Plus className="h-5 w-5" strokeWidth={2.5} />
+      <ShoppingCart className={light ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
     </button>
   );
 }

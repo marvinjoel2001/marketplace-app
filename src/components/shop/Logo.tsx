@@ -1,14 +1,19 @@
 import Link from 'next/link';
 
+/** Vitrina Market wordmark with the octopus logo. */
 export function Logo({ href = '/', suffix }: { href?: string; suffix?: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2 rounded-md" aria-label="Vitrina, ir al inicio">
-      <svg viewBox="0 0 32 22" className="h-5 w-7" aria-hidden>
-        <path d="M7 0h22a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H7L0 11z" fill="var(--color-tag)" />
-        <circle cx="7.5" cy="11" r="2.3" fill="var(--color-ink)" />
-      </svg>
-      <span className="type-sign text-xl font-extrabold leading-none text-ink">vitrina</span>
-      {suffix && <span className="rounded-md bg-verde-tint px-1.5 py-0.5 text-xs font-bold text-verde-dark">{suffix}</span>}
+    <Link href={href} className="flex items-center space-x-2.5 group shrink-0" aria-label="Vitrina Market, ir al inicio">
+      <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-emerald-200/80 group-hover:scale-105 transition-transform shrink-0 bg-white p-0.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/pulpo-icon.png" alt="" className="w-full h-full object-cover rounded-full" />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xl font-black tracking-tight text-slate-900 leading-none">Vitrina Market</span>
+        <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
+          {suffix ?? 'Marketplace Bolivia'}
+        </span>
+      </div>
     </Link>
   );
 }

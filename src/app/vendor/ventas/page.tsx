@@ -7,6 +7,7 @@ import { marketplaceApi, type Order } from '@/lib/api';
 import { describeWindow } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
 import { ORDER_STATUS, PAYMENT_LABEL, STATUS_TONE_CLASS } from '@/lib/orderStatus';
+import { ListSkeleton } from '@/components/shop/Skeleton';
 
 const FILTERS = [
   { key: 'pending', label: 'Por entregar', match: (o: Order) => ['SCHEDULED', 'CONFIRMED', 'PREPARING', 'DSP_DISPATCHED', 'IN_TRANSIT'].includes(o.status) },
@@ -51,7 +52,7 @@ export default function VendorSalesPage() {
       </div>
 
       {orders === null ? (
-        <p className="text-sm text-muted">Cargando ventas…</p>
+        <ListSkeleton rows={3} />
       ) : list.length === 0 ? (
         <p className="panel px-4 py-6 text-center text-sm text-muted">
           {filter === 'pending' ? 'No tienes pedidos por entregar.' : 'Aquí aparecerán tus ventas.'}

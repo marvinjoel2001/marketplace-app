@@ -171,3 +171,5 @@ body:has(.live-page) footer [class*="text-slate-"] { color: #c7cfd7; }
 @media (max-width: 380px) {
   body:has(.live-page) [data-marketplace-brand] a > div:last-child { display: none; }
 }
+body:has(.live-page) [data-marketplace-nav] .glass-input { background: #1c252e; border-color: #2a3640; box-shadow: none; }
+body:has(.live-page) footer [class*="bg-gray-100"] { background: #1c252e; color: #e5e9ed; }
