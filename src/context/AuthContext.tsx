@@ -52,7 +52,7 @@ interface AuthContextType {
   loginWithProvider: (provider: 'GOOGLE' | 'TIKTOK') => Promise<void>;
   /** Sends a six-digit code to the number's WhatsApp. `devCode` is only present in local development. */
   requestPhoneCode: (phone: string) => Promise<{ devCode?: string }>;
-  verifyPhoneCode: (phone: string, code: string) => Promise<void>;
+  verifyPhoneCode: (phone: string, code: string, idToken?: string) => Promise<void>;
   saveAddress: (address: SavedAddress) => Promise<UserProfile>;
   setStoreId: (storeId: string) => void;
   logout: () => Promise<void>;
@@ -170,8 +170,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const requestPhoneCode = useCallback(async (phone: string) => postJson('/api/auth/otp/request', { phone }), []);
 
   const verifyPhoneCode = useCallback(
-    async (phone: string, code: string) => {
-      const data = await postJson('/api/auth/otp/verify', { phone, code });
+    async (phone: string, code: string, idToken?: string) => {
+      const data = await postJson('/api/auth/otp/verify', { phone, code, idToken });
       finishLogin(data.user);
     },
     [finishLogin],

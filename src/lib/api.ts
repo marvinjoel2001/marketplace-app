@@ -72,6 +72,8 @@ export interface Store {
   deliveryDays: string;
   deliveryStart: string;
   deliveryEnd: string;
+  /** Checkout methods the admin enabled for this store, comma separated. */
+  paymentMethods?: string;
   ownerId?: string | null;
   isLiveNow?: boolean;
 }
@@ -431,7 +433,7 @@ export const marketplaceApi = {
     return fetchFromAPI(`/orders/${id(orderId)}/status`, json('PATCH', { status }));
   },
 
-  async getShippingQuote(data: { pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number }): Promise<{ price: number; estimatedMinutes: number }> {
+  async getShippingQuote(data: { pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; storeId?: string }): Promise<{ price: number; estimatedMinutes: number }> {
     return fetchFromAPI('/dsp/quote', json('POST', data));
   },
 

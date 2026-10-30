@@ -171,6 +171,7 @@ function LivePill({ compact = false }: { compact?: boolean }) {
 /** Customer navigation: Vitrina Market header and footer, plus a tab bar on phones. Hidden in the store panel. */
 export function ShopChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isLive = pathname.startsWith('/live');
   const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [catsOpen, setCatsOpen] = useState(false);
@@ -217,14 +218,20 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
               </span>
               <Link
                 href="/vendor"
+                style={isLive ? { backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a' } : undefined}
                 className={`hidden md:flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-2xs whitespace-nowrap border ${
                   user?.storeId
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200/90 hover:bg-emerald-100'
                     : 'bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100'
                 }`}
               >
-                <Store className={`w-3.5 h-3.5 shrink-0 ${user?.storeId ? 'text-emerald-700' : 'text-indigo-600'}`} />
-                <span>{user?.storeId ? 'Mi Tienda' : 'Vender'}</span>
+                <Store
+                  style={isLive ? { color: user?.storeId ? '#047857' : '#4f46e5' } : undefined}
+                  className={`w-3.5 h-3.5 shrink-0 ${user?.storeId ? 'text-emerald-700' : 'text-indigo-600'}`}
+                />
+                <span style={isLive ? { color: user?.storeId ? '#065f46' : '#0f172a' } : undefined}>
+                  {user?.storeId ? 'Mi Tienda' : 'Vender'}
+                </span>
               </Link>
               <Link href="/cart" aria-label="Carrito de compras" className="hidden md:inline-flex p-2 text-slate-700 hover:text-emerald-700 transition-all">
                 <CartBadge />

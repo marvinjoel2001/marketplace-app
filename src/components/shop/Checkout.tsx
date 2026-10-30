@@ -52,6 +52,10 @@ export function Checkout() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState('');
 
+  // Only the methods the admin enabled for this store; the backend rejects the others.
+  const payments = PAYMENTS.filter((p) => !store?.paymentMethods || store.paymentMethods.split(',').includes(p.key));
+  const selectedPayment = payments.some((p) => p.key === payment) ? payment : payments[0]?.key ?? payment;
+
   const storeId = group?.storeId;
   useEffect(() => {
     if (!storeId) return;
@@ -78,7 +82,7 @@ export function Checkout() {
     if (!store || lat == null || lng == null) return;
     let active = true;
     marketplaceApi
-      .getShippingQuote({ pickupLat: store.latitude, pickupLng: store.longitude, dropoffLat: lat, dropoffLng: lng })
+      .getShippingQuote({ pickupLat: store.latitude, pickupLng: store.longitude, dropoffLat: lat, dropoffLng: lng, storeId: store.id })
       .then((q) => active && setShipping(q.price))
       .catch(() => active && setShipping(null));
     return () => {
@@ -118,7 +122,7 @@ export function Checkout() {
         customerReference: user.addressReference ?? '',
         customerLat: user.lat,
         customerLng: user.lng,
-        paymentMethod: payment,
+        paymentMethod: selectedPayment,
         deliveryAt: slot,
         items: group.items.map((it) => ({ productOfferId: it.productOfferId, quantity: it.quantity })),
       });
@@ -219,12 +223,12 @@ export function Checkout() {
 
           <Step n={3} title="¿Cómo pagas?">
             <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Forma de pago">
-              {PAYMENTS.map(({ key, label, icon: Icon }) => (
+              {payments.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   type="button"
                   role="radio"
-                  aria-checked={payment === key}
+                  aria-checked={selectedPayment === key}
                   onClick={() => setPayment(key)}
                   className="flex flex-col items-start gap-2 rounded-xl border border-line bg-surface p-3 text-left text-sm font-semibold aria-checked:border-verde aria-checked:bg-verde-tint"
                 >

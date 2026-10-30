@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Phone, ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Sheet } from './Sheet';
 import { GoogleIcon, TikTokIcon } from '@/components/common/TikTokIcon';
+import { isFirebaseConfigured, sendFirebasePhoneCode } from '@/lib/firebase';
+import type { ConfirmationResult } from 'firebase/auth';
 
 const RESEND_SECONDS = 30;
 
@@ -17,6 +19,7 @@ export function LoginSheet() {
   const [wait, setWait] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -53,8 +56,14 @@ export function LoginSheet() {
 
   const sendCode = () =>
     run('send', async () => {
-      const result = await requestPhoneCode(phone);
-      setDevCode(result.devCode ?? '');
+      if (isFirebaseConfigured()) {
+        const confirmation = await sendFirebasePhoneCode(phone);
+        confirmationRef.current = confirmation;
+        setDevCode('');
+      } else {
+        const result = await requestPhoneCode(phone);
+        setDevCode(result.devCode ?? '');
+      }
       setCode('');
       setWait(RESEND_SECONDS);
       setMode('code');
@@ -62,7 +71,13 @@ export function LoginSheet() {
 
   const confirmCode = () =>
     run('verify', async () => {
-      await verifyPhoneCode(phone, code);
+      if (confirmationRef.current) {
+        const credential = await confirmationRef.current.confirm(code);
+        const idToken = await credential.user.getIdToken();
+        await verifyPhoneCode(phone, code, idToken);
+      } else {
+        await verifyPhoneCode(phone, code);
+      }
       reset();
     });
 
@@ -137,7 +152,11 @@ export function LoginSheet() {
                 autoFocus
               />
             </div>
-            <p className="mt-2 text-xs text-muted">Te enviaremos un código de 6 dígitos por WhatsApp.</p>
+            <p className="mt-2 text-xs text-muted">
+              {isFirebaseConfigured()
+                ? 'Te enviaremos un código de 6 dígitos por SMS a tu celular.'
+                : 'Te enviaremos un código de 6 dígitos por WhatsApp.'}
+            </p>
           </div>
           <button type="submit" className="btn btn-primary w-full" disabled={phone.length !== 8 || Boolean(busy)}>
             {busy === 'send' ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
@@ -159,7 +178,9 @@ export function LoginSheet() {
           </button>
           <div>
             <label htmlFor="login-code" className="field-label">
-              Código que te llegó al WhatsApp de +591 {phone}
+              {isFirebaseConfigured()
+                ? `Código SMS enviado a +591 ${phone}`
+                : `Código que te llegó al WhatsApp de +591 ${phone}`}
             </label>
             <input
               id="login-code"
@@ -193,6 +214,8 @@ export function LoginSheet() {
           {error}
         </p>
       )}
+
+      <div id="firebase-recaptcha-container" />
     </Sheet>
   );
 }

@@ -18,30 +18,25 @@ export async function adminFetch<T = unknown>(path: string, init: RequestInit & 
 }
 
 export function useAdminData<T>(path: string | null) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(Boolean(path));
+  // Remember which path the result belongs to: a new path shows "loading" until its own answer arrives.
+  const [result, setResult] = useState<{ path: string | null; data: T | null; error: string }>({ path: null, data: null, error: '' });
 
   const load = useCallback(async () => {
     if (!path) return;
     try {
-      setData(await adminFetch<T>(path));
-      setError('');
+      const data = await adminFetch<T>(path);
+      setResult({ path, data, error: '' });
     } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setResult((prev) => ({ path, data: prev.path === path ? prev.data : null, error: (err as Error).message }));
     }
   }, [path]);
 
   useEffect(() => {
-    setLoading(Boolean(path));
-    // The fetch resolves asynchronously; state is set from its result, not synchronously in the effect.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-  }, [load, path]);
+  }, [load]);
 
-  return { data, error, loading, reload: load };
+  const current = result.path === path;
+  return { data: current ? result.data : null, error: current ? result.error : '', loading: Boolean(path) && !current, reload: load };
 }
 
 export const bs = (n: number | null | undefined) =>
