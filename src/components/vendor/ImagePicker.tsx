@@ -7,7 +7,7 @@ import { mediaUrl } from '@/lib/catalog';
 
 /** Shrinks a photo to at most 1280 px and re-encodes it as JPEG, so uploads stay small on mobile data. */
 export async function compressPhoto(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error('Elige un archivo de imagen.');
+  if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.');
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement('canvas');
