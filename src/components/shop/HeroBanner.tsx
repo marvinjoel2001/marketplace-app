@@ -9,6 +9,7 @@ import { discountOf, isPromoActive, mainOffer, offerPrice, productImages } from 
 import { formatBs } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { toCartItem } from './QuickAdd';
+import { parseVariants } from '@/lib/variants';
 
 /** Two-tone title: the first half of the name in dark, the rest in blue. */
 function splitTitle(title: string): [string, string] {
@@ -42,6 +43,8 @@ export function HeroBanner({ products }: { products: Product[] }) {
   const go = (delta: number) => setActive((i) => (i + delta + count) % count);
 
   const buyNow = () => {
+    // With options the buyer picks one on the product page first.
+    if (parseVariants(offer).length) return router.push(`/product/${product.slug}`);
     addToCart(toCartItem(product, offer));
     router.push(`/checkout?store=${offer.storeId}`);
   };

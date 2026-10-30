@@ -9,7 +9,7 @@ import { marketplaceApi } from '@/lib/api';
 import { offerPrice, productImages } from '@/lib/catalog';
 import { formatBs } from '@/lib/utils';
 import { Sheet } from '@/components/shop/Sheet';
-import { ProductForm } from '@/components/vendor/ProductForm';
+import { QuickUpload } from '@/components/vendor/upload/QuickUpload';
 import { useStoreOffers } from '@/components/vendor/useStoreOffers';
 import { TikTokIcon } from '@/components/common/TikTokIcon';
 import { ListSkeleton, PanelSkeleton } from '@/components/shop/Skeleton';
@@ -210,12 +210,13 @@ export default function SellOnTikTokPage() {
         </div>
       )}
 
-      <Sheet open={creating} onClose={() => setCreating(false)} title="Subir producto">
-        <ProductForm
+      <Sheet open={creating} onClose={() => setCreating(false)} title="Subir producto" wide>
+        <QuickUpload
           storeId={store.id}
-          onSaved={(productId) => {
-            setCreating(false);
-            setPicked((prev) => new Set(prev).add(productId));
+          mode={{ kind: 'create' }}
+          onPublished={(product) => setPicked((prev) => new Set(prev).add(product.id))}
+          onSaved={(close) => {
+            if (close) setCreating(false);
             reload();
           }}
         />

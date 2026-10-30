@@ -89,8 +89,54 @@ export interface Offer {
   discountPercent?: number | null;
   isFlashSale?: boolean;
   flashSaleEnd?: string | null;
+  /** What the options are called (Talla, Voltaje, Presentación, ...). Null when there is a single version. */
+  variantAxis?: string | null;
+  /** JSON array of { label, stock }; parse with parseVariants. */
+  variants?: string | null;
+  stockCheckedAt?: string;
   store?: Store;
   product?: Product;
+}
+
+export interface Variant {
+  label: string;
+  stock: number;
+}
+
+export type Condition = 'NUEVO' | 'SEMINUEVO' | 'USADO';
+
+/** The form pre-filled from a product photo. */
+export interface PhotoSuggestion {
+  recognized: boolean;
+  title: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  audience: string;
+  condition: Condition;
+  colors: string[];
+  description: string;
+  details: { name: string; value: string }[];
+  variantAxis: string;
+  variantOptions: string[];
+  bulky: boolean;
+  priceRangeBs: { low: number; high: number } | null;
+}
+
+export interface ProductInput {
+  title: string;
+  description?: string;
+  basePrice: number;
+  categoryId: string;
+  storeId: string;
+  images: string[];
+  stock: number;
+  condition?: Condition;
+  audience?: string | null;
+  bulky?: boolean;
+  specifications?: Record<string, string>;
+  color?: string;
+  variantAxis?: string | null;
+  variants?: Variant[] | null;
 }
 
 export interface Product {
@@ -100,6 +146,11 @@ export interface Product {
   description: string;
   basePrice: number;
   images: string;
+  specifications?: string | null;
+  color?: string | null;
+  condition?: Condition;
+  audience?: string | null;
+  bulky?: boolean;
   category?: Category;
   offers?: Offer[];
 }
@@ -107,6 +158,7 @@ export interface Product {
 export interface OrderItem {
   id: string;
   productTitle: string;
+  variant?: string | null;
   storeName: string;
   storeId: string;
   quantity: number;
@@ -253,19 +305,11 @@ export const marketplaceApi = {
     return null;
   },
 
-  async createProduct(data: {
-    title: string;
-    description?: string;
-    basePrice: number;
-    categoryId: string;
-    storeId: string;
-    images: string[];
-    stock: number;
-  }): Promise<Product> {
+  async createProduct(data: ProductInput): Promise<Product> {
     return fetchFromAPI('/products', json('POST', data));
   },
 
-  async updateProduct(productId: string, data: Partial<{ title: string; description: string; images: string[]; categoryId: string }>) {
+  async updateProduct(productId: string, data: Partial<Omit<ProductInput, 'storeId' | 'stock' | 'basePrice' | 'variantAxis' | 'variants'>>) {
     return fetchFromAPI(`/products/${id(productId)}`, json('PUT', data));
   },
 
@@ -356,8 +400,26 @@ export const marketplaceApi = {
     return fetchFromAPI(`/stores/${id(storeId)}/offers`);
   },
 
-  async updateOffer(storeId: string, offerId: string, data: { price?: number; stock?: number; isActive?: boolean }) {
+  async updateOffer(storeId: string, offerId: string, data: { price?: number; stock?: number; isActive?: boolean; variantAxis?: string | null; variants?: Variant[] | null }) {
     return fetchFromAPI(`/stores/${id(storeId)}/offers/${id(offerId)}`, json('PATCH', data));
+  },
+
+  /** "Vendí una" (change -1) or "Llegaron más" (change > 0), optionally for one option. */
+  async adjustStock(storeId: string, offerId: string, data: { change: number; variant?: string }): Promise<Offer & { product: Product }> {
+    return fetchFromAPI(`/stores/${id(storeId)}/offers/${id(offerId)}/stock`, json('POST', data));
+  },
+
+  /** Answers "¿Sigues teniendo estos?". */
+  async confirmStock(storeId: string, offerIds: string[], stillHave: boolean): Promise<{ updated: number }> {
+    return fetchFromAPI(`/stores/${id(storeId)}/offers/confirm`, json('POST', { offerIds, stillHave }));
+  },
+
+  async photoAiStatus(): Promise<{ enabled: boolean }> {
+    return fetchFromAPI('/products/photo-ai/status');
+  },
+
+  async analyzePhoto(storeId: string, image: string): Promise<PhotoSuggestion> {
+    return fetchFromAPI('/products/photo-ai/analyze', json('POST', { storeId, image }));
   },
 
   async applyBulkOffer(storeId: string, data: { offerIds: string[]; discountPercent: number; endsAt: string }) {

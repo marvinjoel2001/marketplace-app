@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Trash2, Store as StoreIcon } from 'lucide-react';
-import { groupByStore, useCart } from '@/context/CartContext';
+import { cartKey, groupByStore, useCart } from '@/context/CartContext';
 import { formatBs } from '@/lib/utils';
 import { QuantityStepper } from '@/components/shop/BuyBox';
 
@@ -41,7 +41,7 @@ export default function CartPage() {
             </h2>
             <ul className="divide-y divide-line">
               {group.items.map((item) => (
-                <li key={item.productOfferId} className="flex gap-3 p-4">
+                <li key={cartKey(item)} className="flex gap-3 p-4">
                   <Link href={`/product/${item.productSlug}`} className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-line bg-paper">
                     {item.productImage && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -51,9 +51,10 @@ export default function CartPage() {
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <div className="flex items-start justify-between gap-2">
                       <p className="line-clamp-2 text-sm font-medium">{item.productTitle}</p>
+                      {item.variant && <p className="text-xs text-muted">{item.variant}</p>}
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.productOfferId)}
+                        onClick={() => removeFromCart(cartKey(item))}
                         className="-mr-1 -mt-1 rounded-full p-1.5 text-muted hover:text-danger"
                         aria-label={`Quitar ${item.productTitle}`}
                       >
@@ -63,7 +64,7 @@ export default function CartPage() {
                     <div className="flex items-center justify-between">
                       <QuantityStepper
                         value={item.quantity}
-                        onChange={(v) => updateQuantity(item.productOfferId, v)}
+                        onChange={(v) => updateQuantity(cartKey(item), v)}
                         max={Math.min(item.stock ?? 99, 99)}
                         label={`Cantidad de ${item.productTitle}`}
                       />

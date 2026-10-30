@@ -13,6 +13,13 @@ export interface CartItem {
   quantity: number;
   productImage: string;
   stock?: number;
+  /** Chosen option (size, voltage, ...) when the product has options. */
+  variant?: string;
+}
+
+/** One cart line per product and option. */
+export function cartKey(item: Pick<CartItem, 'productOfferId' | 'variant'>) {
+  return item.variant ? `${item.productOfferId}::${item.variant}` : item.productOfferId;
 }
 
 interface CartContextType {
@@ -58,11 +65,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
-      const existing = prev.find((it) => it.productOfferId === item.productOfferId);
+      const key = cartKey(item);
+      const existing = prev.find((it) => cartKey(it) === key);
       const cap = (qty: number) => Math.min(qty, item.stock ?? 99);
       if (existing) {
         return prev.map((it) =>
-          it.productOfferId === item.productOfferId
+          cartKey(it) === key
             ? { ...it, unitPrice: item.unitPrice, quantity: cap(it.quantity + item.quantity) }
             : it,
         );
@@ -72,12 +80,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setLastAddedAt(Date.now());
   };
 
-  const removeFromCart = (offerId: string) => setCart((prev) => prev.filter((it) => it.productOfferId !== offerId));
+  const removeFromCart = (key: string) => setCart((prev) => prev.filter((it) => cartKey(it) !== key));
 
-  const updateQuantity = (offerId: string, qty: number) => {
-    if (qty <= 0) return removeFromCart(offerId);
+  const updateQuantity = (key: string, qty: number) => {
+    if (qty <= 0) return removeFromCart(key);
     setCart((prev) =>
-      prev.map((it) => (it.productOfferId === offerId ? { ...it, quantity: Math.min(qty, it.stock ?? 99) } : it)),
+      prev.map((it) => (cartKey(it) === key ? { ...it, quantity: Math.min(qty, it.stock ?? 99) } : it)),
     );
   };
 

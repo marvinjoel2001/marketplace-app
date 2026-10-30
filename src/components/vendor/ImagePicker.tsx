@@ -6,7 +6,8 @@ import { marketplaceApi } from '@/lib/api';
 import { mediaUrl } from '@/lib/catalog';
 
 /** Shrinks a photo to at most 1280 px and re-encodes it as JPEG, so uploads stay small on mobile data. */
-async function compress(file: File): Promise<string> {
+export async function compressPhoto(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error('Elige un archivo de imagen.');
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement('canvas');
@@ -18,7 +19,7 @@ async function compress(file: File): Promise<string> {
 }
 
 export async function uploadPhoto(file: File, folder: 'products' | 'stores') {
-  const base64Data = await compress(file);
+  const base64Data = await compressPhoto(file);
   const { url } = await marketplaceApi.uploadImage({ base64Data, fileName: 'foto.jpg', folder });
   return url;
 }

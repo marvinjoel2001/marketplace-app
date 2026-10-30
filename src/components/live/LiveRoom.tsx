@@ -24,6 +24,9 @@ import { copyText, formatBs } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import { toCartItem } from '@/components/shop/QuickAdd';
+import { VariantPicker } from '@/components/shop/BuyBox';
+import { Sheet } from '@/components/shop/Sheet';
+import { parseVariants } from '@/lib/variants';
 import { TikTokIcon } from '@/components/common/TikTokIcon';
 import { LiveVideo } from './LivePreview';
 
@@ -141,17 +144,22 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
   const productCount = offers.length || shopProducts.length;
   const viewers = feed?.viewers ?? live?.viewer_count ?? 0;
 
+  // Products with options (sizes, voltages, ...) ask which one before going to the cart.
+  const [picking, setPicking] = useState<{ offer: StoreOffer; then: 'buy' | 'add'; variant: string } | null>(null);
+
   const buy = useCallback(
-    (offer: StoreOffer) => {
-      addToCart(toCartItem(offer.product, { ...offer, store: storeForCart }));
+    (offer: StoreOffer, variant?: string) => {
+      if (!variant && parseVariants(offer).length) return setPicking({ offer, then: 'buy', variant: '' });
+      addToCart(toCartItem(offer.product, { ...offer, store: storeForCart }, 1, variant));
       router.push(`/checkout?store=${offer.storeId}`);
     },
-    [addToCart, router, storeForCart],
+    [addToCart, router, storeForCart, setPicking],
   );
 
-  const add = (offer: StoreOffer) => {
-    addToCart(toCartItem(offer.product, { ...offer, store: storeForCart }));
-    toast(`Agregaste ${offer.product.title} al carrito`);
+  const add = (offer: StoreOffer, variant?: string) => {
+    if (!variant && parseVariants(offer).length) return setPicking({ offer, then: 'add', variant: '' });
+    addToCart(toCartItem(offer.product, { ...offer, store: storeForCart }, 1, variant));
+    toast(`Agregaste ${offer.product.title}${variant ? ` (${variant})` : ''} al carrito`);
   };
 
   const share = async () => {
@@ -519,6 +527,27 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
             ))}
         </div>
       </aside>
+
+      <Sheet open={Boolean(picking)} onClose={() => setPicking(null)} title={picking?.offer.product.title ?? 'Elige una opción'}>
+        {picking && (
+          <div className="flex flex-col gap-5">
+            <VariantPicker offer={picking.offer} value={picking.variant} onChange={(variant) => setPicking({ ...picking, variant })} />
+            <button
+              type="button"
+              className="btn btn-primary w-full"
+              disabled={!picking.variant}
+              onClick={() => {
+                const { offer, then, variant } = picking;
+                setPicking(null);
+                if (then === 'buy') buy(offer, variant);
+                else add(offer, variant);
+              }}
+            >
+              {picking.variant ? (picking.then === 'buy' ? `Comprar ${picking.variant}` : `Agregar ${picking.variant} al carrito`) : `Elige ${(picking.offer.variantAxis || 'una opción').toLowerCase()}`}
+            </button>
+          </div>
+        )}
+      </Sheet>
     </div>
   );
 }

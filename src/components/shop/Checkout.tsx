@@ -7,7 +7,7 @@ import { Banknote, Loader2, MapPin, QrCode } from 'lucide-react';
 import { marketplaceApi, type Store } from '@/lib/api';
 import { deliveryDays } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
-import { groupByStore, useCart } from '@/context/CartContext';
+import { cartKey, groupByStore, useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AddressForm } from './AddressForm';
@@ -124,7 +124,7 @@ export function Checkout() {
         customerLng: user.lng,
         paymentMethod: selectedPayment,
         deliveryAt: slot,
-        items: group.items.map((it) => ({ productOfferId: it.productOfferId, quantity: it.quantity })),
+        items: group.items.map((it) => ({ productOfferId: it.productOfferId, quantity: it.quantity, variant: it.variant })),
       });
       clearStore(group.storeId);
       toast('Pedido confirmado');
@@ -243,9 +243,9 @@ export function Checkout() {
           <section className="panel p-4 sm:p-5" aria-label="Resumen">
             <ul className="flex flex-col gap-2 text-sm">
               {group.items.map((it) => (
-                <li key={it.productOfferId} className="flex justify-between gap-3">
+                <li key={cartKey(it)} className="flex justify-between gap-3">
                   <span className="text-ink-soft">
-                    {it.quantity} × {it.productTitle}
+                    {it.quantity} × {it.productTitle}{it.variant && ` (${it.variant})`}
                   </span>
                   <span className="tabular-nums">{formatBs(it.unitPrice * it.quantity)}</span>
                 </li>

@@ -1,12 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { ShoppingCart } from 'lucide-react';
 import type { Offer, Product } from '@/lib/api';
 import { offerPrice, productImages } from '@/lib/catalog';
+import { parseVariants } from '@/lib/variants';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 
-export function toCartItem(product: Product, offer: Offer, quantity = 1) {
+/** `variant` is required when the offer has options (sizes, voltages, ...). */
+export function toCartItem(product: Product, offer: Offer, quantity = 1, variant?: string) {
+  const option = variant ? parseVariants(offer).find((v) => v.label === variant) : undefined;
   return {
     productOfferId: offer.id,
     productId: product.id,
@@ -17,7 +21,8 @@ export function toCartItem(product: Product, offer: Offer, quantity = 1) {
     unitPrice: offerPrice(offer),
     quantity,
     productImage: productImages(product)[0] ?? '',
-    stock: offer.stock,
+    stock: option ? option.stock : offer.stock,
+    ...(option && { variant: option.label }),
   };
 }
 
@@ -25,15 +30,19 @@ export function toCartItem(product: Product, offer: Offer, quantity = 1) {
 export function QuickAdd({ product, offer, light = false }: { product: Product; offer: Offer; light?: boolean }) {
   const { addToCart } = useCart();
   const toast = useToast();
+  const router = useRouter();
+  const options = parseVariants(offer).length > 0;
   return (
     <button
       type="button"
       onClick={(e) => {
         e.preventDefault();
+        // With options the buyer picks one on the product page first.
+        if (options) return router.push(`/product/${product.slug}`);
         addToCart(toCartItem(product, offer));
         toast(`Agregaste ${product.title} al carrito`);
       }}
-      aria-label={`Agregar ${product.title} al carrito`}
+      aria-label={options ? `Elegir opción de ${product.title}` : `Agregar ${product.title} al carrito`}
       className={
         light
           ? 'p-1.5 rounded-lg bg-white hover:bg-[#4F46E5] text-slate-700 hover:text-white border border-slate-200 shadow-2xs transition-colors cursor-pointer'
