@@ -242,8 +242,8 @@ export interface StoreSummary {
   activeOffers: number;
 }
 
-export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+export async function fetchFromAPI(endpoint: string, options: RequestInit = {}, base = API_URL) {
+  const url = `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   try {
     const res = await fetch(url, {
       ...options,
@@ -270,6 +270,14 @@ export async function fetchFromAPI(endpoint: string, options: RequestInit = {}) 
     }
     throw error;
   }
+}
+
+/**
+ * Calls that act as the signed-in user (seller panel, orders, photos) go through this site's /api/backend proxy,
+ * which checks the session cookie; the backend refuses them from anywhere else.
+ */
+export function fetchWithSession(endpoint: string, options: RequestInit = {}) {
+  return fetchFromAPI(endpoint, options, '/api/backend');
 }
 
 const json = (method: string, body?: unknown): RequestInit => ({
@@ -306,15 +314,15 @@ export const marketplaceApi = {
   },
 
   async createProduct(data: ProductInput): Promise<Product> {
-    return fetchFromAPI('/products', json('POST', data));
+    return fetchWithSession('/products', json('POST', data));
   },
 
   async updateProduct(productId: string, data: Partial<Omit<ProductInput, 'storeId' | 'stock' | 'basePrice' | 'variantAxis' | 'variants'>>) {
-    return fetchFromAPI(`/products/${id(productId)}`, json('PUT', data));
+    return fetchWithSession(`/products/${id(productId)}`, json('PUT', data));
   },
 
   async deleteProduct(productId: string) {
-    return fetchFromAPI(`/products/${id(productId)}`, json('DELETE'));
+    return fetchWithSession(`/products/${id(productId)}`, json('DELETE'));
   },
 
   // Categories
@@ -380,38 +388,30 @@ export const marketplaceApi = {
     return null;
   },
 
-  async getStoreByOwner(userId: string): Promise<Store | null> {
-    try {
-      return await fetchFromAPI(`/stores/owner/${id(userId)}`);
-    } catch {
-      return null;
-    }
-  },
-
-  async createStore(data: Omit<Partial<Store>, 'bankAccountInfo'> & { ownerId: string; bankAccountInfo?: unknown }): Promise<Store> {
-    return fetchFromAPI('/stores', json('POST', data));
+  async createStore(data: Omit<Partial<Store>, 'bankAccountInfo' | 'ownerId'> & { bankAccountInfo?: unknown }): Promise<Store> {
+    return fetchWithSession('/stores', json('POST', data));
   },
 
   async updateStore(storeId: string, data: Record<string, unknown>): Promise<Store> {
-    return fetchFromAPI(`/stores/${id(storeId)}`, json('PATCH', data));
+    return fetchWithSession(`/stores/${id(storeId)}`, json('PATCH', data));
   },
 
   async getStoreOffers(storeId: string): Promise<(Offer & { product: Product })[]> {
-    return fetchFromAPI(`/stores/${id(storeId)}/offers`);
+    return fetchWithSession(`/stores/${id(storeId)}/offers`);
   },
 
   async updateOffer(storeId: string, offerId: string, data: { price?: number; stock?: number; isActive?: boolean; variantAxis?: string | null; variants?: Variant[] | null }) {
-    return fetchFromAPI(`/stores/${id(storeId)}/offers/${id(offerId)}`, json('PATCH', data));
+    return fetchWithSession(`/stores/${id(storeId)}/offers/${id(offerId)}`, json('PATCH', data));
   },
 
   /** "Vendí una" (change -1) or "Llegaron más" (change > 0), optionally for one option. */
   async adjustStock(storeId: string, offerId: string, data: { change: number; variant?: string }): Promise<Offer & { product: Product }> {
-    return fetchFromAPI(`/stores/${id(storeId)}/offers/${id(offerId)}/stock`, json('POST', data));
+    return fetchWithSession(`/stores/${id(storeId)}/offers/${id(offerId)}/stock`, json('POST', data));
   },
 
   /** Answers "¿Sigues teniendo estos?". */
   async confirmStock(storeId: string, offerIds: string[], stillHave: boolean): Promise<{ updated: number }> {
-    return fetchFromAPI(`/stores/${id(storeId)}/offers/confirm`, json('POST', { offerIds, stillHave }));
+    return fetchWithSession(`/stores/${id(storeId)}/offers/confirm`, json('POST', { offerIds, stillHave }));
   },
 
   async photoAiStatus(): Promise<{ enabled: boolean }> {
@@ -419,24 +419,24 @@ export const marketplaceApi = {
   },
 
   async analyzePhoto(storeId: string, image: string): Promise<PhotoSuggestion> {
-    return fetchFromAPI('/products/photo-ai/analyze', json('POST', { storeId, image }));
+    return fetchWithSession('/products/photo-ai/analyze', json('POST', { storeId, image }));
   },
 
   async applyBulkOffer(storeId: string, data: { offerIds: string[]; discountPercent: number; endsAt: string }) {
-    return fetchFromAPI(`/stores/${id(storeId)}/offers/bulk`, json('POST', data));
+    return fetchWithSession(`/stores/${id(storeId)}/offers/bulk`, json('POST', data));
   },
 
   async endOffers(storeId: string, offerIds: string[]) {
-    return fetchFromAPI(`/stores/${id(storeId)}/offers/end`, json('POST', { offerIds }));
+    return fetchWithSession(`/stores/${id(storeId)}/offers/end`, json('POST', { offerIds }));
   },
 
   async getStoreOrders(storeId: string, since?: string): Promise<Order[]> {
     const qs = since ? `?since=${id(since)}` : '';
-    return fetchFromAPI(`/stores/${id(storeId)}/orders${qs}`);
+    return fetchWithSession(`/stores/${id(storeId)}/orders${qs}`);
   },
 
   async getStoreSummary(storeId: string): Promise<StoreSummary> {
-    return fetchFromAPI(`/stores/${id(storeId)}/summary`);
+    return fetchWithSession(`/stores/${id(storeId)}/summary`);
   },
 
   // Live from the store panel
@@ -451,32 +451,19 @@ export const marketplaceApi = {
   },
 
   async createLiveStream(data: { storeId: string; title: string; streamerName?: string; featuredProductIds: string[]; tiktokUrl?: string }) {
-    return fetchFromAPI('/live-streams', json('POST', data));
+    return fetchWithSession('/live-streams', json('POST', data));
   },
 
   async endLiveStream(streamId: string) {
-    return fetchFromAPI(`/live-streams/${id(streamId)}/end`, json('POST'));
+    return fetchWithSession(`/live-streams/${id(streamId)}/end`, json('POST'));
   },
 
-  // Orders
-  async getOrder(idOrNumber: string): Promise<Order | null> {
-    try {
-      return await fetchFromAPI(`/orders/${id(idOrNumber)}`);
-    } catch {
-      return null;
-    }
-  },
-
-  async getUserOrders(userId: string): Promise<Order[]> {
-    try {
-      return await fetchFromAPI(`/orders/user/${id(userId)}`);
-    } catch {
-      return [];
-    }
+  // Orders (the backend fills in the customer from the session)
+  async getMyOrders(): Promise<Order[]> {
+    return fetchWithSession('/orders/mine');
   },
 
   async createOrder(data: {
-    userId?: string;
     customerName: string;
     customerEmail?: string;
     customerPhone: string;
@@ -486,13 +473,9 @@ export const marketplaceApi = {
     customerLng: number;
     paymentMethod: string;
     deliveryAt: string;
-    items: { productOfferId: string; quantity: number }[];
+    items: { productOfferId: string; quantity: number; variant?: string }[];
   }): Promise<Order> {
-    return fetchFromAPI('/orders', json('POST', data));
-  },
-
-  async updateOrderStatus(orderId: string, status: string) {
-    return fetchFromAPI(`/orders/${id(orderId)}/status`, json('PATCH', { status }));
+    return fetchWithSession('/orders', json('POST', data));
   },
 
   async getShippingQuote(data: { pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; storeId?: string }): Promise<{ price: number; estimatedMinutes: number }> {
@@ -501,95 +484,6 @@ export const marketplaceApi = {
 
   // Photos
   async uploadImage(data: { base64Data: string; fileName?: string; folder?: 'products' | 'stores' }): Promise<{ url: string }> {
-    return fetchFromAPI('/upload/image', json('POST', data));
-  },
-
-  // Admin Stats
-  async getAdminStats() {
-    try {
-      return await fetchFromAPI('/admin/stats');
-    } catch {
-      return {
-        totalOrders: 0,
-        totalSales: 0,
-        activeDrivers: 0,
-        activeStores: 0,
-        liveStreamsNow: 0,
-      };
-    }
-  },
-
-  // Admin Stores Management
-  async getAdminStores() {
-    return fetchFromAPI('/admin/stores');
-  },
-
-  async updateStoreStatus(storeId: string, status: string) {
-    return fetchFromAPI(`/admin/stores/${id(storeId)}/status`, json('PATCH', { status }));
-  },
-
-  async updateStoreAdmin(storeId: string, data: Record<string, unknown>) {
-    return fetchFromAPI(`/admin/stores/${id(storeId)}`, json('PATCH', data));
-  },
-
-  async deleteStoreAdmin(storeId: string) {
-    return fetchFromAPI(`/admin/stores/${id(storeId)}`, json('DELETE'));
-  },
-
-  // Admin Users Management
-  async getAdminUsers() {
-    return fetchFromAPI('/admin/users');
-  },
-
-  async updateUserRole(userId: string, role: string) {
-    return fetchFromAPI(`/admin/users/${id(userId)}/role`, json('PATCH', { role }));
-  },
-
-  async updateUserStatus(userId: string, status: string) {
-    return fetchFromAPI(`/admin/users/${id(userId)}/status`, json('PATCH', { status }));
-  },
-
-  async deleteUserAdmin(userId: string) {
-    return fetchFromAPI(`/admin/users/${id(userId)}`, json('DELETE'));
-  },
-
-  // Admin Orders Management
-  async getAdminOrders(params?: { storeId?: string; status?: string }) {
-    const query = new URLSearchParams();
-    if (params?.storeId) query.set('storeId', params.storeId);
-    if (params?.status) query.set('status', params.status);
-    const qs = query.toString() ? `?${query.toString()}` : '';
-    return fetchFromAPI(`/admin/orders${qs}`);
-  },
-
-  async cancelOrderAdmin(orderId: string, reason?: string) {
-    return fetchFromAPI(`/admin/orders/${id(orderId)}/cancel`, json('POST', { reason }));
-  },
-
-  // Admin Products Moderation
-  async getAdminProducts() {
-    return fetchFromAPI('/admin/products');
-  },
-
-  async moderateProductAdmin(productId: string, status: string) {
-    return fetchFromAPI(`/admin/products/${id(productId)}/moderate`, json('PATCH', { status }));
-  },
-
-  async deleteProductAdmin(productId: string) {
-    return fetchFromAPI(`/admin/products/${id(productId)}`, json('DELETE'));
-  },
-
-  // Admin Payment Configs
-  async getPaymentConfigs() {
-    return fetchFromAPI('/admin/payment-configs');
-  },
-
-  async updatePaymentConfig(key: string, data: Record<string, unknown>) {
-    return fetchFromAPI(`/admin/payment-configs/${id(key)}`, json('PUT', data));
-  },
-
-  // Account
-  async getUser(userId: string) {
-    return fetchFromAPI(`/auth/me/${id(userId)}`);
+    return fetchWithSession('/upload/image', json('POST', data));
   },
 };

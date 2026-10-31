@@ -44,6 +44,8 @@ export function Checkout() {
   const group = groups.find((g) => g.storeId === params.get('store')) ?? groups[0];
 
   const [store, setStore] = useState<Store | null>(null);
+  const [storeFailed, setStoreFailed] = useState(false);
+  const [storeRetry, setStoreRetry] = useState(0);
   const [editingAddress, setEditingAddress] = useState(false);
   const [shipping, setShipping] = useState<number | null>(null);
   const [dayKey, setDayKey] = useState<string | null>(null);
@@ -60,11 +62,15 @@ export function Checkout() {
   useEffect(() => {
     if (!storeId) return;
     let active = true;
-    marketplaceApi.getStore(storeId).then((s) => active && setStore(s));
+    marketplaceApi.getStore(storeId).then((s) => {
+      if (!active) return;
+      setStore(s);
+      setStoreFailed(!s);
+    });
     return () => {
       active = false;
     };
-  }, [storeId]);
+  }, [storeId, storeRetry]);
 
   // Ask to sign in once, as soon as someone reaches checkout without a session.
   const asked = useRef(false);
@@ -114,7 +120,6 @@ export function Checkout() {
     setError('');
     try {
       const order = await marketplaceApi.createOrder({
-        userId: user.id,
         customerName: user.name,
         customerEmail: user.email,
         customerPhone: user.phone ?? '',
@@ -179,7 +184,21 @@ export function Checkout() {
           </Step>
 
           <Step n={2} title="¿Cuándo lo quieres?">
-            {!store ? (
+            {!store && storeFailed ? (
+              <p className="flex flex-wrap items-center gap-3 text-sm text-ink-soft">
+                No pudimos cargar los horarios de esta tienda.
+                <button
+                  type="button"
+                  className="font-semibold text-verde-dark"
+                  onClick={() => {
+                    setStoreFailed(false);
+                    setStoreRetry((n) => n + 1);
+                  }}
+                >
+                  Reintentar
+                </button>
+              </p>
+            ) : !store ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-busy="true" aria-label="Cargando horarios">{Array.from({ length: 6 }).map((_, i) => <Bone key={i} className="h-11 w-full" />)}</div>
             ) : days.length === 0 ? (
               <p className="text-sm text-ink-soft">Esta tienda no tiene horarios libres esta semana.</p>
@@ -267,15 +286,19 @@ export function Checkout() {
             <button
               type="button"
               className="btn btn-primary mt-4 w-full"
-              disabled={!hasAddress || editingAddress || !slot || placing}
+              disabled={!hasAddress || editingAddress || !slot || shipping == null || placing}
               onClick={placeOrder}
             >
               {placing && <Loader2 className="h-5 w-5 animate-spin" />}
               Confirmar pedido
             </button>
-            {(!hasAddress || !slot) && (
+            {(!hasAddress || !slot || shipping == null) && (
               <p className="mt-2 text-center text-xs text-muted">
-                {!hasAddress ? 'Guarda tu dirección para continuar.' : 'Elige la hora de entrega para continuar.'}
+                {!hasAddress
+                  ? 'Guarda tu dirección para continuar.'
+                  : !slot
+                    ? 'Elige la hora de entrega para continuar.'
+                    : 'Estamos calculando el envío…'}
               </p>
             )}
           </section>

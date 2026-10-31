@@ -1,3 +1,5 @@
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Clock, Store as StoreIcon } from 'lucide-react';
@@ -10,9 +12,25 @@ import { ProductGallery } from '@/components/shop/ProductGallery';
 
 export const dynamic = 'force-dynamic';
 
+// One backend call per request, shared by the metadata and the page.
+const loadProduct = cache((id: string) => marketplaceApi.getProduct(id));
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const product = await loadProduct((await params).id);
+  if (!product) return { title: 'Producto no encontrado — Vitrina' };
+  const offer = mainOffer(product);
+  const description = (product.description || '').slice(0, 160) || `${product.title}${offer?.store ? ` en ${offer.store.name}` : ''}`;
+  const image = productImages(product)[0];
+  return {
+    title: `${product.title} — Vitrina`,
+    description,
+    openGraph: { title: product.title, description, ...(image && { images: [image] }) },
+  };
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await marketplaceApi.getProduct(id);
+  const product = await loadProduct(id);
   const offer = product && mainOffer(product);
   if (!product || !offer) notFound();
 

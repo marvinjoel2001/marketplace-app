@@ -23,15 +23,10 @@ export function safeReturnUrl(raw: string | null): string {
 }
 
 /** Calls the marketplace backend and turns its error body into a readable message. */
-export async function backend(path: string, init: RequestInit = {}) {
+export async function backend(path: string, init: RequestInit = {}, userId?: string) {
   const res = await fetch(`${BACKEND_URL}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      // Identity endpoints on the backend only answer to this server.
-      ...(process.env.AUTH_INTERNAL_KEY ? { 'x-internal-key': process.env.AUTH_INTERNAL_KEY } : {}),
-      ...(init.headers || {}),
-    },
+    headers: sessionHeaders(userId, init.headers),
     cache: 'no-store',
   });
   const data = await res.json().catch(() => ({}));
@@ -40,6 +35,19 @@ export async function backend(path: string, init: RequestInit = {}) {
     throw Object.assign(new Error(message || 'El servidor no respondió'), { status: res.status });
   }
   return data;
+}
+
+/**
+ * Headers for calls to the backend from this server. AUTH_INTERNAL_KEY proves the call comes from here, so the backend
+ * can trust `x-user-id`: the id of a session whose signed cookie this server already checked.
+ */
+export function sessionHeaders(userId?: string, extra?: HeadersInit): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    ...(process.env.AUTH_INTERNAL_KEY ? { 'x-internal-key': process.env.AUTH_INTERNAL_KEY } : {}),
+    ...(userId ? { 'x-user-id': userId } : {}),
+    ...Object.fromEntries(new Headers(extra).entries()),
+  };
 }
 
 /** The session cookie is `userId.signature`: knowing a user id is not enough to act as that user. */
@@ -56,7 +64,11 @@ export function withSession(response: NextResponse, userId: string) {
 
 /** The signed-in user id, or null for a missing, malformed or forged cookie. */
 export function readSession(req: NextRequest): string | null {
-  const raw = req.cookies.get(SESSION_COOKIE)?.value;
+  return verifySession(req.cookies.get(SESSION_COOKIE)?.value);
+}
+
+/** Same check for a raw cookie value (server components read it with `cookies()`). */
+export function verifySession(raw: string | undefined): string | null {
   const dot = raw?.lastIndexOf('.') ?? -1;
   if (!raw || dot < 1) return null;
   const userId = raw.slice(0, dot);

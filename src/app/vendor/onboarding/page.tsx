@@ -40,7 +40,7 @@ export default function VendorOnboardingPage() {
     savingRef.current = true;
     setSaving(true);
     try {
-      const store = await marketplaceApi.createStore({ ...draftToPayload(draft), ownerId: user.id });
+      const store = await marketplaceApi.createStore(draftToPayload(draft));
       setStoreId(store.id);
     } catch (err) {
       setError((err as Error).message);
