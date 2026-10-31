@@ -41,13 +41,12 @@ export async function backend(path: string, init: RequestInit = {}, userId?: str
  * Headers for calls to the backend from this server. AUTH_INTERNAL_KEY proves the call comes from here, so the backend
  * can trust `x-user-id`: the id of a session whose signed cookie this server already checked.
  */
-export function sessionHeaders(userId?: string, extra?: HeadersInit): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    ...(process.env.AUTH_INTERNAL_KEY ? { 'x-internal-key': process.env.AUTH_INTERNAL_KEY } : {}),
-    ...(userId ? { 'x-user-id': userId } : {}),
-    ...Object.fromEntries(new Headers(extra).entries()),
-  };
+export function sessionHeaders(userId?: string, extra?: HeadersInit): Headers {
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  new Headers(extra).forEach((value, key) => headers.set(key, value));
+  if (process.env.AUTH_INTERNAL_KEY) headers.set('x-internal-key', process.env.AUTH_INTERNAL_KEY);
+  if (userId) headers.set('x-user-id', userId);
+  return headers;
 }
 
 /** The session cookie is `userId.signature`: knowing a user id is not enough to act as that user. */

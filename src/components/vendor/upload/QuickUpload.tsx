@@ -131,15 +131,21 @@ export function QuickUpload({ storeId, mode, onSaved, onPublished }: { storeId: 
     if (!ready.length) return;
     setBusy('all');
     let done = 0;
-    for (const draft of ready) {
-      try {
-        await save(draft);
-        done += 1;
-        setDrafts((list) => list.filter((d) => d.key !== draft.key));
-      } catch (err) {
-        update(draft.key, (d) => ({ ...d, uploadError: (err as Error).message }));
+    // A few at a time instead of one by one: twenty products publish in seconds, without flooding a phone's connection.
+    let next = 0;
+    const worker = async () => {
+      while (next < ready.length) {
+        const draft = ready[next++];
+        try {
+          await save(draft);
+          done += 1;
+          setDrafts((list) => list.filter((d) => d.key !== draft.key));
+        } catch (err) {
+          update(draft.key, (d) => ({ ...d, uploadError: (err as Error).message }));
+        }
       }
-    }
+    };
+    await Promise.all(Array.from({ length: Math.min(PARALLEL, ready.length) }, worker));
     setBusy(null);
     toast(done === 1 ? 'Producto publicado' : `${done} productos publicados`);
     onSaved(done === drafts.length);

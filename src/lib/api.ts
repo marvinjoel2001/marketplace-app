@@ -482,8 +482,12 @@ export const marketplaceApi = {
     return fetchFromAPI('/dsp/quote', json('POST', data));
   },
 
-  // Photos
-  async uploadImage(data: { base64Data: string; fileName?: string; folder?: 'products' | 'stores' }): Promise<{ url: string }> {
-    return fetchWithSession('/upload/image', json('POST', data));
+  // Photos travel as raw JPEG bytes: a quarter lighter than base64 on mobile data.
+  async uploadPhoto(photo: Blob, folder: 'products' | 'stores' = 'products'): Promise<{ url: string }> {
+    return fetchWithSession(`/upload/image/raw?folder=${folder}`, {
+      method: 'POST',
+      body: photo,
+      headers: { 'Content-Type': photo.type || 'image/jpeg' },
+    });
   },
 };

@@ -12,10 +12,12 @@ async function handle(req: NextRequest, { params }: { params: Promise<{ path: st
 
   try {
     const hasBody = req.method !== 'GET' && req.method !== 'DELETE';
+    // Photos come as raw image bytes; everything else is JSON.
+    const contentType = req.headers.get('content-type') || 'application/json';
     const res = await fetch(`${BACKEND_URL}/${path.map(encodeURIComponent).join('/')}${req.nextUrl.search}`, {
       method: req.method,
-      headers: sessionHeaders(userId),
-      ...(hasBody ? { body: await req.text() } : {}),
+      headers: sessionHeaders(userId, { 'Content-Type': contentType }),
+      ...(hasBody ? { body: contentType.startsWith('image/') ? await req.arrayBuffer() : await req.text() } : {}),
       cache: 'no-store',
     });
     const data = await res.json().catch(() => ({}));
