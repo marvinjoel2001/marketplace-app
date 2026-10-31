@@ -31,16 +31,15 @@ export async function sendFirebasePhoneCode(
   if (!auth) throw new Error('Firebase Auth no está configurado');
 
   const digits = phone.replace(/\D/g, '').replace(/^591/, '');
+  if (!/^[67]\d{7}$/.test(digits)) throw new Error('Escribe un celular boliviano válido de 8 dígitos.');
   const e164 = `+591${digits}`;
+  auth.languageCode = 'es';
 
-  // Invisible reCAPTCHA container
-  let verifier = (window as unknown as { _firebaseRecaptcha?: RecaptchaVerifier })._firebaseRecaptcha;
-  if (!verifier) {
-    verifier = new RecaptchaVerifier(auth, containerId, {
-      size: 'invisible',
-    });
-    (window as unknown as { _firebaseRecaptcha?: RecaptchaVerifier })._firebaseRecaptcha = verifier;
+  // Each request gets a fresh challenge, including resends and reopened dialogs.
+  const verifier = new RecaptchaVerifier(auth, containerId, { size: 'invisible' });
+  try {
+    return await signInWithPhoneNumber(auth, e164, verifier);
+  } finally {
+    verifier.clear();
   }
-
-  return await signInWithPhoneNumber(auth, e164, verifier);
 }

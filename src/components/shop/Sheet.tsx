@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useEffectEvent, useRef } from 'react';
 import { X } from 'lucide-react';
 
 /** Bottom sheet on phones, centered dialog on wider screens. */
@@ -18,20 +18,22 @@ export function Sheet({
   wide?: boolean;
 }) {
   const panel = useRef<HTMLDivElement>(null);
+  const dismiss = useEffectEvent(() => onClose());
 
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const overflow = document.body.style.overflow;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && dismiss();
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
-    panel.current?.focus();
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (
