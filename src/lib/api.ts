@@ -39,7 +39,9 @@ export interface TikTokLivesResponse {
     retention_seconds?: number;
     active_count?: number;
     refreshing_count?: number;
-    status?: 'live' | 'refreshing' | 'searching' | 'disabled';
+    status?: 'live' | 'refreshing' | 'searching' | 'disabled' | 'unavailable';
+    discovery_status?: 'starting' | 'ok' | 'error';
+    discovery_checked_at?: string | null;
     server_time?: string;
     /** Cities with lives in the current category, for the filter chips. */
     cities?: { name: string; count: number }[];

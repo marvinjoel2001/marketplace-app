@@ -18,6 +18,7 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
   initialNow: number;
 }) {
   const [data, setData] = useState(initialData);
+  const [connectionError, setConnectionError] = useState(!initialData);
   const [now, setNow] = useState(initialNow);
   const request = useRef<AbortController | null>(null);
   const query = useMemo(() => new URLSearchParams({ ...(category ? { category } : {}), page: String(page) }).toString(), [category, page]);
@@ -34,9 +35,11 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
       const result: TikTokLivesResponse = await response.json();
       if (!Array.isArray(result.data) || !result.meta || !result.pagination) throw new Error('Respuesta incompleta');
       setData(result);
+      setConnectionError(false);
       setNow(Date.now());
       try { sessionStorage.setItem(storageKey, JSON.stringify(result)); } catch { /* Optional short-lived recovery. */ }
     } catch {
+      setConnectionError(true);
       // A failed request keeps the last list; cards still expire by their own verified_at.
     } finally {
       clearTimeout(timeout);
@@ -78,6 +81,7 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
   // Rooms waiting for re-verification still show as live: shoppers don't need that detail.
   const cards = (data?.data ?? []).filter((live) => liveFreshness(live, now, freshSeconds, retention) !== 'expired');
   const viewers = cards.reduce((sum, live) => sum + live.viewer_count, 0);
+  const unavailable = connectionError || data?.meta.status === 'unavailable' || data?.meta.worker_enabled === false;
 
   return (
     <div className="live-content">
@@ -112,8 +116,10 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
         {cards.length === 0 ? (
           <div className="live-empty" role="status">
             <Radio size={30} />
-            <h3>{category ? `Nadie vende ${category.toLowerCase()} en vivo ahora` : 'No hay lives de venta en este momento'}</h3>
-            <p>{category ? 'Mira las otras categorías o vuelve en un rato.' : 'Vuelve en un rato: esta página se actualiza sola.'}</p>
+            <h3>{unavailable ? 'No pudimos consultar los lives en este momento'
+              : category ? `No encontramos lives de ${category.toLowerCase()} por ahora` : 'No encontramos lives de venta por ahora'}</h3>
+            <p>{unavailable ? 'Estamos intentando recuperar la conexión. La página se actualizará automáticamente.'
+              : category ? 'Mira las otras categorías o vuelve en un rato.' : 'Vuelve en un rato: esta página se actualiza sola.'}</p>
             {category && <Link href="/live" className="live-primary-button">Ver todos los lives</Link>}
           </div>
         ) : (
