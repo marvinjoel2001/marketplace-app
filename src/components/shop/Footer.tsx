@@ -51,8 +51,12 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-100 mt-8 pt-6 text-xs text-gray-400">
+        <div className="border-t border-gray-100 mt-8 pt-6 text-xs text-gray-400 flex flex-wrap items-center justify-between gap-2">
           <p>© 2026 Vitrina Market Bolivia. Santa Cruz, Bolivia.</p>
+          <div className="flex gap-4">
+            <Link href="/privacidad" className="hover:text-amber-600">Privacidad</Link>
+            <Link href="/terminos" className="hover:text-amber-600">Términos</Link>
+          </div>
         </div>
       </div>
     </footer>
