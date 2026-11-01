@@ -36,7 +36,7 @@ function bubbles(lives: LiveStore[], tiktok: TikTokLiveItem[]): LiveBubble[] {
     .map((t) => ({
       key: `tt-${t.username}`,
       name: `@${t.username}`,
-      sub: t.viewer_count > 0 ? `${t.viewer_count.toLocaleString('es-BO')} viendo` : null,
+      sub: t.city,
       avatar: t.avatar_url,
       href: `/live/${t.username}`,
     }));

@@ -43,6 +43,9 @@ export interface TikTokLivesResponse {
     server_time?: string;
     /** Cities with lives in the current category, for the filter chips. */
     cities?: { name: string; count: number }[];
+    /** City whose lives come first (the visitor's), and how many of those there are. */
+    near?: string | null;
+    near_count?: number;
   };
 }
 
@@ -341,11 +344,12 @@ export const marketplaceApi = {
 
   // TikTok LIVE discovery. Returns null when the backend is unreachable or rejects the query,
   // so the UI can tell "no lives right now" ({ data: [] }) apart from "could not check".
-  async getTikTokLives(params: { category?: string; city?: string; page?: number; limit?: number } = {}): Promise<TikTokLivesResponse | null> {
+  async getTikTokLives(params: { category?: string; city?: string; near?: string | null; page?: number; limit?: number } = {}): Promise<TikTokLivesResponse | null> {
     try {
       const query = new URLSearchParams();
       if (params.category) query.set('category', params.category);
       if (params.city) query.set('city', params.city);
+      if (params.near) query.set('near', params.near);
       if (params.page) query.set('page', String(params.page));
       if (params.limit) query.set('limit', String(params.limit));
       const qs = query.toString() ? `?${query.toString()}` : '';

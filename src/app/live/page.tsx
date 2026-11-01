@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { cookies, headers } from 'next/headers';
 import { Radio, ShoppingBag } from 'lucide-react';
 import { marketplaceApi, type LiveStore } from '@/lib/api';
 import { productImages } from '@/lib/catalog';
 import { LiveDirectory } from '@/components/live/LiveDirectory';
 import { LiveSourceToggle, type LiveSource } from '@/components/shop/LiveSourceToggle';
 import { StoreAvatar } from '@/components/shop/LiveStrip';
+import { NEAR_COOKIE, resolveNear } from '@/lib/visitorCity';
 import './live.css';
 
 export const dynamic = 'force-dynamic';
@@ -68,8 +70,14 @@ export default async function LiveShoppingDirectoryPage({ searchParams }: {
   const source: LiveSource = params.fuente === 'tiendas' ? 'tiendas' : 'tiktok';
   const category = typeof params.category === 'string' && CATEGORIES.includes(params.category) ? params.category : undefined;
   const page = typeof params.page === 'string' && /^\d{1,4}$/.test(params.page) && Number(params.page) > 0 ? Number(params.page) : 1;
+  // The visitor's city (their choice, else their connection) goes first; the rest of Bolivia follows.
+  const near = resolveNear({
+    param: typeof params.cerca === 'string' ? params.cerca : null,
+    cookie: (await cookies()).get(NEAR_COOKIE)?.value,
+    headers: await headers(),
+  });
   const [lives, registered] = await Promise.all([
-    marketplaceApi.getTikTokLives({ category, page, limit: 100 }),
+    marketplaceApi.getTikTokLives({ category, near: near.city, page, limit: 100 }),
     marketplaceApi.getLiveStores(),
   ]);
   return (
@@ -84,14 +92,14 @@ export default async function LiveShoppingDirectoryPage({ searchParams }: {
           <LiveSourceToggle
             dark
             value={source}
-            counts={{ tiktok: lives?.pagination.total ?? 0, tiendas: registered.length }}
             hrefFor={(s) => (s === 'tiendas' ? '/live?fuente=tiendas' : '/live')}
           />
         </div>
         {source === 'tiendas' ? (
           <RegisteredLives lives={registered} />
         ) : (
-          <LiveDirectory key={`${category ?? 'all'}:${page}`} initialData={lives} category={category} page={page} initialNow={Date.parse(lives?.meta.server_time ?? '') || 0} />
+          <LiveDirectory key={`${category ?? 'all'}:${page}:${near.city ?? 'bo'}`} initialData={lives} category={category} page={page}
+            near={near.city} nearSource={near.source} initialNow={Date.parse(lives?.meta.server_time ?? '') || 0} />
         )}
       </div>
     </div>
