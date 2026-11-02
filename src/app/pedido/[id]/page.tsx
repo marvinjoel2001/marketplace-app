@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CalendarClock, MapPin, Phone } from 'lucide-react';
+import { CalendarClock, CheckCircle2, MapPin, Navigation, Phone } from 'lucide-react';
 import { marketplaceApi } from '@/lib/api';
 import { describeWindow } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
 import { mediaUrl } from '@/lib/catalog';
 import { ORDER_STATUS, PAYMENT_LABEL, STATUS_TONE_CLASS } from '@/lib/orderStatus';
+import { QrPayment } from '@/components/shop/QrPayment';
+import { OrderAutoRefresh } from '@/components/shop/OrderAutoRefresh';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Tu pedido — Vitrina' };
@@ -15,21 +17,43 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const order = await marketplaceApi.getOrder(id);
   if (!order) notFound();
   const status = ORDER_STATUS[order.status] ?? ORDER_STATUS.SCHEDULED;
+  // OpenDSP accepted the delivery but no driver took it yet.
+  const statusLabel = order.status === 'DSP_DISPATCHED' && !order.dspDriverName ? 'Buscando repartidor' : status.customer;
+  const paid = order.paymentStatus === 'PAID';
+  const awaitingQr = order.paymentMethod === 'QR_PREPAID' && !paid && order.status !== 'CANCELLED';
+  const closed = order.status === 'DELIVERED' || order.status === 'CANCELLED';
+  const trackable = Boolean(order.dspTrackingUrl) && ['DSP_DISPATCHED', 'IN_TRANSIT'].includes(order.status);
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4">
+      {!closed && <OrderAutoRefresh />}
       <div>
-        <span className={`inline-block rounded-md px-2 py-1 text-sm font-bold ${STATUS_TONE_CLASS[status.tone]}`}>{status.customer}</span>
+        <span className={`inline-block rounded-md px-2 py-1 text-sm font-bold ${STATUS_TONE_CLASS[status.tone]}`}>{awaitingQr ? 'Esperando tu pago' : statusLabel}</span>
         <h1 className="type-sign mt-2 text-2xl font-extrabold">Pedido {order.orderNumber}</h1>
         <p className="mt-1 text-sm text-muted">De {order.items[0]?.storeName}</p>
       </div>
+
+      {awaitingQr && <QrPayment orderNumber={order.orderNumber} amount={order.totalAmount} storeName={order.items[0]?.storeName ?? 'la tienda'} />}
+
+      {trackable && (
+        <a href={order.dspTrackingUrl!} target="_blank" rel="noopener noreferrer" className="btn btn-primary w-full">
+          <Navigation className="h-5 w-5" /> Seguir a mi repartidor
+        </a>
+      )}
 
       <div className="panel flex flex-col gap-3 p-4 text-sm">
         <p className="flex items-start gap-3">
           <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-verde" />
           <span>
             <span className="block font-semibold">Llega {describeWindow(order.deliveryAt, order.deliveryWindow)}</span>
-            <span className="text-ink-soft">{PAYMENT_LABEL[order.paymentMethod] ?? 'Pago al recibir'}: {formatBs(order.totalAmount)}</span>
+            <span className="text-ink-soft">
+              {PAYMENT_LABEL[order.paymentMethod] ?? 'Pago al recibir'}: {formatBs(order.totalAmount)}
+              {paid && (
+                <span className="ml-1.5 inline-flex items-center gap-1 font-semibold text-verde-dark">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Pagado
+                </span>
+              )}
+            </span>
           </span>
         </p>
         <p className="flex items-start gap-3">

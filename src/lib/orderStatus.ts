@@ -19,4 +19,5 @@ export const STATUS_TONE_CLASS = {
 export const PAYMENT_LABEL: Record<string, string> = {
   CASH_ON_DELIVERY: 'Efectivo al recibir',
   QR_ON_DELIVERY: 'QR al recibir',
+  QR_PREPAID: 'Pago con QR',
 };

@@ -127,6 +127,7 @@ export default function AdminStoreDetail({ params }: { params: Promise<{ id: str
 function StoreConfig({ store, onSaved }: { store: AdminStore; onSaved: () => void }) {
   const toast = useToast();
   const [methods, setMethods] = useState<string[]>(store.paymentMethods);
+  const [openDsp, setOpenDsp] = useState(store.openDspEnabled);
   const [custom, setCustom] = useState(store.rates.custom);
   const [baseFare, setBaseFare] = useState(String(store.rates.baseFare));
   const [perKm, setPerKm] = useState(String(store.rates.perKm));
@@ -141,6 +142,7 @@ function StoreConfig({ store, onSaved }: { store: AdminStore; onSaved: () => voi
         method: 'PATCH',
         json: {
           paymentMethods: methods,
+          openDspEnabled: openDsp,
           shippingBaseFare: custom ? Number(baseFare) : null,
           shippingPerKm: custom ? Number(perKm) : null,
           customCommissionRate: commission.trim() === '' ? null : Number(commission),
@@ -168,6 +170,17 @@ function StoreConfig({ store, onSaved }: { store: AdminStore; onSaved: () => voi
             ))}
           </div>
           {methods.length === 0 && <p className="mt-2 text-xs text-rose-600">Deja al menos un método activo.</p>}
+        </fieldset>
+
+        <fieldset>
+          <legend className="field-label">Reparto</legend>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={openDsp} onChange={(e) => setOpenDsp(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#5b45fa]" />
+            <span>
+              Entregar con OpenDSP
+              <span className="block text-xs text-slate-500">El repartidor se pide solo y el cliente recibe un link para seguirlo. Desactívalo si la tienda entrega con su propia gente.</span>
+            </span>
+          </label>
         </fieldset>
 
         <fieldset className="space-y-3">

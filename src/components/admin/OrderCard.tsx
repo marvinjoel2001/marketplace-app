@@ -29,6 +29,24 @@ export function OrderCard({ order, onChanged, compact }: { order: AdminOrder; on
     }
   };
 
+  // Without this the driver is requested automatically 20 minutes before the delivery window.
+  const requestDriver = async () => {
+    setBusy(true);
+    try {
+      await adminFetch(`orders/${order.id}/dispatch`, { method: 'POST' });
+      toast(`${order.orderNumber}: enviado a OpenDSP, buscando repartidor`);
+      onChanged();
+    } catch (err) {
+      toast((err as Error).message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const canRequestDriver =
+    !order.dspOrderId &&
+    ['SCHEDULED', 'CONFIRMED', 'PREPARING'].includes(order.status) &&
+    !(order.paymentMethod === 'QR_PREPAID' && order.paymentStatus !== 'PAID');
+
   return (
     <article className="vendor-card space-y-3 p-4" style={{ borderLeft: `4px solid ${storeColor(order.storeId)}` }}>
       <div className="flex flex-wrap items-center gap-2">
@@ -50,8 +68,8 @@ export function OrderCard({ order, onChanged, compact }: { order: AdminOrder; on
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Entrega</p>
           <p className="font-semibold">{order.deliveryAt ? `${dateOnly(order.deliveryAt)}, ${order.deliveryWindow ?? ''}` : 'Sin horario'}</p>
-          <p className="text-slate-500">{PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod} · {bs(order.total)} <span className="text-xs">(envío {bs(order.shippingFee)})</span></p>
-          <p className="flex items-center gap-1 text-slate-500"><Truck className="h-3.5 w-3.5" />{order.driver ? `${order.driver.name}${order.driver.phone ? ` · ${order.driver.phone}` : ''}` : 'Sin repartidor asignado'}</p>
+          <p className="text-slate-500">{PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod} · {bs(order.total)} <span className="text-xs">(envío {bs(order.shippingFee)})</span>{order.paymentStatus === 'PAID' ? <span className="ml-1 rounded bg-emerald-50 px-1.5 text-xs font-semibold text-emerald-700">Pagado</span> : order.paymentMethod === 'QR_PREPAID' && <span className="ml-1 rounded bg-amber-50 px-1.5 text-xs font-semibold text-amber-700">Esperando pago</span>}</p>
+          <p className="flex items-center gap-1 text-slate-500"><Truck className="h-3.5 w-3.5" />{order.driver ? `${order.driver.name}${order.driver.phone ? ` · ${order.driver.phone}` : ''}` : order.dspOrderId ? 'En OpenDSP, buscando repartidor' : 'Sin repartidor asignado'}</p>
         </div>
       </div>
 
@@ -71,6 +89,11 @@ export function OrderCard({ order, onChanged, compact }: { order: AdminOrder; on
               {NEXT_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS[s].label}</option>)}
             </select>
             {busy && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
+            {canRequestDriver && (
+              <button type="button" className="flex items-center gap-1 rounded-xl bg-[#5b45fa] px-3 py-2 text-xs font-semibold text-white hover:bg-[#4a36e0]" disabled={busy} onClick={requestDriver}>
+                <Truck className="h-3.5 w-3.5" />Pedir repartidor
+              </button>
+            )}
             <button type="button" className="rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50" onClick={() => setCancelling(true)}>Cancelar</button>
           </>
         )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, LogOut, MapPin, Store as StoreIcon } from 'lucide-react';
+import { Bell, ChevronRight, LogOut, MapPin, Store as StoreIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { marketplaceApi, type Order } from '@/lib/api';
 import { describeWindow } from '@/lib/schedule';
@@ -96,6 +96,15 @@ export default function AccountPage() {
           </ul>
         )}
       </section>
+
+      <Link href="/notificaciones" className="panel flex items-center gap-3 p-4">
+        <Bell className="h-5 w-5 text-verde" />
+        <span className="flex-1">
+          <span className="block font-semibold">Notificaciones</span>
+          <span className="text-sm text-muted">Qué pasó con tus pedidos, paso a paso.</span>
+        </span>
+        <ChevronRight className="h-4 w-4 text-muted" />
+      </Link>
 
       <Link href="/vendor" className="panel flex items-center gap-3 p-4">
         <StoreIcon className="h-5 w-5 text-verde" />

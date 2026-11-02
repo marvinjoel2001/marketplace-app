@@ -10,6 +10,7 @@ import { marketplaceApi, type Category } from '@/lib/api';
 import { TikTokIcon } from '@/components/common/TikTokIcon';
 import { Logo } from './Logo';
 import { Footer } from './Footer';
+import { NotificationBell } from './NotificationBell';
 
 const TABS = [
   { href: '/', label: 'Inicio', icon: Home },
@@ -210,6 +211,7 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+              {user && <NotificationBell userId={user.id} />}
               <span className="sm:hidden">
                 <LivePill compact />
               </span>

@@ -14,6 +14,8 @@ export interface AdminStore {
   createdAt: string;
   products: number;
   paymentMethods: string[];
+  /** Deliveries go to OpenDSP; false = the store delivers with its own people. */
+  openDspEnabled: boolean;
   rates: { baseFare: number; perKm: number; custom: boolean };
   customCommissionRate: number | null;
   walletBalance: number;
@@ -45,6 +47,8 @@ export interface AdminOrder {
   createdAt: string;
   recipient: { name: string; phone: string; address: string; reference: string | null; lat: number; lng: number };
   driver: { name: string; phone: string | null } | null;
+  /** Set once the delivery was created in OpenDSP. */
+  dspOrderId: string | null;
   items: { title: string; quantity: number; unitPrice: number }[];
 }
 

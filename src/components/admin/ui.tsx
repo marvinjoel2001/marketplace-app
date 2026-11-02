@@ -62,6 +62,7 @@ export const ORDER_STATUS: Record<string, { label: string; tone: Tone }> = {
 export const PAYMENT_LABEL: Record<string, string> = {
   CASH_ON_DELIVERY: 'Efectivo al recibir',
   QR_ON_DELIVERY: 'QR al recibir',
+  QR_PREPAID: 'Pagar ahora con QR',
 };
 
 export type Tone = 'green' | 'red' | 'amber' | 'indigo' | 'slate';

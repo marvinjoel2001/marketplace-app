@@ -190,8 +190,22 @@ export interface Order {
   deliveryWindow?: string | null;
   dspDriverName?: string | null;
   dspDriverPhone?: string | null;
+  /** OpenDSP page where the customer follows the driver; only when the store delivers with OpenDSP. */
+  dspTrackingUrl?: string | null;
+  paidAt?: string | null;
   createdAt: string;
   items: OrderItem[];
+}
+
+export interface CustomerNotification {
+  id: string;
+  orderId: string | null;
+  kind: string;
+  title: string;
+  body: string;
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
 }
 
 export interface LiveStore {
@@ -495,6 +509,23 @@ export const marketplaceApi = {
     items: { productOfferId: string; quantity: number }[];
   }): Promise<Order> {
     return fetchFromAPI('/orders', json('POST', data));
+  },
+
+  /** "Ya pagué" on an order paid with QR (accepted only while the backend runs in payment test mode). */
+  async confirmOrderPayment(orderNumber: string): Promise<Order> {
+    return fetchFromAPI(`/orders/${id(orderNumber)}/payment/confirm`, json('POST'));
+  },
+
+  async getNotifications(userId: string): Promise<{ unread: number; items: CustomerNotification[] } | null> {
+    try {
+      return await fetchFromAPI(`/notifications/user/${id(userId)}`);
+    } catch {
+      return null;
+    }
+  },
+
+  async markNotificationsRead(userId: string) {
+    return fetchFromAPI(`/notifications/user/${id(userId)}/read`, json('POST'));
   },
 
   async updateOrderStatus(orderId: string, status: string) {

@@ -16,6 +16,7 @@ import { Bone } from './Skeleton';
 const PAYMENTS = [
   { key: 'CASH_ON_DELIVERY', label: 'Efectivo al recibir', icon: Banknote },
   { key: 'QR_ON_DELIVERY', label: 'QR al recibir', icon: QrCode },
+  { key: 'QR_PREPAID', label: 'Pagar ahora con QR', icon: QrCode },
 ] as const;
 
 function Step({ n, title, children, action }: { n: number; title: string; children: React.ReactNode; action?: React.ReactNode }) {
@@ -237,7 +238,9 @@ export function Checkout() {
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted">Pagas cuando recibes tu pedido.</p>
+            <p className="mt-2 text-xs text-muted">
+              {selectedPayment === 'QR_PREPAID' ? 'Al confirmar te mostramos el QR para pagar desde tu banco.' : 'Pagas cuando recibes tu pedido.'}
+            </p>
           </Step>
 
           <section className="panel p-4 sm:p-5" aria-label="Resumen">
