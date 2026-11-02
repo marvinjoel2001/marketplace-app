@@ -5,22 +5,38 @@ import { CheckCircle2, Loader2, Sparkles, XCircle } from 'lucide-react';
 import { Card, ErrorBox, Loading, adminFetch, useAdminData } from './ui';
 import { useToast } from '@/context/ToastContext';
 
-interface PhotoAi {
-  enabled: boolean;
-  model: string;
-  models: string[];
+type Provider = 'anthropic' | 'deploy';
+
+interface KeyState {
   hasApiKey: boolean;
   keyHint: string;
   fromEnv: boolean;
 }
 
+interface PhotoAi {
+  enabled: boolean;
+  model: string;
+  models: string[];
+  modelProviders: Record<string, Provider>;
+  providers: Record<Provider, KeyState>;
+}
+
 const MODEL_INFO: Record<string, { name: string; help: string }> = {
   'claude-opus-5-5': { name: 'Claude Opus 5.5', help: 'El más preciso: reconoce mejor marcas, modelos y etiquetas.' },
   'claude-sonnet-5-5': { name: 'Claude Sonnet 5.5', help: 'Muy bueno y más económico que Opus.' },
-  'claude-haiku-5-5': { name: 'Claude Haiku 5.5', help: 'El más rápido y barato. Puede fallar más en marcas y detalles.' },
+  'claude-haiku-5-5': { name: 'Claude Haiku 5.5', help: 'El más rápido y barato de Claude. Puede fallar más en marcas y detalles.' },
+  'deepseek-ai/deepseek-v4.1-flash-1017': {
+    name: 'DeepSeek V4.1 Flash (Deploy)',
+    help: 'El más económico: menos de 0,001 USD por foto. Usa tu API key de deploy.com.',
+  },
 };
 
-/** Anthropic key that lets sellers publish from a photo. Without it the seller form stays manual. */
+const PROVIDER_INFO: Record<Provider, { label: string; placeholder: string; href: string; site: string; env: string }> = {
+  anthropic: { label: 'Anthropic', placeholder: 'sk-ant-...', href: 'https://console.anthropic.com/settings/keys', site: 'console.anthropic.com', env: 'ANTHROPIC_API_KEY' },
+  deploy: { label: 'Deploy', placeholder: 'Tu Secret Key de Deploy', href: 'https://deploy.com', site: 'deploy.com (Service API Keys)', env: 'DEPLOY_API_KEY' },
+};
+
+/** Key and model that let sellers publish from a photo. Without a key the seller form stays manual. */
 export function PhotoAiSettings() {
   const toast = useToast();
   const { data, error, loading, reload } = useAdminData<PhotoAi>('vision-ai');
@@ -41,12 +57,17 @@ export function PhotoAiSettings() {
   if (loading) return <Card title="Fotos con IA"><Loading /></Card>;
   if (error || !data) return <ErrorBox message={error || 'Sin datos'} onRetry={reload} />;
 
-  const active = data.enabled && data.hasApiKey;
+  // The key field follows the model picked in the form, even before saving.
+  const provider: Provider = data.modelProviders[model] ?? 'anthropic';
+  const key = data.providers[provider];
+  const info = PROVIDER_INFO[provider];
+  const savedKey = data.providers[data.modelProviders[data.model] ?? 'anthropic'];
+  const active = data.enabled && savedKey.hasApiKey;
 
   const save = async (removeKey = false) => {
     setBusy(removeKey ? 'remove' : 'save');
     try {
-      await adminFetch('vision-ai', { method: 'PUT', json: removeKey ? { removeKey: true } : { apiKey, model, enabled } });
+      await adminFetch('vision-ai', { method: 'PUT', json: removeKey ? { removeKey: true, model } : { apiKey, model, enabled } });
       setApiKey('');
       setTested(null);
       toast(removeKey ? 'API key quitada' : 'Reconocimiento de fotos guardado');
@@ -77,7 +98,7 @@ export function PhotoAiSettings() {
         {active ? <Sparkles className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
         {active
           ? 'Activo: cuando una tienda sube una foto, recibe el nombre, la categoría, los detalles y un precio de referencia ya llenos.'
-          : data.hasApiKey
+          : savedKey.hasApiKey
             ? 'Apagado: las tiendas llenan los datos de sus productos a mano.'
             : 'Falta la API key: mientras tanto las tiendas llenan los datos a mano.'}
       </p>
@@ -88,34 +109,34 @@ export function PhotoAiSettings() {
             <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${enabled ? 'left-6' : 'left-1'}`} />
           </button>
         </div>
-        <div>
-          <label htmlFor="ai-key" className="field-label">API key de Anthropic</label>
-          <input
-            id="ai-key"
-            className="field font-mono"
-            type="password"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder={data.hasApiKey ? `Guardada (${data.keyHint}). Deja vacío para mantenerla` : 'sk-ant-...'}
-            value={apiKey}
-            onChange={(e) => { setApiKey(e.target.value); setTested(null); }}
-          />
-          <p className="mt-2 text-xs text-slate-500">
-            Créala en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="font-semibold text-indigo-600 underline">console.anthropic.com</a>. Se guarda en el servidor y no se vuelve a mostrar.
-            {data.fromEnv && ' Ahora se usa la de la variable ANTHROPIC_API_KEY del servidor.'}
-          </p>
-        </div>
         <fieldset>
           <legend className="field-label">Modelo</legend>
           <div className="space-y-2">
             {data.models.map((m) => (
-              <button key={m} type="button" aria-pressed={model === m} onClick={() => { setModel(m); setTested(null); }} className={`w-full rounded-xl border px-3.5 py-2.5 text-left transition-colors ${model === m ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}>
+              <button key={m} type="button" aria-pressed={model === m} onClick={() => { setModel(m); setApiKey(''); setTested(null); }} className={`w-full rounded-xl border px-3.5 py-2.5 text-left transition-colors ${model === m ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}>
                 <span className="block text-sm font-semibold">{MODEL_INFO[m]?.name ?? m}</span>
                 <span className="block text-xs text-slate-500">{MODEL_INFO[m]?.help}</span>
               </button>
             ))}
           </div>
         </fieldset>
+        <div>
+          <label htmlFor="ai-key" className="field-label">API key de {info.label}</label>
+          <input
+            id="ai-key"
+            className="field font-mono"
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={key.hasApiKey ? `Guardada (${key.keyHint}). Deja vacío para mantenerla` : info.placeholder}
+            value={apiKey}
+            onChange={(e) => { setApiKey(e.target.value); setTested(null); }}
+          />
+          <p className="mt-2 text-xs text-slate-500">
+            Créala en <a href={info.href} target="_blank" rel="noreferrer" className="font-semibold text-indigo-600 underline">{info.site}</a>. Se guarda en el servidor y no se vuelve a mostrar.
+            {key.fromEnv && ` Ahora se usa la de la variable ${info.env} del servidor.`}
+          </p>
+        </div>
         {tested && (
           <p role="status" className={`flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${tested.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700'}`}>
             {tested.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
@@ -123,11 +144,11 @@ export function PhotoAiSettings() {
           </p>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" className="btn btn-ghost" disabled={busy !== null || (!apiKey && !data.hasApiKey)} onClick={test}>{busy === 'test' && <Loader2 className="h-4 w-4 animate-spin" />}Probar conexión</button>
+          <button type="button" className="btn btn-ghost" disabled={busy !== null || (!apiKey && !key.hasApiKey)} onClick={test}>{busy === 'test' && <Loader2 className="h-4 w-4 animate-spin" />}Probar conexión</button>
           <button type="submit" className="btn btn-primary" disabled={busy !== null}>{busy === 'save' && <Loader2 className="h-5 w-5 animate-spin" />}Guardar</button>
         </div>
-        {data.hasApiKey && !data.fromEnv && (
-          <button type="button" className="w-full text-center text-xs font-semibold text-slate-500 hover:text-red-600" disabled={busy !== null} onClick={() => save(true)}>Quitar la API key guardada</button>
+        {key.hasApiKey && !key.fromEnv && (
+          <button type="button" className="w-full text-center text-xs font-semibold text-slate-500 hover:text-red-600" disabled={busy !== null} onClick={() => save(true)}>Quitar la API key de {info.label}</button>
         )}
       </form>
     </Card>
