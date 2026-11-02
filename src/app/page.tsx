@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { cookies, headers } from 'next/headers';
 import { Radio } from 'lucide-react';
 import { marketplaceApi, type Product } from '@/lib/api';
 import { isPromoActive, mainOffer } from '@/lib/catalog';
@@ -6,6 +7,7 @@ import { HeroBanner } from '@/components/shop/HeroBanner';
 import { HomeHighlightSection } from '@/components/shop/HomeHighlightSection';
 import { BrowseByCategory } from '@/components/shop/BrowseByCategory';
 import { ProductCard } from '@/components/shop/ProductCard';
+import { NEAR_COOKIE, resolveNear } from '@/lib/visitorCity';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +24,17 @@ export default async function HomePage({
 }) {
   const { category, q } = await searchParams;
   const filtering = Boolean(category || q);
+  // Lives from the visitor's city first in the home strip too.
+  const near = filtering ? null : resolveNear({
+    cookie: (await cookies()).get(NEAR_COOKIE)?.value,
+    headers: await headers(),
+  }).city;
   const [products, allProducts, categories, lives, tiktok] = await Promise.all([
     marketplaceApi.getProducts({ category, q }),
     filtering ? marketplaceApi.getProducts() : Promise.resolve(null),
     marketplaceApi.getCategories(),
     filtering ? Promise.resolve([]) : marketplaceApi.getLiveStores(),
-    filtering ? Promise.resolve(null) : marketplaceApi.getTikTokLives({ limit: 20 }),
+    filtering ? Promise.resolve(null) : marketplaceApi.getTikTokLives({ limit: 20, near }),
   ]);
   const visible = products.filter((p) => mainOffer(p));
   const catalogue = (allProducts ?? products).filter((p) => mainOffer(p));

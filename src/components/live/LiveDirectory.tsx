@@ -3,25 +3,33 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Eye, MapPin, Radio } from 'lucide-react';
+import { ArrowRight, MapPin, Radio } from 'lucide-react';
 import type { TikTokLivesResponse } from '@/lib/api';
 import { liveFreshness } from '@/lib/liveFreshness';
+import { NEAR_ALL, type NearSource } from '@/lib/visitorCity';
 import { LivePreview } from './LivePreview';
+import { NearLocation } from './NearLocation';
 
 const CATEGORIES = ['Ropa', 'Electrónica', 'Hogar', 'Belleza', 'Otros'];
 
 /** Selling lives, refreshed quietly in the background. */
-export function LiveDirectory({ initialData, category, page, initialNow }: {
+export function LiveDirectory({ initialData, category, page, near = null, nearSource = null, initialNow }: {
   initialData: TikTokLivesResponse | null;
   category?: string;
   page: number;
+  /** The visitor's city: its lives come first, then the rest of Bolivia. */
+  near?: string | null;
+  nearSource?: NearSource;
   initialNow: number;
 }) {
   const [data, setData] = useState(initialData);
   const [connectionError, setConnectionError] = useState(!initialData);
   const [now, setNow] = useState(initialNow);
   const request = useRef<AbortController | null>(null);
-  const query = useMemo(() => new URLSearchParams({ ...(category ? { category } : {}), page: String(page) }).toString(), [category, page]);
+  // Background refreshes keep the same city the page was rendered with.
+  const query = useMemo(() => new URLSearchParams({
+    ...(category ? { category } : {}), page: String(page), cerca: near ?? NEAR_ALL,
+  }).toString(), [category, page, near]);
   const storageKey = `vitrina:live-directory:${query}`;
 
   const refresh = useCallback(async () => {
@@ -80,8 +88,8 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
   const retention = data?.meta.retention_seconds ?? 300;
   // Rooms waiting for re-verification still show as live: shoppers don't need that detail.
   const cards = (data?.data ?? []).filter((live) => liveFreshness(live, now, freshSeconds, retention) !== 'expired');
-  const viewers = cards.reduce((sum, live) => sum + live.viewer_count, 0);
   const unavailable = connectionError || data?.meta.status === 'unavailable' || data?.meta.worker_enabled === false;
+  const nearCount = near ? cards.filter((live) => live.city === near).length : 0;
 
   return (
     <div className="live-content">
@@ -91,18 +99,15 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
           <span className="live-eyebrow"><Radio aria-hidden="true" size={15} /> En vivo ahora</span>
           <h1 id="live-heading">Lives de venta en Bolivia</h1>
           <p>Entra, mira lo que muestran y pregunta en el chat.</p>
-          {cards.length > 0 && (
-            <div className="live-stats">
-              <span><Radio aria-hidden="true" size={17} /><strong>{cards.length}</strong> en vivo</span>
-              {viewers > 0 && <span><Eye aria-hidden="true" size={17} /><strong>{viewers.toLocaleString('es-BO')}</strong> mirando</span>}
-            </div>
-          )}
         </div>
       </section>
 
       <section id="transmisiones" className="live-list-section" aria-labelledby="live-list-heading">
         <div className="live-list-toolbar">
-          <h2 id="live-list-heading">Transmisiones</h2>
+          <div className="min-w-0">
+            <h2 id="live-list-heading">Transmisiones</h2>
+            <NearLocation near={near} source={nearSource} />
+          </div>
           <nav className="live-category-nav" aria-label="Categorías de transmisiones">
             {[undefined, ...CATEGORIES].map((name) => (
               <Link key={name ?? 'all'} href={name ? `/live?category=${encodeURIComponent(name)}` : '/live'}
@@ -112,6 +117,10 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
             ))}
           </nav>
         </div>
+
+        {near && cards.length > 0 && nearCount === 0 && (
+          <p className="live-near-note" role="status">Ahora no hay lives de {near}: te mostramos los del resto de Bolivia.</p>
+        )}
 
         {cards.length === 0 ? (
           <div className="live-empty" role="status">
@@ -130,7 +139,6 @@ export function LiveDirectory({ initialData, category, page, initialNow }: {
                   <LivePreview roomId={live.room_id} hlsUrl={live.stream_hls_url ?? null} flvUrl={live.stream_flv_url ?? null}
                     coverUrl={live.cover_image_url} avatarUrl={live.avatar_url} href={`/live/${live.username}`} alt={live.title || `@${live.username}`} />
                   <span className="live-card-badge">LIVE</span>
-                  {live.viewer_count > 0 && <span className="live-card-viewers"><Eye size={12} />{live.viewer_count.toLocaleString('es-BO')}</span>}
                   <span className="live-card-category">{live.category}</span>
                 </div>
                 <Link href={`/live/${live.username}`} className="live-card-copy block">

@@ -15,7 +15,8 @@ export function LiveSourceToggle({
   dark = false,
 }: {
   value: LiveSource;
-  counts: Record<LiveSource, number>;
+  /** Optional badges; the /live page leaves them out. */
+  counts?: Record<LiveSource, number>;
   onChange?: (source: LiveSource) => void;
   hrefFor?: (source: LiveSource) => string;
   dark?: boolean;
@@ -45,7 +46,7 @@ export function LiveSourceToggle({
           <>
             <span className={`flex h-5 w-5 items-center justify-center rounded-full ${key === 'tiktok' ? 'bg-black' : on && !dark ? 'bg-white/20' : ''}`}>{icon}</span>
             {label}
-            <span className={`rounded-full px-1.5 text-[10px] font-black ${on ? (dark ? 'bg-slate-200' : 'bg-white/25') : dark ? 'bg-[#253039]' : 'bg-white'}`}>{counts[key]}</span>
+            {counts && <span className={`rounded-full px-1.5 text-[10px] font-black ${on ? (dark ? 'bg-slate-200' : 'bg-white/25') : dark ? 'bg-[#253039]' : 'bg-white'}`}>{counts[key]}</span>}
           </>
         );
         return hrefFor ? (
