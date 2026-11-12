@@ -16,16 +16,25 @@ export default function AccountPage() {
   const { user, ready, requestLogin, logout } = useAuth();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [editing, setEditing] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   const userId = user?.id;
   useEffect(() => {
     if (!userId) return;
     let active = true;
-    marketplaceApi.getUserOrders(userId).then((list) => active && setOrders(list));
+    marketplaceApi
+      .getMyOrders()
+      .then((list) => {
+        if (!active) return;
+        setOrders(list);
+        setLoadError('');
+      })
+      .catch(() => active && setLoadError('No pudimos cargar tus pedidos. Revisa tu conexión.'));
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, retry]);
 
   if (!ready) return <div className="mx-auto max-w-xl space-y-4"><PanelSkeleton lines={2} /><ListSkeleton rows={3} /></div>;
 
@@ -71,7 +80,14 @@ export default function AccountPage() {
         <h2 id="orders-title" className="mb-2 font-bold">
           Mis pedidos
         </h2>
-        {orders === null ? (
+        {loadError && orders === null ? (
+          <p className="panel flex items-center justify-between gap-3 px-4 py-5 text-sm text-muted">
+            {loadError}
+            <button type="button" className="font-semibold text-verde-dark" onClick={() => setRetry((n) => n + 1)}>
+              Reintentar
+            </button>
+          </p>
+        ) : orders === null ? (
           <ListSkeleton rows={3} />
         ) : orders.length === 0 ? (
           <p className="panel px-4 py-5 text-sm text-muted">Todavía no hiciste pedidos.</p>

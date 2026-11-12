@@ -8,7 +8,7 @@ import { Home, Package, Receipt, Tag, Settings, ArrowLeft, ArrowRight, Bell, Eye
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { VendorContext } from '@/context/VendorContext';
-import { API_URL, marketplaceApi, type Order, type Store } from '@/lib/api';
+import { marketplaceApi, type Order, type Store } from '@/lib/api';
 import { describeWindow } from '@/lib/schedule';
 import { Logo } from '@/components/shop/Logo';
 import { mediaUrl } from '@/lib/catalog';
@@ -76,7 +76,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!userId) return;
     const controller = new AbortController();
-    fetch(`${API_URL}/stores/owner/${encodeURIComponent(userId)}`, { signal: controller.signal, cache: 'no-store' })
+    fetch('/api/backend/stores/mine', { signal: controller.signal, cache: 'no-store' })
       .then(async (res) => {
         if (res.status === 404) return null;
         if (!res.ok) throw new Error('No pudimos cargar tu tienda. Comprueba tu conexión e inténtalo otra vez.');

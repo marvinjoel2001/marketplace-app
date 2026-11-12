@@ -1,6 +1,6 @@
 import { marketplaceApi, type Condition, type Offer, type PhotoSuggestion, type Product, type ProductInput, type Variant } from '@/lib/api';
 import { parseDetails, parseVariants } from '@/lib/variants';
-import { compressPhoto } from '../ImagePicker';
+import { preparePhoto } from '../ImagePicker';
 
 export type QtyMode = 'one' | 'many' | 'options';
 export type AiState = 'off' | 'working' | 'done' | 'failed' | 'unrecognized';
@@ -195,15 +195,15 @@ export async function processPhoto(
   ai: boolean,
   update: (key: string, fn: (d: Draft) => Draft) => void,
 ) {
-  const image = await compressPhoto(file);
-  update(draftKey, (d) => ({ ...d, preview: d.preview || image, uploading: d.uploading + 1, ai: ai ? 'working' : d.ai }));
+  const photo = await preparePhoto(file, ai);
+  update(draftKey, (d) => ({ ...d, preview: d.preview || photo.preview, uploading: d.uploading + 1, ai: ai ? 'working' : d.ai }));
   const upload = marketplaceApi
-    .uploadImage({ base64Data: image, fileName: 'foto.jpg', folder: 'products' })
+    .uploadPhoto(photo.blob)
     .then(({ url }) => update(draftKey, (d) => ({ ...d, images: [...d.images, url], uploading: d.uploading - 1 })))
     .catch((err: Error) => update(draftKey, (d) => ({ ...d, uploading: d.uploading - 1, uploadError: err.message || 'La foto no se pudo subir' })));
   const analysis = ai
     ? marketplaceApi
-        .analyzePhoto(storeId, image)
+        .analyzePhoto(storeId, photo.forAssistant)
         .then((s) => update(draftKey, (d) => applySuggestion(d, s)))
         .catch((err: Error) => update(draftKey, (d) => ({ ...d, ai: 'failed', aiError: err.message })))
     : Promise.resolve();
@@ -212,10 +212,10 @@ export async function processPhoto(
 
 /** Adds another photo of the same product (no analysis: the form is already filled). */
 export async function addPhoto(file: File, draftKey: string, update: (key: string, fn: (d: Draft) => Draft) => void) {
-  const image = await compressPhoto(file);
-  update(draftKey, (d) => ({ ...d, preview: d.preview || image, uploading: d.uploading + 1 }));
+  const photo = await preparePhoto(file);
+  update(draftKey, (d) => ({ ...d, preview: d.preview || photo.preview, uploading: d.uploading + 1 }));
   try {
-    const { url } = await marketplaceApi.uploadImage({ base64Data: image, fileName: 'foto.jpg', folder: 'products' });
+    const { url } = await marketplaceApi.uploadPhoto(photo.blob);
     update(draftKey, (d) => ({ ...d, images: [...d.images, url], uploading: d.uploading - 1 }));
   } catch (err) {
     update(draftKey, (d) => ({ ...d, uploading: d.uploading - 1, uploadError: (err as Error).message || 'La foto no se pudo subir' }));

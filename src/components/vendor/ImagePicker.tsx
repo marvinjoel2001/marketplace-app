@@ -5,22 +5,56 @@ import { Camera, ImagePlus, Loader2, X } from 'lucide-react';
 import { marketplaceApi } from '@/lib/api';
 import { mediaUrl } from '@/lib/catalog';
 
-/** Shrinks a photo to at most 1280 px and re-encodes it as JPEG, so uploads stay small on mobile data. */
-export async function compressPhoto(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.');
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+/** A photo ready to publish: the JPEG to upload, a local preview and (when asked) a lighter copy for the assistant. */
+export interface PreparedPhoto {
+  blob: Blob;
+  preview: string;
+  forAssistant: string;
+}
+
+function scaled(source: ImageBitmap | HTMLCanvasElement, maxSide: number) {
+  const scale = Math.min(1, maxSide / Math.max(source.width, source.height));
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return canvas.toDataURL('image/jpeg', 0.82);
+  canvas.width = Math.round(source.width * scale);
+  canvas.height = Math.round(source.height * scale);
+  canvas.getContext('2d')!.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+/** JPEG bytes from a canvas. `toBlob` can take a full second on some phones and background tabs; this takes milliseconds. */
+function jpegBlob(canvas: HTMLCanvasElement, quality: number) {
+  const url = canvas.toDataURL('image/jpeg', quality);
+  const binary = atob(url.slice(url.indexOf(',') + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: 'image/jpeg' });
+}
+
+/**
+ * Decodes the photo once and shrinks it to at most 1280 px as JPEG, so uploads stay small on mobile data. The assistant
+ * only needs to recognise the product, so it gets a 1024 px copy instead of the full photo a second time.
+ */
+export async function preparePhoto(file: File, withAssistant = false): Promise<PreparedPhoto> {
+  if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.');
+  const bitmap = await createImageBitmap(file).catch(() => {
+    throw new Error('No pudimos leer esa foto. Prueba con otra.');
+  });
+  let photo: HTMLCanvasElement;
+  try {
+    photo = scaled(bitmap, 1280);
+  } finally {
+    bitmap.close();
+  }
+  const blob = jpegBlob(photo, 0.8);
+  // Drawn from the already reduced photo: no second pass over the full camera image.
+  const forAssistant = withAssistant ? scaled(photo, 1024).toDataURL('image/jpeg', 0.72) : '';
+  return { blob, preview: URL.createObjectURL(blob), forAssistant };
 }
 
 export async function uploadPhoto(file: File, folder: 'products' | 'stores') {
-  const base64Data = await compressPhoto(file);
-  const { url } = await marketplaceApi.uploadImage({ base64Data, fileName: 'foto.jpg', folder });
+  const { blob, preview } = await preparePhoto(file);
+  URL.revokeObjectURL(preview);
+  const { url } = await marketplaceApi.uploadPhoto(blob, folder);
   return url;
 }
 
@@ -54,18 +88,21 @@ export function ImagePicker({
     const picked = Array.from(files).slice(0, room);
     setError('');
     setUploading(picked.length);
-    const urls: string[] = [];
-    for (const file of picked) {
-      try {
-        if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.');
-        if (file.size > 5 * 1024 * 1024) throw new Error('La imagen debe pesar menos de 5 MB.');
-        urls.push(await uploadPhoto(file, folder));
-      } catch (err) {
-        setError((err as Error).message || 'Una foto no se pudo subir. Prueba de nuevo.');
-      }
-      setUploading((n) => n - 1);
-    }
-    onChange([...value, ...urls]);
+    // All at once, keeping the order they were picked in. Camera photos weigh several MB, but they are shrunk before uploading.
+    const urls = await Promise.all(
+      picked.map(async (file) => {
+        try {
+          if (file.size > 40 * 1024 * 1024) throw new Error('Esa imagen es demasiado pesada.');
+          return await uploadPhoto(file, folder);
+        } catch (err) {
+          setError((err as Error).message || 'Una foto no se pudo subir. Prueba de nuevo.');
+          return null;
+        } finally {
+          setUploading((n) => n - 1);
+        }
+      }),
+    );
+    onChange([...value, ...urls.filter((u): u is string => Boolean(u))]);
   };
 
   const full = value.length >= max;
