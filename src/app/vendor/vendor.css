@@ -16,6 +16,7 @@
 .vendor-category { display: flex; min-height: 82px; flex-direction: column; align-items: center; justify-content: center; gap: 9px; background: #fff; border: 1px solid #dfe3ee; border-radius: 16px; font-size: 12px; font-weight: 600; transition: background .15s, border-color .15s; }
 .vendor-category:hover { background: #f8f7ff; border-color: #b6aaff; }
 .vendor-category[aria-pressed=true] { background: #f1eeff; border-color: #6a50ff; color: #5034ef; }
+.vendor-category:disabled { opacity: .45; cursor: not-allowed; }
 .vendor-category svg { width: 24px; height: 24px; stroke-width: 1.8; }
 .vendor-day { min-height: 52px; border-radius: 12px; background: #eef0f7; font-size: 13px; font-weight: 600; }
 .vendor-day[aria-pressed=true] { background: #5b45fa; color: white; }

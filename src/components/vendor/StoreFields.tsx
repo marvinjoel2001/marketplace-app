@@ -9,6 +9,9 @@ import { Shirt, Footprints, ShoppingBag, Sparkles, House, ToyBrick, Utensils, Sm
 
 const CATEGORY_ICONS = { Ropa: Shirt, Calzado: Footprints, Accesorios: ShoppingBag, Belleza: Sparkles, Hogar: House, Juguetes: ToyBrick, Comida: Utensils, Electrónica: Smartphone, Deportes: Dumbbell, Mascotas: PawPrint, Otros: Ellipsis };
 export const STORE_CATEGORIES = Object.keys(CATEGORY_ICONS) as (keyof typeof CATEGORY_ICONS)[];
+const MAX_CATEGORIES = 3;
+/** A store's categories are saved together as "Ropa, Calzado". */
+const pickedCategories = (value: string) => value.split(',').map((c) => c.trim()).filter((c) => (STORE_CATEGORIES as string[]).includes(c));
 export const BANKS = [
   'Banco Unión',
   'BNB',
@@ -93,11 +96,14 @@ export function BasicsFields({ draft, set }: FieldsProps) {
         <div className="vendor-input-icon"><StoreIcon /><input id="store-name" className="field" required maxLength={80} autoComplete="organization" value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ej.: Moda Lupita" /></div>
       </div>
       <div>
-        <p className="field-label">¿Qué vendes?</p>
-        <div className="grid grid-cols-4 gap-2.5" role="group" aria-label="Rubro de la tienda">
+        <p className="field-label">¿Qué vendes? <span className="font-normal text-slate-500">Elige hasta {MAX_CATEGORIES}</span></p>
+        <div className="grid grid-cols-4 gap-2.5" role="group" aria-label="Rubros de la tienda">
           {STORE_CATEGORIES.map((c) => {
             const Icon = CATEGORY_ICONS[c];
-            return <button key={c} type="button" aria-pressed={draft.category === c} className="vendor-category" onClick={() => set({ category: c })}><Icon />{c}</button>;
+            const picked = pickedCategories(draft.category);
+            const on = picked.includes(c);
+            const full = !on && picked.length >= MAX_CATEGORIES;
+            return <button key={c} type="button" aria-pressed={on} disabled={full} className="vendor-category" onClick={() => set({ category: (on ? picked.filter((x) => x !== c) : [...picked, c]).join(', ') })}><Icon />{c}</button>;
           })}
         </div>
       </div>
