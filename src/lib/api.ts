@@ -79,6 +79,8 @@ export interface Store {
   deliveryEnd: string;
   /** Checkout methods the admin enabled for this store, comma separated. */
   paymentMethods?: string;
+  /** False when the store delivers with its own people instead of OpenDSP drivers. */
+  openDspEnabled?: boolean;
   ownerId?: string | null;
   isLiveNow?: boolean;
 }
@@ -188,6 +190,8 @@ export interface Order {
   storeId?: string | null;
   deliveryAt?: string | null;
   deliveryWindow?: string | null;
+  /** Set once the order was sent to OpenDSP for delivery. */
+  dspOrderId?: string | null;
   dspDriverName?: string | null;
   dspDriverPhone?: string | null;
   /** OpenDSP page where the customer follows the driver; only when the store delivers with OpenDSP. */
@@ -453,6 +457,11 @@ export const marketplaceApi = {
   async getStoreOrders(storeId: string, since?: string): Promise<Order[]> {
     const qs = since ? `?since=${id(since)}` : '';
     return fetchWithSession(`/stores/${id(storeId)}/orders${qs}`);
+  },
+
+  /** The seller asks for the driver now instead of waiting for the delivery window. */
+  async requestDriver(orderId: string): Promise<Order> {
+    return fetchWithSession(`/orders/${id(orderId)}/dispatch`, json('POST'));
   },
 
   async getStoreSummary(storeId: string): Promise<StoreSummary> {

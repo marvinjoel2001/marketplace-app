@@ -72,7 +72,7 @@ export default function AdminStoreDetail({ params }: { params: Promise<{ id: str
             <p className="text-sm text-slate-500">Esta tienda no tiene un dueño vinculado.</p>
           )}
           <p className="mt-3 text-sm text-slate-500">Celular de la tienda: {store.phone ?? '—'}</p>
-          {store.tiktokUsername && <p className="text-sm text-slate-500">TikTok: @{store.tiktokUsername}</p>}
+          {store.tiktokUsername && <TikTokCheck store={store} onSaved={reload} />}
           {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className="btn btn-ghost mt-4 w-full text-sm"><MessageCircle className="h-4 w-4" />Escribir por WhatsApp</a>}
         </Card>
       </div>
@@ -120,6 +120,37 @@ export default function AdminStoreDetail({ params }: { params: Promise<{ id: str
       </Card>
 
       {statusModal && <StatusModal store={store} status={statusModal} onClose={() => setStatusModal(null)} onSaved={() => { setStatusModal(null); reload(); }} />}
+    </div>
+  );
+}
+
+/** Confirms the TikTok user the seller typed is theirs, so their live video shows up next to the store. */
+function TikTokCheck({ store, onSaved }: { store: AdminStore; onSaved: () => void }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const verify = async () => {
+    if (!confirm(`¿Confirmas que la cuenta @${store.tiktokUsername} de TikTok es de ${store.name}? Su live aparecerá en la tienda.`)) return;
+    setBusy(true);
+    try {
+      await adminFetch(`stores/${store.id}/tiktok/verify`, { method: 'POST' });
+      toast('TikTok verificado. Su live aparecerá en unos 3 minutos.');
+      onSaved();
+    } catch (err) {
+      toast((err as Error).message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+      <a href={`https://www.tiktok.com/@${store.tiktokUsername}`} target="_blank" rel="noopener noreferrer" className="hover:underline">TikTok: @{store.tiktokUsername}</a>
+      {store.tiktokVerified ? (
+        <Badge tone="green">Verificado</Badge>
+      ) : (
+        <button type="button" onClick={verify} disabled={busy} className="btn btn-primary !min-h-8 !px-3 !text-xs">
+          {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Verificar TikTok
+        </button>
+      )}
     </div>
   );
 }

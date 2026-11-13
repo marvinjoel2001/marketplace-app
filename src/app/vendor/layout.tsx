@@ -109,13 +109,17 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         setUnseenSales((n) => n + fresh.length);
         for (const order of fresh) {
           toast(saleText(order), 'info');
-          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('Nueva venta en Vitrina', { body: saleText(order), icon: '/pulpo-icon.png', tag: order.id });
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            const notice = new Notification('Nueva venta en Vitrina', { body: saleText(order), icon: '/pulpo-icon.png', tag: order.id });
+            // Tapping the notice opens that sale.
+            notice.onclick = () => { window.focus(); router.push(`/vendor/ventas?pedido=${encodeURIComponent(order.id)}`); notice.close(); };
+          }
         }
       } catch {} finally { checking = false; }
     };
     const timer = setInterval(check, 20_000);
     return () => { alive = false; clearInterval(timer); };
-  }, [storeId, toast]);
+  }, [storeId, toast, router]);
   const markSalesSeen = useCallback(() => setUnseenSales(0), []);
   const setStore = useCallback((s: Store) => { if (userId) setResolved({ owner: userId, store: s }); }, [userId]);
   const signOut = async () => {
@@ -152,7 +156,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       <div className="ml-auto flex items-center gap-2 sm:gap-4">
         <Link href="/vendor/tiktok" className="hidden items-center gap-2 rounded-2xl bg-[#111b39] px-4 py-2.5 text-xs font-semibold text-white xl:flex"><TikTokIcon className="h-4 w-4" />TikTok Live</Link>
         <Link href={`/en-vivo/${store.slug}`} className="hidden items-center gap-2 rounded-2xl bg-[#edf0f7] px-4 py-2.5 text-xs font-semibold sm:flex"><Eye className="h-4 w-4" />Ver tienda</Link>
-        <Link href="/vendor/ventas" aria-label={`${unseenSales} pedidos nuevos`} className="relative hidden rounded-full bg-white p-2.5 sm:block"><Bell className="h-5 w-5" />{unseenSales > 0 && <span className="absolute right-0 top-0 rounded-full bg-rose-500 px-1 text-[9px] text-white">{unseenSales}</span>}</Link>
+        <Link href="/vendor/ventas" aria-label={`${unseenSales} pedidos nuevos`} className="relative rounded-full bg-white p-2.5"><Bell className="h-5 w-5" />{unseenSales > 0 && <span className="absolute right-0 top-0 rounded-full bg-rose-500 px-1 text-[9px] text-white">{unseenSales}</span>}</Link>
         <div className="relative">
           <button type="button" aria-label="Menú de mi cuenta" aria-expanded={accountOpen} onClick={() => setAccountOpen(!accountOpen)} className="flex items-center gap-2 rounded-xl p-1.5">
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#e9e4ff] text-[#5b45fa]">{store.logo ? <Image unoptimized width={640} height={640} src={mediaUrl(store.logo)} alt="" className="h-full w-full object-cover" /> : <StoreIcon className="h-5 w-5" />}</span><span className="hidden max-w-32 truncate text-xs font-bold xl:block">{store.name}</span><ChevronDown className="hidden h-3.5 w-3.5 sm:block" />

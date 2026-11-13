@@ -2,9 +2,10 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { MapPin, Phone, Search, MessageCircle } from 'lucide-react';
+import { Bike, Loader2, MapPin, Phone, Search, MessageCircle } from 'lucide-react';
 import { useVendor } from '@/context/VendorContext';
-import { type Order } from '@/lib/api';
+import { marketplaceApi, type Order } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
 import { useStoreOrders } from '@/components/vendor/useStoreOrders';
 import { describeWindow } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
@@ -24,6 +25,21 @@ function SalesScreen() {
   const { orders, error, reload } = useStoreOrders(store.id, unseenSales);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['key']>(selectedOrder ? 'all' : 'pending');
+  const toast = useToast();
+  const [asking, setAsking] = useState('');
+
+  const requestDriver = async (order: Order) => {
+    setAsking(order.id);
+    try {
+      await marketplaceApi.requestDriver(order.id);
+      toast('Pedimos un repartidor. Te avisamos cuando esté en camino a tu tienda.');
+      reload();
+    } catch (err) {
+      toast((err as Error).message || 'No pudimos pedir el repartidor. Inténtalo otra vez.', 'error');
+    } finally {
+      setAsking('');
+    }
+  };
 
   useEffect(() => {
     if (orders && unseenSales) markSalesSeen();
@@ -60,6 +76,9 @@ function SalesScreen() {
           {list.map((o) => {
             const s = ORDER_STATUS[o.status] ?? ORDER_STATUS.SCHEDULED;
             const mine = o.items.filter((it) => it.storeId === store.id);
+            const paid = o.paymentStatus === 'PAID';
+            const waitingQr = o.paymentMethod === 'QR_PREPAID' && !paid;
+            const canAskDriver = store.openDspEnabled !== false && !o.dspOrderId && ['SCHEDULED', 'CONFIRMED', 'PREPARING'].includes(o.status);
             return (
               <li key={o.id} id={`order-${o.id}`} className={`panel p-4 ${selectedOrder === o.id ? 'ring-2 ring-[#bcb0ff]' : ''}`}>
                 <div className="flex items-start justify-between gap-3">
@@ -82,11 +101,20 @@ function SalesScreen() {
                     </li>
                   ))}
                 </ul>
+                <dl className="mt-3 flex flex-col gap-1 border-t border-line pt-3 text-sm">
+                  <div className="flex justify-between gap-3 text-ink-soft"><dt>Envío</dt><dd className="tabular-nums">{formatBs(o.shippingFee)}</dd></div>
+                  <div className="flex justify-between gap-3 font-bold"><dt>Total del cliente</dt><dd className="tabular-nums">{formatBs(o.totalAmount)}</dd></div>
+                  <div className="flex justify-between gap-3 text-ink-soft">
+                    <dt>{PAYMENT_LABEL[o.paymentMethod] ?? o.paymentMethod}</dt>
+                    <dd className={`font-semibold ${paid ? 'text-verde-dark' : ''}`}>{paid ? 'Pagado' : waitingQr ? 'Esperando el pago' : 'Se cobra al entregar'}</dd>
+                  </div>
+                </dl>
                 <div className="mt-3 flex flex-col gap-1.5 border-t border-line pt-3 text-sm text-ink-soft">
                   <p className="flex items-start gap-2">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-verde" />
                     <span>
                       {o.customerName}: {o.customerAddress}
+                      {o.customerReference && <span className="block text-xs">Referencia: {o.customerReference}</span>}
                     </span>
                   </p>
                   <p className="flex items-center gap-2">
@@ -95,10 +123,30 @@ function SalesScreen() {
                       {o.customerPhone}
                     </a>
                     <a href={`https://wa.me/${o.customerPhone.replace(/\D/g, '').length === 8 ? '591' : ''}${o.customerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-1 text-xs font-semibold text-[#6248ff]"><MessageCircle className="h-3.5 w-3.5" />WhatsApp</a>
-                    <span className="ml-auto text-xs">{PAYMENT_LABEL[o.paymentMethod] ?? o.paymentMethod}</span>
                   </p>
-                  {o.dspDriverName && <p className="text-xs">Repartidor: {o.dspDriverName}</p>}
+                  {o.dspDriverName && (
+                    <p className="flex items-center gap-2">
+                      <Bike className="h-4 w-4 shrink-0 text-verde" />
+                      <span>Repartidor: {o.dspDriverName}</span>
+                      {o.dspDriverPhone && <a href={`tel:${o.dspDriverPhone.replace(/\s/g, '')}`} className="font-semibold text-verde-dark">{o.dspDriverPhone}</a>}
+                    </p>
+                  )}
                 </div>
+                {(canAskDriver || o.dspTrackingUrl) && (
+                  <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+                    {canAskDriver && (waitingQr ? (
+                      <p className="text-xs text-muted">Podrás pedir el repartidor cuando el cliente pague con QR.</p>
+                    ) : (
+                      <>
+                        <button type="button" className="btn btn-primary w-full sm:w-auto sm:self-start" disabled={asking === o.id} onClick={() => requestDriver(o)}>
+                          {asking === o.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bike className="h-4 w-4" />}Pedir repartidor ahora
+                        </button>
+                        <p className="text-xs text-muted">Si no lo pides, el repartidor se pide solo poco antes del horario de recojo.</p>
+                      </>
+                    ))}
+                    {o.dspTrackingUrl && <a href={o.dspTrackingUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost w-full sm:w-auto sm:self-start"><MapPin className="h-4 w-4" />Ver al repartidor en el mapa</a>}
+                  </div>
+                )}
               </li>
             );
           })}

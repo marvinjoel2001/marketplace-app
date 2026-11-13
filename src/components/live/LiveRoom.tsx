@@ -68,7 +68,7 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
   const live = room.live;
   const store = room.store;
   const name = store?.name ?? `@${room.username}`;
-  const avatar = store?.logo || live?.avatar_url || null;
+  const avatar = store?.logo ? mediaUrl(store.logo) : live?.avatar_url || null;
   const tiktokUrl = live?.live_url ?? `https://www.tiktok.com/@${room.username}/live`;
 
   const [feed, setFeed] = useState<LiveFeed | null>(room.feed);

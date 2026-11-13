@@ -9,6 +9,7 @@ export interface AdminStore {
   longitude: number;
   phone: string | null;
   tiktokUsername: string | null;
+  tiktokVerified: boolean;
   status: 'ACTIVE' | 'SUSPENDED' | 'BANNED';
   statusReason: string | null;
   createdAt: string;
