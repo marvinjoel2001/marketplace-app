@@ -13,7 +13,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     let active = true;
     const load = () => {
       if (document.visibilityState !== 'visible') return;
-      marketplaceApi.getNotifications(userId).then((r) => active && r && setUnread(r.unread));
+      marketplaceApi.getNotifications().then((r) => active && r && setUnread(r.unread));
     };
     load();
     const timer = setInterval(load, 20_000);

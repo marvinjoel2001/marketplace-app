@@ -132,6 +132,11 @@ function SalesScreen() {
                     </p>
                   )}
                 </div>
+                {o.combinedDelivery && (
+                  <p className="mt-3 rounded-lg bg-verde-tint px-3 py-2 text-xs text-verde-dark">
+                    Compra de varias tiendas ({o.purchaseId}): el mismo repartidor recoge los pedidos de las otras tiendas en el mismo viaje.
+                  </p>
+                )}
                 {(canAskDriver || o.dspTrackingUrl) && (
                   <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
                     {canAskDriver && (waitingQr ? (

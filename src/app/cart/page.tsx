@@ -26,9 +26,15 @@ export default function CartPage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
       <h1 className="type-sign text-2xl font-extrabold">Carrito</h1>
       {groups.length > 1 && (
-        <p className="text-sm text-ink-soft">
-          Tienes productos de {groups.length} tiendas. Cada tienda entrega por separado, así que haces un pedido por tienda.
-        </p>
+        <section className="panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Comprar todo junto">
+          <div>
+            <p className="font-bold">Tienes productos de {groups.length} tiendas</p>
+            <p className="mt-0.5 text-sm text-ink-soft">Cómpralos juntos: un solo pago y, si conviene, un solo viaje del repartidor.</p>
+          </div>
+          <Link href="/checkout?compra=todo" className="btn btn-primary shrink-0">
+            Comprar todo junto
+          </Link>
+        </section>
       )}
 
       {groups.map((group) => {

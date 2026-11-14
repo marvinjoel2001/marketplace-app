@@ -190,6 +190,10 @@ export interface Order {
   storeId?: string | null;
   deliveryAt?: string | null;
   deliveryWindow?: string | null;
+  /** Orders placed together in one checkout (one per store) share it. */
+  purchaseId?: string | null;
+  /** One driver brings every order of the purchase in a single trip. */
+  combinedDelivery?: boolean;
   /** Set once the order was sent to OpenDSP for delivery. */
   dspOrderId?: string | null;
   dspDriverName?: string | null;
@@ -199,6 +203,35 @@ export interface Order {
   paidAt?: string | null;
   createdAt: string;
   items: OrderItem[];
+}
+
+/** What checkout sends to create an order (or a purchase from several stores). */
+export interface OrderRequest {
+  customerName: string;
+  customerEmail?: string;
+  customerPhone: string;
+  customerAddress: string;
+  customerReference?: string;
+  customerLat: number;
+  customerLng: number;
+  paymentMethod: string;
+  deliveryAt: string;
+  items: { productOfferId: string; quantity: number; variant?: string }[];
+}
+
+export interface PurchaseQuote {
+  combined: boolean;
+  total: number;
+  /** What the same deliveries would cost as one trip per store. */
+  separateTotal: number;
+  stores: { storeId: string; storeName: string; fee: number }[];
+}
+
+export interface Purchase {
+  /** Null when the cart had a single store: it is then a normal order. */
+  purchaseId: string | null;
+  combined: boolean;
+  orders: Order[];
 }
 
 export interface CustomerNotification {
@@ -492,18 +525,7 @@ export const marketplaceApi = {
     return fetchWithSession('/orders/mine');
   },
 
-  async createOrder(data: {
-    customerName: string;
-    customerEmail?: string;
-    customerPhone: string;
-    customerAddress: string;
-    customerReference?: string;
-    customerLat: number;
-    customerLng: number;
-    paymentMethod: string;
-    deliveryAt: string;
-    items: { productOfferId: string; quantity: number; variant?: string }[];
-  }): Promise<Order> {
+  async createOrder(data: OrderRequest): Promise<Order> {
     return fetchWithSession('/orders', json('POST', data));
   },
 
@@ -512,16 +534,27 @@ export const marketplaceApi = {
     return fetchWithSession(`/orders/${id(orderNumber)}/payment/confirm`, json('POST'));
   },
 
-  async getNotifications(userId: string): Promise<{ unread: number; items: CustomerNotification[] } | null> {
+  /** The signed-in person's notifications (the session says who, not the caller). */
+  async getNotifications(): Promise<{ unread: number; items: CustomerNotification[] } | null> {
     try {
-      return await fetchFromAPI(`/notifications/user/${id(userId)}`);
+      return await fetchWithSession('/notifications/mine');
     } catch {
       return null;
     }
   },
 
-  async markNotificationsRead(userId: string) {
-    return fetchFromAPI(`/notifications/user/${id(userId)}/read`, json('POST'));
+  async markNotificationsRead() {
+    return fetchWithSession('/notifications/mine/read', json('POST'));
+  },
+
+  /** Delivery price for a cart from several stores: one combined trip when that is cheaper. */
+  async quotePurchase(data: { items: { productOfferId: string; quantity: number }[]; customerLat: number; customerLng: number }): Promise<PurchaseQuote> {
+    return fetchFromAPI('/orders/purchase/quote', json('POST', data));
+  },
+
+  /** One checkout for several stores: creates an order per store. */
+  async createPurchase(data: OrderRequest): Promise<Purchase> {
+    return fetchWithSession('/orders/purchase', json('POST', data));
   },
 
   async getShippingQuote(data: { pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; storeId?: string }): Promise<{ price: number; estimatedMinutes: number }> {

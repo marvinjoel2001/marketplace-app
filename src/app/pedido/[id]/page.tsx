@@ -62,7 +62,19 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         <p className="mt-1 text-sm text-muted">De {order.items[0]?.storeName}</p>
       </div>
 
-      {awaitingQr && <QrPayment orderNumber={order.orderNumber} amount={order.totalAmount} storeName={order.items[0]?.storeName ?? 'la tienda'} />}
+      {order.purchaseId && (
+        <Link href={`/compra/${order.purchaseId}`} className="panel flex items-center justify-between gap-3 p-3.5 text-sm">
+          <span>
+            <span className="block font-semibold">Parte de tu compra {order.purchaseId}</span>
+            <span className="text-ink-soft">
+              {awaitingQr ? 'Paga toda la compra de una vez desde ahí.' : order.combinedDelivery ? 'Un solo repartidor trae todos tus pedidos.' : 'Mira los otros pedidos de la compra.'}
+            </span>
+          </span>
+          <span className="shrink-0 font-semibold text-verde-dark">Ver compra</span>
+        </Link>
+      )}
+
+      {awaitingQr && !order.purchaseId && <QrPayment orderNumber={order.orderNumber} amount={order.totalAmount} storeName={order.items[0]?.storeName ?? 'la tienda'} />}
 
       {trackable && (
         <a href={order.dspTrackingUrl!} target="_blank" rel="noopener noreferrer" className="btn btn-primary w-full">

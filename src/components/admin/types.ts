@@ -57,6 +57,7 @@ export interface ShippingRates {
   baseFare: number;
   perKm: number;
   minDistanceKm: number;
+  extraStopFee: number;
 }
 
 export const STORE_STATUS: Record<AdminStore['status'], { label: string; tone: 'green' | 'amber' | 'red' }> = {

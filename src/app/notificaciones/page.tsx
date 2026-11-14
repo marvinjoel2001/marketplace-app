@@ -21,12 +21,12 @@ export default function NotificationsPage() {
     if (!userId) return;
     let active = true;
     const load = () =>
-      marketplaceApi.getNotifications(userId).then((r) => {
+      marketplaceApi.getNotifications().then((r) => {
         if (!active) return;
         setItems(r?.items ?? []);
         if (r?.unread)
           marketplaceApi
-            .markNotificationsRead(userId)
+            .markNotificationsRead()
             .then(() => window.dispatchEvent(new Event('notifications-read')))
             .catch(() => undefined);
       });

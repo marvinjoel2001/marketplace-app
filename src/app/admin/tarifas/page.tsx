@@ -13,20 +13,20 @@ export default function AdminRatesPage() {
   const toast = useToast();
   const rates = useAdminData<ShippingRates>('shipping');
   const stores = useAdminData<AdminStore[]>('stores/overview');
-  const [form, setForm] = useState({ baseFare: '', perKm: '', minDistanceKm: '' });
+  const [form, setForm] = useState({ baseFare: '', perKm: '', minDistanceKm: '', extraStopFee: '' });
   const [km, setKm] = useState('4');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     // Fill the form once the saved tariff arrives.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (rates.data) setForm({ baseFare: String(rates.data.baseFare), perKm: String(rates.data.perKm), minDistanceKm: String(rates.data.minDistanceKm) });
+    if (rates.data) setForm({ baseFare: String(rates.data.baseFare), perKm: String(rates.data.perKm), minDistanceKm: String(rates.data.minDistanceKm), extraStopFee: String(rates.data.extraStopFee ?? 4) });
   }, [rates.data]);
 
   if (rates.loading) return <Loading />;
   if (rates.error || !rates.data) return <ErrorBox message={rates.error || 'Sin datos'} onRetry={rates.reload} />;
 
-  const draft = { baseFare: Number(form.baseFare) || 0, perKm: Number(form.perKm) || 0, minDistanceKm: Number(form.minDistanceKm) || 0 };
+  const draft = { baseFare: Number(form.baseFare) || 0, perKm: Number(form.perKm) || 0, minDistanceKm: Number(form.minDistanceKm) || 0, extraStopFee: Number(form.extraStopFee) || 0 };
   const custom = (stores.data ?? []).filter((s) => s.rates.custom);
 
   const save = async (e: React.FormEvent) => {
@@ -51,7 +51,7 @@ export default function AdminRatesPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Tarifa general">
           <form onSubmit={save} className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div>
                 <label htmlFor="r-base" className="text-xs font-semibold text-slate-500">Base por envío (Bs)</label>
                 <input id="r-base" className="field" inputMode="decimal" value={form.baseFare} onChange={(e) => setForm({ ...form, baseFare: e.target.value })} />
@@ -64,8 +64,12 @@ export default function AdminRatesPage() {
                 <label htmlFor="r-min" className="text-xs font-semibold text-slate-500">Km mínimos</label>
                 <input id="r-min" className="field" inputMode="decimal" value={form.minDistanceKm} onChange={(e) => setForm({ ...form, minDistanceKm: e.target.value })} />
               </div>
+              <div>
+                <label htmlFor="r-stop" className="text-xs font-semibold text-slate-500">Parada extra (Bs)</label>
+                <input id="r-stop" className="field" inputMode="decimal" value={form.extraStopFee} onChange={(e) => setForm({ ...form, extraStopFee: e.target.value })} />
+              </div>
             </div>
-            <p className="text-xs text-slate-500">Envío = base + km × tarifa por km. Si la entrega está más cerca que los km mínimos, se cobran los km mínimos. La distancia es en línea recta entre la tienda y el cliente.</p>
+            <p className="text-xs text-slate-500">Envío = base + km × tarifa por km. Si la entrega está más cerca que los km mínimos, se cobran los km mínimos. La distancia es en línea recta entre la tienda y el cliente. Parada extra: lo que se suma por cada tienda adicional cuando un cliente compra a varias tiendas y un solo repartidor recoge todo.</p>
             <button type="submit" className="btn btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-5 w-5 animate-spin" />}Guardar tarifa general</button>
           </form>
         </Card>

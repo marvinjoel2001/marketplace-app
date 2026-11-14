@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Banknote, Loader2, MapPin, QrCode } from 'lucide-react';
-import { marketplaceApi, type Store } from '@/lib/api';
+import { marketplaceApi, type PurchaseQuote, type Store } from '@/lib/api';
 import { deliveryDays } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
 import { cartKey, groupByStore, useCart } from '@/context/CartContext';
@@ -18,6 +18,18 @@ const PAYMENTS = [
   { key: 'QR_ON_DELIVERY', label: 'QR al recibir', icon: QrCode },
   { key: 'QR_PREPAID', label: 'Pagar ahora con QR', icon: QrCode },
 ] as const;
+
+/** The backend joins up to this many stores in one purchase. */
+const MAX_STORES = 4;
+type Days = ReturnType<typeof deliveryDays>;
+
+/** Days and hours in which every store delivers, so one driver can bring everything together. */
+function commonDays(all: Days[]): Days {
+  if (all.length < 2) return all[0] ?? [];
+  const [first, ...rest] = all;
+  const shared = rest.map((days) => new Set(days.flatMap((d) => d.slots.map((s) => s.at))));
+  return first.map((d) => ({ ...d, slots: d.slots.filter((s) => shared.every((set) => set.has(s.at))) })).filter((d) => d.slots.length > 0);
+}
 
 function Step({ n, title, children, action }: { n: number; title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -43,8 +55,14 @@ export function Checkout() {
 
   const groups = groupByStore(cart);
   const group = groups.find((g) => g.storeId === params.get('store')) ?? groups[0];
+  // "Comprar todo junto" in the cart: every store in one purchase, with one order per store behind it.
+  const together = params.get('compra') === 'todo' && groups.length > 1;
+  const selected = together ? groups.slice(0, MAX_STORES) : group ? [group] : [];
+  const selectedItems = selected.flatMap((g) => g.items);
 
-  const [store, setStore] = useState<Store | null>(null);
+  const [stores, setStores] = useState<Store[] | null>(null);
+  const store = stores?.[0] ?? null;
+  const [quote, setQuote] = useState<PurchaseQuote | null>(null);
   const [storeFailed, setStoreFailed] = useState(false);
   const [storeRetry, setStoreRetry] = useState(0);
   const [editingAddress, setEditingAddress] = useState(false);
@@ -55,27 +73,29 @@ export function Checkout() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState('');
 
-  // Only the methods the admin enabled for this store; the backend rejects the others.
-  const payments = PAYMENTS.filter((p) => !store?.paymentMethods || store.paymentMethods.split(',').includes(p.key));
+  // Only the methods the admin enabled for every store in the purchase; the backend rejects the others.
+  const payments = PAYMENTS.filter((p) => (stores ?? []).every((s) => !s.paymentMethods || s.paymentMethods.split(',').includes(p.key)));
   const selectedPayment = payments.some((p) => p.key === payment) ? payment : payments[0]?.key ?? payment;
 
-  const storeId = group?.storeId;
+  const storeIds = selected.map((g) => g.storeId).join(',');
   useEffect(() => {
-    if (!storeId) return;
+    if (!storeIds) return;
     let active = true;
-    marketplaceApi.getStore(storeId).then((s) => {
+    Promise.all(storeIds.split(',').map((id) => marketplaceApi.getStore(id))).then((list) => {
       if (!active) return;
-      setStore(s);
-      setStoreFailed(!s);
+      const loaded = list.filter((s): s is NonNullable<typeof s> => Boolean(s));
+      const complete = loaded.length === list.length;
+      setStores(complete ? loaded : null);
+      setStoreFailed(!complete);
     });
     return () => {
       active = false;
     };
-  }, [storeId, storeRetry]);
+  }, [storeIds, storeRetry]);
 
   // Ask to sign in once, as soon as someone reaches checkout without a session.
   const asked = useRef(false);
-  const hasItems = Boolean(group);
+  const hasItems = selected.length > 0;
   useEffect(() => {
     if (ready && !user && hasItems && !asked.current) {
       asked.current = true;
@@ -85,22 +105,33 @@ export function Checkout() {
 
   const lat = user?.lat;
   const lng = user?.lng;
+  const quoteItems = JSON.stringify(selectedItems.map((it) => ({ productOfferId: it.productOfferId, quantity: it.quantity })));
   useEffect(() => {
-    if (!store || lat == null || lng == null) return;
+    // Nothing to quote once the purchase is placed and the cart is empty.
+    if (!stores?.length || lat == null || lng == null || quoteItems === '[]') return;
     let active = true;
-    marketplaceApi
-      .getShippingQuote({ pickupLat: store.latitude, pickupLng: store.longitude, dropoffLat: lat, dropoffLng: lng, storeId: store.id })
-      .then((q) => active && setShipping(q.price))
+    const [first] = stores;
+    const asked = stores.length > 1
+      ? marketplaceApi.quotePurchase({ items: JSON.parse(quoteItems), customerLat: lat, customerLng: lng }).then((q) => ({ price: q.total, quote: q as PurchaseQuote | null }))
+      : marketplaceApi
+          .getShippingQuote({ pickupLat: first.latitude, pickupLng: first.longitude, dropoffLat: lat, dropoffLng: lng, storeId: first.id })
+          .then((q) => ({ price: q.price, quote: null }));
+    asked
+      .then((result) => {
+        if (!active) return;
+        setShipping(result.price);
+        setQuote(result.quote);
+      })
       .catch(() => active && setShipping(null));
     return () => {
       active = false;
     };
-  }, [store, lat, lng]);
+  }, [stores, lat, lng, quoteItems]);
 
-  const days = useMemo(() => (store ? deliveryDays(store) : []), [store]);
+  const days = useMemo(() => commonDays((stores ?? []).map((s) => deliveryDays(s))), [stores]);
   const day = days.find((d) => d.key === dayKey) ?? days[0];
 
-  if (!group) {
+  if (!selected.length) {
     return (
       <div className="mx-auto my-8 max-w-xl rounded-[2rem] border border-white/80 bg-white/80 p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-2xl sm:p-12">
         <h1 className="type-sign text-2xl font-extrabold">No hay nada para pedir</h1>
@@ -112,7 +143,8 @@ export function Checkout() {
     );
   }
 
-  const subtotal = group.items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+  const subtotal = selectedItems.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+  const saved = quote?.combined ? quote.separateTotal - quote.total : 0;
   const showAddressForm = Boolean(user) && (!hasAddress || editingAddress);
 
   const placeOrder = async () => {
@@ -120,7 +152,7 @@ export function Checkout() {
     setPlacing(true);
     setError('');
     try {
-      const order = await marketplaceApi.createOrder({
+      const details = {
         customerName: user.name,
         customerEmail: user.email,
         customerPhone: user.phone ?? '',
@@ -130,9 +162,17 @@ export function Checkout() {
         customerLng: user.lng,
         paymentMethod: selectedPayment,
         deliveryAt: slot,
-        items: group.items.map((it) => ({ productOfferId: it.productOfferId, quantity: it.quantity, variant: it.variant })),
-      });
-      clearStore(group.storeId);
+        items: selectedItems.map((it) => ({ productOfferId: it.productOfferId, quantity: it.quantity, variant: it.variant })),
+      };
+      if (selected.length > 1) {
+        const purchase = await marketplaceApi.createPurchase(details);
+        selected.forEach((g) => clearStore(g.storeId));
+        toast(`Compra confirmada: ${purchase.orders.length} pedidos`);
+        router.push(purchase.purchaseId ? `/compra/${purchase.purchaseId}` : `/pedido/${purchase.orders[0].orderNumber}`);
+        return;
+      }
+      const order = await marketplaceApi.createOrder(details);
+      clearStore(selected[0].storeId);
       toast('Pedido confirmado');
       router.push(`/pedido/${order.orderNumber}`);
     } catch (err) {
@@ -144,8 +184,8 @@ export function Checkout() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <div>
-        <h1 className="type-sign text-2xl font-extrabold">Tu pedido</h1>
-        <p className="mt-0.5 text-sm text-muted">De {group.storeName}</p>
+        <h1 className="type-sign text-2xl font-extrabold">{selected.length > 1 ? 'Tu compra' : 'Tu pedido'}</h1>
+        <p className="mt-0.5 text-sm text-muted">De {selected.map((g) => g.storeName).join(', ')}</p>
       </div>
 
       {!user ? (
@@ -187,7 +227,7 @@ export function Checkout() {
           <Step n={2} title="¿Cuándo lo quieres?">
             {!store && storeFailed ? (
               <p className="flex flex-wrap items-center gap-3 text-sm text-ink-soft">
-                No pudimos cargar los horarios de esta tienda.
+                No pudimos cargar los horarios de {selected.length > 1 ? 'las tiendas' : 'esta tienda'}.
                 <button
                   type="button"
                   className="font-semibold text-verde-dark"
@@ -202,11 +242,20 @@ export function Checkout() {
             ) : !store ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-busy="true" aria-label="Cargando horarios">{Array.from({ length: 6 }).map((_, i) => <Bone key={i} className="h-11 w-full" />)}</div>
             ) : days.length === 0 ? (
-              <p className="text-sm text-ink-soft">Esta tienda no tiene horarios libres esta semana.</p>
+              selected.length > 1 ? (
+                <p className="text-sm text-ink-soft">
+                  Estas tiendas no entregan en el mismo horario esta semana.{' '}
+                  <Link href="/cart" className="font-semibold text-verde-dark">Pide a cada tienda por separado desde tu carrito.</Link>
+                </p>
+              ) : (
+                <p className="text-sm text-ink-soft">Esta tienda no tiene horarios libres esta semana.</p>
+              )
             ) : (
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-ink-soft">
-                  {store.name} entrega de {store.deliveryStart} a {store.deliveryEnd}. Elige el día y la hora.
+                  {selected.length > 1
+                    ? 'Estos son los horarios en que entregan todas las tiendas. Elige el día y la hora.'
+                    : `${store.name} entrega de ${store.deliveryStart} a ${store.deliveryEnd}. Elige el día y la hora.`}
                 </p>
                 <div className="scroll-row -mx-4 px-4 sm:mx-0 sm:px-0" role="group" aria-label="Día de entrega">
                   {days.map((d) => (
@@ -264,18 +313,28 @@ export function Checkout() {
 
           <section className="panel p-4 sm:p-5" aria-label="Resumen">
             <ul className="flex flex-col gap-2 text-sm">
-              {group.items.map((it) => (
-                <li key={cartKey(it)} className="flex justify-between gap-3">
-                  <span className="text-ink-soft">
-                    {it.quantity} × {it.productTitle}{it.variant && ` (${it.variant})`}
-                  </span>
-                  <span className="tabular-nums">{formatBs(it.unitPrice * it.quantity)}</span>
-                </li>
+              {selected.map((g) => (
+                <React.Fragment key={g.storeId}>
+                  {selected.length > 1 && <li className="pt-1 text-xs font-bold uppercase tracking-wide text-muted">{g.storeName}</li>}
+                  {g.items.map((it) => (
+                    <li key={cartKey(it)} className="flex justify-between gap-3">
+                      <span className="text-ink-soft">
+                        {it.quantity} × {it.productTitle}{it.variant && ` (${it.variant})`}
+                      </span>
+                      <span className="tabular-nums">{formatBs(it.unitPrice * it.quantity)}</span>
+                    </li>
+                  ))}
+                </React.Fragment>
               ))}
               <li className="flex justify-between gap-3 border-t border-line pt-2">
-                <span className="text-ink-soft">Envío</span>
+                <span className="text-ink-soft">
+                  {quote?.combined ? 'Envío (un solo viaje para todo)' : quote && shipping != null ? `Envío (${quote.stores.length} viajes, uno por tienda)` : 'Envío'}
+                </span>
                 <span className="tabular-nums">{shipping == null ? (hasAddress ? 'Calculando…' : 'Falta tu dirección') : formatBs(shipping)}</span>
               </li>
+              {saved > 0 && shipping != null && (
+                <li className="text-xs font-semibold text-verde-dark">Ahorras {formatBs(saved)} en envío por comprar todo junto.</li>
+              )}
               <li className="type-sign flex justify-between gap-3 text-lg font-extrabold">
                 <span>Total</span>
                 <span className="tabular-nums">{formatBs(subtotal + (shipping ?? 0))}</span>
@@ -293,7 +352,7 @@ export function Checkout() {
               onClick={placeOrder}
             >
               {placing && <Loader2 className="h-5 w-5 animate-spin" />}
-              Confirmar pedido
+              {selected.length > 1 ? 'Confirmar compra' : 'Confirmar pedido'}
             </button>
             {(!hasAddress || !slot || shipping == null) && (
               <p className="mt-2 text-center text-xs text-muted">
