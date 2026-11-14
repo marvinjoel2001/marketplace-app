@@ -190,6 +190,8 @@ export interface Order {
   storeId?: string | null;
   deliveryAt?: string | null;
   deliveryWindow?: string | null;
+  /** Code of the public tracking page (/seguir/…); the orders of a purchase share it. */
+  trackingCode?: string | null;
   /** Orders placed together in one checkout (one per store) share it. */
   purchaseId?: string | null;
   /** One driver brings every order of the purchase in a single trip. */
@@ -217,6 +219,31 @@ export interface OrderRequest {
   paymentMethod: string;
   deliveryAt: string;
   items: { productOfferId: string; quantity: number; variant?: string }[];
+}
+
+export type TrackingStep = 'IN_STORE' | 'SEARCHING_DRIVER' | 'DRIVER_TO_STORE' | 'PICKED_UP' | 'DELIVERED' | 'CANCELLED';
+
+/** What the public tracking page shows: where each store's order is, and the driver once there is one. */
+export interface Tracking {
+  code: string;
+  purchaseId: string | null;
+  combined: boolean;
+  headline: string;
+  deliveryAt: string | null;
+  deliveryWindow: string | null;
+  destination: { name: string; address: string; reference: string | null; lat: number; lng: number };
+  paymentMethod: string;
+  paid: boolean;
+  total: number;
+  driver: { name: string; phone: string | null; position: { lat: number; lng: number } | null } | null;
+  stops: {
+    orderNumber: string;
+    step: TrackingStep;
+    storeName: string;
+    store: { id: string; name: string; logo: string; address: string; latitude: number; longitude: number; deliveryDays: string; deliveryStart: string; deliveryEnd: string } | null;
+    items: { title: string; quantity: number }[];
+  }[];
+  reschedule: { allowed: boolean; until: string | null; reason: string | null };
 }
 
 export interface PurchaseQuote {
@@ -545,6 +572,20 @@ export const marketplaceApi = {
 
   async markNotificationsRead() {
     return fetchWithSession('/notifications/mine/read', json('POST'));
+  },
+
+  /** The public tracking page of an order or purchase; null when the link does not exist. */
+  async getTracking(code: string): Promise<Tracking | null> {
+    try {
+      return await fetchFromAPI(`/orders/track/${id(code)}`);
+    } catch {
+      return null;
+    }
+  },
+
+  /** The customer moves the delivery to another window (until an hour before it starts). */
+  async rescheduleDelivery(code: string, deliveryAt: string): Promise<Tracking> {
+    return fetchWithSession(`/orders/track/${id(code)}/reschedule`, json('POST', { deliveryAt }));
   },
 
   /** Delivery price for a cart from several stores: one combined trip when that is cheaper. */

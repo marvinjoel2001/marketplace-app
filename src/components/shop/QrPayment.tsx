@@ -12,7 +12,7 @@ import { useToast } from '@/context/ToastContext';
  * Bank-style payment QR for a QR_PREPAID order. There is no bank integration yet: the code is a test
  * payload and "Ya pagué" marks the order paid only while the backend runs with PAYMENTS_TEST_MODE=true.
  */
-export function QrPayment({ orderNumber, amount, storeName }: { orderNumber: string; amount: number; storeName: string }) {
+export function QrPayment({ orderNumber, amount, storeName, afterPaidHref }: { orderNumber: string; amount: number; storeName: string; afterPaidHref?: string }) {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -23,7 +23,9 @@ export function QrPayment({ orderNumber, amount, storeName }: { orderNumber: str
     try {
       await marketplaceApi.confirmOrderPayment(orderNumber);
       toast('¡Pago recibido! Ya preparamos tu pedido');
-      router.refresh();
+      // Straight to the tracking page once it is paid.
+      if (afterPaidHref) router.push(afterPaidHref);
+      else router.refresh();
     } catch (err) {
       toast((err as Error).message, 'error');
       setBusy(false);

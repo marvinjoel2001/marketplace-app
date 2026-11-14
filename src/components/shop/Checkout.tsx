@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Banknote, Loader2, MapPin, QrCode } from 'lucide-react';
 import { marketplaceApi, type PurchaseQuote, type Store } from '@/lib/api';
-import { deliveryDays } from '@/lib/schedule';
+import { commonDays, deliveryDays } from '@/lib/schedule';
 import { formatBs } from '@/lib/utils';
 import { cartKey, groupByStore, useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -21,16 +21,6 @@ const PAYMENTS = [
 
 /** The backend joins up to this many stores in one purchase. */
 const MAX_STORES = 4;
-type Days = ReturnType<typeof deliveryDays>;
-
-/** Days and hours in which every store delivers, so one driver can bring everything together. */
-function commonDays(all: Days[]): Days {
-  if (all.length < 2) return all[0] ?? [];
-  const [first, ...rest] = all;
-  const shared = rest.map((days) => new Set(days.flatMap((d) => d.slots.map((s) => s.at))));
-  return first.map((d) => ({ ...d, slots: d.slots.filter((s) => shared.every((set) => set.has(s.at))) })).filter((d) => d.slots.length > 0);
-}
-
 function Step({ n, title, children, action }: { n: number; title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <section className="panel p-4 sm:p-5" aria-labelledby={`step-${n}`}>
@@ -168,13 +158,15 @@ export function Checkout() {
         const purchase = await marketplaceApi.createPurchase(details);
         selected.forEach((g) => clearStore(g.storeId));
         toast(`Compra confirmada: ${purchase.orders.length} pedidos`);
-        router.push(purchase.purchaseId ? `/compra/${purchase.purchaseId}` : `/pedido/${purchase.orders[0].orderNumber}`);
+        const code = purchase.orders[0].trackingCode;
+        router.push(selectedPayment !== 'QR_PREPAID' && code ? `/seguir/${code}` : purchase.purchaseId ? `/compra/${purchase.purchaseId}` : `/pedido/${purchase.orders[0].orderNumber}`);
         return;
       }
       const order = await marketplaceApi.createOrder(details);
       clearStore(selected[0].storeId);
       toast('Pedido confirmado');
-      router.push(`/pedido/${order.orderNumber}`);
+      // Paying with QR happens on the order page; everything else goes straight to the tracking page.
+      router.push(selectedPayment !== 'QR_PREPAID' && order.trackingCode ? `/seguir/${order.trackingCode}` : `/pedido/${order.orderNumber}`);
     } catch (err) {
       setError((err as Error).message);
       setPlacing(false);

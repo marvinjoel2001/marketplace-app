@@ -137,7 +137,7 @@ function SalesScreen() {
                     Compra de varias tiendas ({o.purchaseId}): el mismo repartidor recoge los pedidos de las otras tiendas en el mismo viaje.
                   </p>
                 )}
-                {(canAskDriver || o.dspTrackingUrl) && (
+                {canAskDriver && (
                   <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
                     {canAskDriver && (waitingQr ? (
                       <p className="text-xs text-muted">Podrás pedir el repartidor cuando el cliente pague con QR.</p>
@@ -149,7 +149,21 @@ function SalesScreen() {
                         <p className="text-xs text-muted">Si no lo pides, el repartidor se pide solo poco antes del horario de recojo.</p>
                       </>
                     ))}
-                    {o.dspTrackingUrl && <a href={o.dspTrackingUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost w-full sm:w-auto sm:self-start"><MapPin className="h-4 w-4" />Ver al repartidor en el mapa</a>}
+                  </div>
+                )}
+                {o.trackingCode && o.status !== 'CANCELLED' && (
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+                    <a href={`/seguir/${o.trackingCode}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost !min-h-10 flex-1 sm:flex-none">
+                      <MapPin className="h-4 w-4" />Ver el recorrido
+                    </a>
+                    <a
+                      href={`https://wa.me/${o.customerPhone.replace(/\D/g, '').length === 8 ? '591' : ''}${o.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${o.customerName}, aquí puedes seguir tu pedido de ${store.name}: ${typeof window === 'undefined' ? '' : window.location.origin}/seguir/${o.trackingCode}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-ghost !min-h-10 flex-1 sm:flex-none"
+                    >
+                      <MessageCircle className="h-4 w-4" />Enviar seguimiento al cliente
+                    </a>
                   </div>
                 )}
               </li>

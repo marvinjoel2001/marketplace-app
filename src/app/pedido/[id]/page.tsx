@@ -74,12 +74,19 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         </Link>
       )}
 
-      {awaitingQr && !order.purchaseId && <QrPayment orderNumber={order.orderNumber} amount={order.totalAmount} storeName={order.items[0]?.storeName ?? 'la tienda'} />}
+      {awaitingQr && !order.purchaseId && (
+        <QrPayment
+          orderNumber={order.orderNumber}
+          amount={order.totalAmount}
+          storeName={order.items[0]?.storeName ?? 'la tienda'}
+          afterPaidHref={order.trackingCode ? `/seguir/${order.trackingCode}` : undefined}
+        />
+      )}
 
-      {trackable && (
-        <a href={order.dspTrackingUrl!} target="_blank" rel="noopener noreferrer" className="btn btn-primary w-full">
-          <Navigation className="h-5 w-5" /> Seguir a mi repartidor
-        </a>
+      {order.trackingCode && !awaitingQr && order.status !== 'CANCELLED' && (
+        <Link href={`/seguir/${order.trackingCode}`} className="btn btn-primary w-full">
+          <Navigation className="h-5 w-5" /> {trackable ? 'Seguir a mi repartidor en el mapa' : 'Seguir mi pedido en el mapa'}
+        </Link>
       )}
 
       <div className="panel flex flex-col gap-3 p-4 text-sm">

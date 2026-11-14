@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { Bike, CalendarClock, CheckCircle2, ChevronRight, MapPin } from 'lucide-react';
+import { Bike, CalendarClock, CheckCircle2, ChevronRight, MapPin, Navigation } from 'lucide-react';
 import type { Order } from '@/lib/api';
 import { SESSION_COOKIE, backend, verifySession } from '@/lib/server/session';
 import { describeWindow } from '@/lib/schedule';
@@ -78,7 +78,18 @@ export default async function PurchasePage({ params }: { params: Promise<{ id: s
 
       {unpaidQr.length > 0 && (
         // One payment covers every order of the purchase.
-        <QrPayment orderNumber={unpaidQr[0].orderNumber} amount={unpaidQr.reduce((sum, o) => sum + o.totalAmount, 0)} storeName={`tus ${unpaidQr.length} tiendas`} />
+        <QrPayment
+          orderNumber={unpaidQr[0].orderNumber}
+          amount={unpaidQr.reduce((sum, o) => sum + o.totalAmount, 0)}
+          storeName={`tus ${unpaidQr.length} tiendas`}
+          afterPaidHref={first.trackingCode ? `/seguir/${first.trackingCode}` : undefined}
+        />
+      )}
+
+      {first.trackingCode && unpaidQr.length === 0 && open.length > 0 && (
+        <Link href={`/seguir/${first.trackingCode}`} className="btn btn-primary w-full">
+          <Navigation className="h-5 w-5" /> Seguir mi compra en el mapa
+        </Link>
       )}
 
       <div className="panel flex flex-col gap-3 p-4 text-sm">

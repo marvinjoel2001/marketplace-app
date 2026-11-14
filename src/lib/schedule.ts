@@ -92,3 +92,11 @@ export function describeWindow(at?: string | null, window?: string | null, now =
   const minutes = local.getUTCHours() * 60 + local.getUTCMinutes();
   return `${day}, ${window ?? `${fmt(minutes)} - ${fmt(minutes + SLOT_MINUTES)}`}`;
 }
+
+/** Days and hours in which every store delivers, so one driver can bring everything together. */
+export function commonDays(all: DeliveryDay[][]): DeliveryDay[] {
+  if (all.length < 2) return all[0] ?? [];
+  const [first, ...rest] = all;
+  const shared = rest.map((days) => new Set(days.flatMap((d) => d.slots.map((s) => s.at))));
+  return first.map((d) => ({ ...d, slots: d.slots.filter((s) => shared.every((set) => set.has(s.at))) })).filter((d) => d.slots.length > 0);
+}
