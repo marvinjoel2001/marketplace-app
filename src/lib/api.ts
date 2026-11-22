@@ -301,6 +301,25 @@ export interface LiveFeed {
   products: { title: string; price: string | null; image: string | null; url: string | null }[];
 }
 
+/** One of the TikTok accounts a store sells from (the first one is its main account). */
+export interface StoreTikTokAccount {
+  username: string;
+  /** TikTok shows this account broadcasting now. */
+  live: boolean;
+  viewerCount: number;
+  profileUrl: string;
+  liveUrl: string;
+  addedAt: string;
+}
+
+/** Reads "@user", "user" or a profile link, like the server does. Short share links return null. */
+export function tiktokUsernameFromText(input: string): string | null {
+  const text = input.trim();
+  const fromUrl = text.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/i)?.[1];
+  const username = (fromUrl ?? text.replace(/^@+/, '')).toLowerCase();
+  return /^[a-z0-9_][a-z0-9_.]{0,23}$/.test(username) ? username : null;
+}
+
 /** One seller's live room: the TikTok live, the Vitrina store (if registered) and the chat feed. */
 export interface LiveRoomData {
   username: string;
@@ -481,6 +500,20 @@ export const marketplaceApi = {
 
   async updateStore(storeId: string, data: Record<string, unknown>): Promise<Store> {
     return fetchWithSession(`/stores/${id(storeId)}`, json('PATCH', data));
+  },
+
+  // The store's TikTok accounts: a live on any of them shows the store's products.
+  async getStoreTikTokAccounts(storeId: string): Promise<StoreTikTokAccount[]> {
+    return fetchWithSession(`/stores/${id(storeId)}/tiktok-accounts`);
+  },
+  async addStoreTikTokAccount(storeId: string, username: string): Promise<StoreTikTokAccount[]> {
+    return fetchWithSession(`/stores/${id(storeId)}/tiktok-accounts`, json('POST', { username }));
+  },
+  async renameStoreTikTokAccount(storeId: string, current: string, username: string): Promise<StoreTikTokAccount[]> {
+    return fetchWithSession(`/stores/${id(storeId)}/tiktok-accounts/${id(current)}`, json('PATCH', { username }));
+  },
+  async removeStoreTikTokAccount(storeId: string, username: string): Promise<StoreTikTokAccount[]> {
+    return fetchWithSession(`/stores/${id(storeId)}/tiktok-accounts/${id(username)}`, json('DELETE'));
   },
 
   async getStoreOffers(storeId: string): Promise<(Offer & { product: Product })[]> {

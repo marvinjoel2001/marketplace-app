@@ -13,6 +13,8 @@ import { QuickUpload } from '@/components/vendor/upload/QuickUpload';
 import { useStoreOffers } from '@/components/vendor/useStoreOffers';
 import { TikTokIcon } from '@/components/common/TikTokIcon';
 import { ListSkeleton, PanelSkeleton } from '@/components/shop/Skeleton';
+import { TikTokAccounts } from '@/components/vendor/tiktok/TikTokAccounts';
+import { useTikTokAccounts } from '@/components/vendor/tiktok/useTikTokAccounts';
 
 interface LiveStream {
   id: string;
@@ -21,11 +23,10 @@ interface LiveStream {
 }
 
 export default function SellOnTikTokPage() {
-  const { store, setStore } = useVendor();
+  const { store } = useVendor();
   const toast = useToast();
   const { offers, reload } = useStoreOffers(store.id);
   const [live, setLive] = useState<LiveStream | null | undefined>(undefined);
-  const [username, setUsername] = useState(store.tiktokUsername ?? '');
   const [title, setTitle] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set()); // product ids
   const [creating, setCreating] = useState(false);
@@ -39,24 +40,11 @@ export default function SellOnTikTokPage() {
     };
   }, [store.id]);
 
-  // While the sale is open, ask whether Vitrina already sees the live on TikTok.
-  const linkedUsername = store.tiktokUsername;
-  const [onTikTok, setOnTikTok] = useState<boolean | null>(null);
-  useEffect(() => {
-    if (!live || !linkedUsername) return;
-    let active = true;
-    const check = async () => {
-      if (document.visibilityState !== 'visible') return;
-      const room = await marketplaceApi.getLiveRoom(linkedUsername);
-      if (active) setOnTikTok(room ? Boolean(room.tiktokLive) : null);
-    };
-    void check();
-    const timer = setInterval(check, 10000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [live, linkedUsername]);
+  // While the sale is open, look every 10 s whether TikTok shows any of the store's accounts live.
+  const { accounts, setAccounts, showing } = useTikTokAccounts(live ? 10000 : null);
+  const onTikTok = Boolean(accounts?.some((a) => a.live));
+  const handles = (accounts ?? []).map((a) => `@${a.username}`).join(', ');
+  const hasAccount = Boolean(accounts?.length);
 
   const toggle = (productId: string) =>
     setPicked((prev) => {
@@ -69,14 +57,12 @@ export default function SellOnTikTokPage() {
   const start = async () => {
     setBusy(true);
     try {
-      const updated = await marketplaceApi.updateStore(store.id, { tiktokUsername: username });
-      setStore(updated);
       const stream = await marketplaceApi.createLiveStream({
         storeId: store.id,
         title: title.trim() || `Live de ${store.name}`,
         streamerName: store.name,
         featuredProductIds: [...picked],
-        tiktokUrl: updated.tiktokLiveUrl ?? undefined,
+        tiktokUrl: showing?.liveUrl,
       });
       setLive(stream);
       toast('Listo: tus productos ya se ven en Vitrina como "En vivo"');
@@ -104,6 +90,7 @@ export default function SellOnTikTokPage() {
 
   const active = (offers ?? []).filter((o) => o.isActive);
   const featured = live ? (live.featuredProductIds ?? '').split(',').filter(Boolean) : [];
+  const accountsPanel = <TikTokAccounts storeId={store.id} storeName={store.name} accounts={accounts} onChange={setAccounts} />;
 
   return (
     <div className="flex flex-col gap-5">
@@ -128,29 +115,29 @@ export default function SellOnTikTokPage() {
             <p className="mt-1 text-sm text-ink-soft">
               Los clientes ven tu live en la sección En vivo y compran {featured.length === 1 ? 'este producto' : 'estos productos'} sin salir de Vitrina.
             </p>
-            {linkedUsername && (
+            {hasAccount && (
               <p
                 role="status"
                 className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${onTikTok ? 'bg-verde/10 text-verde-dark' : 'bg-paper text-ink-soft'}`}
               >
                 {onTikTok ? (
                   <>
-                    <Check className="h-4 w-4 shrink-0" strokeWidth={3} /> Tu live de TikTok ya se ve en Vitrina
+                    <Check className="h-4 w-4 shrink-0" strokeWidth={3} /> Tu live de TikTok (@{showing?.username}) ya se ve en Vitrina
                   </>
                 ) : (
                   <>
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> Esperando tu live en TikTok (@{linkedUsername}). Empieza a transmitir y aparecerá en menos de un minuto.
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> Esperando tu live en TikTok ({handles}). Empieza a transmitir desde cualquiera y aparecerá en menos de un minuto.
                   </>
                 )}
               </p>
             )}
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {store.tiktokLiveUrl && (
-                <a href={store.tiktokLiveUrl} target="_blank" rel="noopener noreferrer" className="btn bg-ink text-white hover:bg-ink-soft">
+              {showing && (
+                <a href={showing.liveUrl} target="_blank" rel="noopener noreferrer" className="btn bg-ink text-white hover:bg-ink-soft">
                   <TikTokIcon /> Abrir mi live
                 </a>
               )}
-              <Link href={linkedUsername ? `/live/${linkedUsername}` : `/en-vivo/${store.slug}`} className="btn btn-ghost">
+              <Link href={showing ? `/live/${showing.username}` : `/en-vivo/${store.slug}`} className="btn btn-ghost">
                 Ver cómo lo ven mis clientes
               </Link>
             </div>
@@ -166,6 +153,7 @@ export default function SellOnTikTokPage() {
                 </li>
               ))}
           </ul>
+          {accountsPanel}
           <button type="button" className="btn btn-ghost w-full text-danger" onClick={stop} disabled={busy}>
             {busy && <Loader2 className="h-5 w-5 animate-spin" />}
             Terminar live
@@ -173,20 +161,7 @@ export default function SellOnTikTokPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          <section className="panel flex flex-col gap-3 p-4">
-            <h2 className="font-bold">Tu cuenta de TikTok</h2>
-            <div className="flex items-center gap-2">
-              <span className="field w-auto shrink-0 bg-paper font-semibold text-ink-soft">@</span>
-              <input
-                className="field"
-                value={username}
-                onChange={(e) => setUsername(e.target.value.replace(/^@/, '').replace(/\s/g, '').toLowerCase())}
-                placeholder="tu_usuario"
-                aria-label="Usuario de TikTok"
-                autoCapitalize="none"
-              />
-            </div>
-          </section>
+          {accountsPanel}
 
           <section className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
@@ -237,11 +212,11 @@ export default function SellOnTikTokPage() {
             <input id="live-title" className="field" maxLength={90} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`Live de ${store.name}`} />
           </div>
 
-          <button type="button" className="btn btn-primary w-full" onClick={start} disabled={busy || picked.size === 0 || !username}>
+          <button type="button" className="btn btn-primary w-full" onClick={start} disabled={busy || picked.size === 0 || !hasAccount}>
             {busy && <Loader2 className="h-5 w-5 animate-spin" />}
-            {picked.size === 0 ? 'Elige qué vas a vender' : !username ? 'Escribe tu usuario de TikTok' : `Empezar a vender ${picked.size} ${picked.size === 1 ? 'producto' : 'productos'}`}
+            {!hasAccount ? 'Vincula tu cuenta de TikTok' : picked.size === 0 ? 'Elige qué vas a vender' : `Empezar a vender ${picked.size} ${picked.size === 1 ? 'producto' : 'productos'}`}
           </button>
-          <p className="-mt-2 text-center text-xs text-muted">Después inicia tu live en TikTok como siempre.</p>
+          <p className="-mt-2 text-center text-xs text-muted">Después inicia tu live en TikTok como siempre, desde cualquiera de tus cuentas.</p>
         </div>
       )}
 

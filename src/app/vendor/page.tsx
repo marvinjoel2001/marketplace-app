@@ -16,6 +16,7 @@ import { ListSkeleton } from '@/components/shop/Skeleton';
 import { ProductCatalog } from '@/components/vendor/ProductCatalog';
 import { SalesOverview } from '@/components/vendor/SalesOverview';
 import { LiveNowCard, type OpenSale } from '@/components/vendor/LiveNowCard';
+import { useTikTokAccounts } from '@/components/vendor/tiktok/useTikTokAccounts';
 import { storeOrderTotal, useStoreOrders } from '@/components/vendor/useStoreOrders';
 
 function NotifyToggle() {
@@ -48,15 +49,18 @@ export default function VendorHomePage() {
     const timer = setInterval(() => { if (!document.hidden) read(); }, 60_000);
     return () => { active = false; clearInterval(timer); };
   }, [store.id, version]);
+  // The store may sell from several TikTok accounts: follow the one broadcasting now, else the main one.
+  // While a sale is open the seller is waiting to see their live appear, so look more often.
+  const { showing } = useTikTokAccounts(sale ? 10_000 : 30_000);
+  const roomUsername = showing?.username ?? null;
   useEffect(() => {
-    if (!store.tiktokUsername) return;
+    if (!roomUsername) return;
     let active = true;
-    const read = () => marketplaceApi.getLiveRoom(store.tiktokUsername!).then((room) => { if (active) setLiveRoom(room); });
+    const read = () => marketplaceApi.getLiveRoom(roomUsername).then((room) => { if (active) setLiveRoom(room); });
     read();
-    // While a sale is open the seller is waiting to see their live appear: look more often.
     const timer = setInterval(() => { if (!document.hidden) read(); }, sale ? 10_000 : 30_000);
     return () => { active = false; clearInterval(timer); };
-  }, [store.tiktokUsername, sale]);
+  }, [roomUsername, sale]);
   const verifiedLive = (liveRoom?.tiktokLive ?? liveRoom?.isLive) && liveRoom?.live && liveRoom.live.store_id === store.id;
   const endSale = async () => {
     if (!sale) return;
@@ -83,7 +87,7 @@ export default function VendorHomePage() {
   ];
   return <div className="mx-auto grid max-w-[1600px] gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
     <div className="min-w-0 space-y-4">
-      {sale && <LiveNowCard sale={sale} room={liveRoom} username={store.tiktokUsername ?? null} storeName={store.name} onEnd={endSale} />}
+      {sale && <LiveNowCard sale={sale} room={liveRoom} username={roomUsername} storeName={store.name} onEnd={endSale} />}
       <section className={`vendor-card grid gap-4 p-3 ${sale ? '' : 'md:grid-cols-[1fr_1fr]'}`} aria-label="Resumen de mi tienda">
         <div className="flex items-center gap-5"><span className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eeebff] text-[#6248ff] sm:h-28 sm:w-28">{store.logo ? <Image unoptimized width={640} height={640} src={mediaUrl(store.logo)} alt={`Logo de ${store.name}`} className="h-full w-full object-cover" /> : <StoreIcon className="h-11 w-11" strokeWidth={1.4} />}</span><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="break-words text-2xl font-extrabold tracking-tight">{store.name}</h1><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">Tu tienda</span></div><p className="mt-1.5 text-xs text-slate-500">{store.category}</p><p className="mt-2 flex items-start gap-1 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="line-clamp-2">{store.address}</span></p><Link href="/vendor/ajustes" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#e2e5ef] px-3 py-2 text-xs font-semibold"><Pencil className="h-3.5 w-3.5 text-[#6248ff]" />Editar tienda</Link></div></div>
         {!sale && <div className="flex flex-col items-start justify-center rounded-2xl bg-black p-4 text-white"><h2 className="text-xl font-extrabold tracking-tight">¡Vende en TikTok Live!</h2><p className="mb-4 mt-2 max-w-xs text-xs leading-5 text-white/80">Prepara tu catálogo y comparte tu tienda durante tus transmisiones.</p><Link href="/vendor/tiktok" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-black hover:bg-slate-100"><TikTokIcon className="h-4 w-4" />{store.tiktokUsername ? 'Administrar TikTok' : 'Conectar mi cuenta'}<ArrowRight className="h-3 w-3" /></Link></div>}
