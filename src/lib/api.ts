@@ -301,6 +301,22 @@ export interface LiveFeed {
   products: { title: string; price: string | null; image: string | null; url: string | null }[];
 }
 
+/** The WhatsApp line stores use to reach Vitrina's support team (set from /admin/ajustes). */
+export interface SupportLine {
+  available: boolean;
+  /** Digits with country code, as wa.me expects them. */
+  whatsapp: string;
+  /** Opening text; {tienda} becomes the store's name. */
+  message: string;
+  hours: string;
+}
+
+/** wa.me link that opens the support chat with the opening text already written. */
+export function supportChatUrl(line: Pick<SupportLine, 'whatsapp' | 'message'>, storeName: string): string {
+  const text = line.message.replaceAll('{tienda}', storeName);
+  return `https://wa.me/${line.whatsapp}?text=${encodeURIComponent(text)}`;
+}
+
 /** One of the TikTok accounts a store sells from (the first one is its main account). */
 export interface StoreTikTokAccount {
   username: string;
@@ -450,6 +466,15 @@ export const marketplaceApi = {
       // API not reachable
     }
     return [];
+  },
+
+  /** Vitrina's support line for stores; null when the backend can't be reached. */
+  async getSupport(): Promise<SupportLine | null> {
+    try {
+      return await fetchFromAPI('/support', { signal: AbortSignal.timeout(8000) });
+    } catch {
+      return null;
+    }
   },
 
   // TikTok LIVE discovery. Returns null when the backend is unreachable or rejects the query,

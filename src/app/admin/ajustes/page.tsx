@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { PhotoAiSettings } from '@/components/admin/PhotoAiSettings';
+import { SupportSettings } from '@/components/admin/SupportSettings';
 import { Card, ErrorBox, Loading, PageHeader, adminFetch, useAdminData } from '@/components/admin/ui';
 import { ChangePassword } from '@/components/admin/AdminShell';
 import { useToast } from '@/context/ToastContext';
@@ -27,11 +28,12 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <PageHeader title="Ajustes" subtitle="Tu acceso de administrador, el reconocimiento de fotos y el envío de códigos por WhatsApp." />
+      <PageHeader title="Ajustes" subtitle="Tu acceso de administrador, el soporte para tiendas, el reconocimiento de fotos y el envío de códigos por WhatsApp." />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Usuario y contraseña">
           {admin ? <ChangePassword admin={admin} onDone={setAdmin} /> : <Loading />}
         </Card>
+        <SupportSettings />
         <PhotoAiSettings />
         <WhatsAppSettings />
       </div>
