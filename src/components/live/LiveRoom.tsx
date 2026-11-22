@@ -67,6 +67,9 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
   const { addToCart } = useCart();
   const live = room.live;
   const store = room.store;
+  // The store opened its sale in Vitrina but TikTok isn't broadcasting yet (or not seen yet).
+  const onTikTok = room.tiktokLive ?? room.isLive;
+  const waiting = room.isLive && !onTikTok;
   const name = store?.name ?? `@${room.username}`;
   const avatar = store?.logo ? mediaUrl(store.logo) : live?.avatar_url || null;
   const tiktokUrl = live?.live_url ?? `https://www.tiktok.com/@${room.username}/live`;
@@ -86,7 +89,7 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
 
   // Follow the room: new comments, likes and viewers every few seconds while the page is visible.
   useEffect(() => {
-    if (!room.isLive || !live) return;
+    if (!onTikTok || !live) return;
     let active = true;
     const tick = async () => {
       if (document.visibilityState !== 'visible') return;
@@ -110,7 +113,16 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
       active = false;
       clearInterval(timer);
     };
-  }, [room.isLive, room.username, live]);
+  }, [onTikTok, room.username, live]);
+
+  // While waiting for the store's TikTok live, reload the room so the video appears once it's found.
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') router.refresh();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [waiting, router]);
 
   // A small pulse on the heart when the like count grows.
   const likes = feed?.likes ?? null;
@@ -232,18 +244,29 @@ export function LiveRoom({ room }: { room: LiveRoomData }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={poster} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
             )}
-            {live && room.isLive && (
+            {live && onTikTok && (
               <LiveVideo roomId={live.room_id} hlsUrl={live.stream_hls_url} flvUrl={live.stream_flv_url} alt={name} enabled expanded muted={muted} />
             )}
           </div>
 
+          {waiting && (
+            <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 rounded-2xl bg-black/65 p-4 text-center text-white backdrop-blur" role="status">
+              <p className="font-bold">El live empieza en un momento</p>
+              <p className="mt-1 text-sm text-white/75">
+                Apenas {name} transmita en TikTok, el video aparece aquí. Ya puedes comprar sus productos.
+              </p>
+            </div>
+          )}
+
           <div className="absolute left-3 top-3 flex items-center gap-2">
-            {room.isLive ? (
+            {onTikTok ? (
               <span className="rounded-md bg-[#FE2C55] px-2.5 py-1 text-xs font-black text-white">LIVE</span>
+            ) : waiting ? (
+              <span className="rounded-md bg-black/60 px-2.5 py-1 text-xs font-bold text-white">Por empezar</span>
             ) : (
               <span className="rounded-md bg-black/60 px-2.5 py-1 text-xs font-bold text-white">Terminó</span>
             )}
-            {room.isLive && viewers > 0 && (
+            {onTikTok && viewers > 0 && (
               <span className="flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-xs font-bold text-white">
                 <Eye className="h-3.5 w-3.5" /> {compact(viewers)}
               </span>

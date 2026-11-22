@@ -38,10 +38,17 @@ export default async function StoreLivePage({ params }: { params: Promise<{ slug
       {live && (
         <div className="panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px]">{live.title}</p>
-          {store.tiktokLiveUrl && (
-            <a href={store.tiktokLiveUrl} target="_blank" rel="noopener noreferrer" className="btn shrink-0 bg-ink text-white hover:bg-ink-soft">
-              <TikTokIcon /> Ver el live en TikTok
-            </a>
+          {store.tiktokUsername ? (
+            // The live room plays the TikTok video here, next to the products.
+            <Link href={`/live/${store.tiktokUsername}`} className="btn shrink-0 bg-ink text-white hover:bg-ink-soft">
+              <TikTokIcon /> Ver el live
+            </Link>
+          ) : (
+            store.tiktokLiveUrl && (
+              <a href={store.tiktokLiveUrl} target="_blank" rel="noopener noreferrer" className="btn shrink-0 bg-ink text-white hover:bg-ink-soft">
+                <TikTokIcon /> Ver el live en TikTok
+              </a>
+            )
           )}
         </div>
       )}

@@ -304,7 +304,10 @@ export interface LiveFeed {
 /** One seller's live room: the TikTok live, the Vitrina store (if registered) and the chat feed. */
 export interface LiveRoomData {
   username: string;
+  /** The room is open: TikTok is broadcasting, or the store opened a sale in Vitrina. */
   isLive: boolean;
+  /** TikTok is broadcasting this room now (video and chat). Missing on older backends. */
+  tiktokLive?: boolean;
   live: TikTokLiveItem | null;
   store:
     | (Pick<Store, 'id' | 'slug' | 'name' | 'logo' | 'deliveryDays' | 'deliveryStart' | 'deliveryEnd'> & {

@@ -39,6 +39,25 @@ export default function SellOnTikTokPage() {
     };
   }, [store.id]);
 
+  // While the sale is open, ask whether Vitrina already sees the live on TikTok.
+  const linkedUsername = store.tiktokUsername;
+  const [onTikTok, setOnTikTok] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!live || !linkedUsername) return;
+    let active = true;
+    const check = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const room = await marketplaceApi.getLiveRoom(linkedUsername);
+      if (active) setOnTikTok(room ? Boolean(room.tiktokLive) : null);
+    };
+    void check();
+    const timer = setInterval(check, 10000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [live, linkedUsername]);
+
   const toggle = (productId: string) =>
     setPicked((prev) => {
       const next = new Set(prev);
@@ -109,13 +128,29 @@ export default function SellOnTikTokPage() {
             <p className="mt-1 text-sm text-ink-soft">
               Los clientes ven tu live en la sección En vivo y compran {featured.length === 1 ? 'este producto' : 'estos productos'} sin salir de Vitrina.
             </p>
+            {linkedUsername && (
+              <p
+                role="status"
+                className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${onTikTok ? 'bg-verde/10 text-verde-dark' : 'bg-paper text-ink-soft'}`}
+              >
+                {onTikTok ? (
+                  <>
+                    <Check className="h-4 w-4 shrink-0" strokeWidth={3} /> Tu live de TikTok ya se ve en Vitrina
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> Esperando tu live en TikTok (@{linkedUsername}). Empieza a transmitir y aparecerá en menos de un minuto.
+                  </>
+                )}
+              </p>
+            )}
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {store.tiktokLiveUrl && (
                 <a href={store.tiktokLiveUrl} target="_blank" rel="noopener noreferrer" className="btn bg-ink text-white hover:bg-ink-soft">
                   <TikTokIcon /> Abrir mi live
                 </a>
               )}
-              <Link href={`/en-vivo/${store.slug}`} className="btn btn-ghost">
+              <Link href={linkedUsername ? `/live/${linkedUsername}` : `/en-vivo/${store.slug}`} className="btn btn-ghost">
                 Ver cómo lo ven mis clientes
               </Link>
             </div>
