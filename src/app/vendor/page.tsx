@@ -15,6 +15,7 @@ import { TikTokIcon } from '@/components/common/TikTokIcon';
 import { ListSkeleton } from '@/components/shop/Skeleton';
 import { ProductCatalog } from '@/components/vendor/ProductCatalog';
 import { SalesOverview } from '@/components/vendor/SalesOverview';
+import { LiveNowCard, type OpenSale } from '@/components/vendor/LiveNowCard';
 import { storeOrderTotal, useStoreOrders } from '@/components/vendor/useStoreOrders';
 
 function NotifyToggle() {
@@ -38,15 +39,31 @@ export default function VendorHomePage() {
     marketplaceApi.getStoreSummary(store.id).then((s) => { if (active) { setSummary(s); setSummaryError(false); } }).catch(() => { if (active) setSummaryError(true); });
     return () => { active = false; };
   }, [store.id, unseenSales, version]);
+  // The sale the store opened from "Vender por TikTok" (null: none open).
+  const [sale, setSale] = useState<OpenSale | null | undefined>(undefined);
+  useEffect(() => {
+    let active = true;
+    const read = () => marketplaceApi.getLiveStreams(store.id).then((list) => { if (active) setSale((list[0] as OpenSale | undefined) ?? null); });
+    read();
+    const timer = setInterval(() => { if (!document.hidden) read(); }, 60_000);
+    return () => { active = false; clearInterval(timer); };
+  }, [store.id, version]);
   useEffect(() => {
     if (!store.tiktokUsername) return;
     let active = true;
     const read = () => marketplaceApi.getLiveRoom(store.tiktokUsername!).then((room) => { if (active) setLiveRoom(room); });
     read();
-    const timer = setInterval(() => { if (!document.hidden) read(); }, 30_000);
+    // While a sale is open the seller is waiting to see their live appear: look more often.
+    const timer = setInterval(() => { if (!document.hidden) read(); }, sale ? 10_000 : 30_000);
     return () => { active = false; clearInterval(timer); };
-  }, [store.tiktokUsername]);
-  const verifiedLive = liveRoom?.isLive && liveRoom.live && liveRoom.live.store_id === store.id;
+  }, [store.tiktokUsername, sale]);
+  const verifiedLive = (liveRoom?.tiktokLive ?? liveRoom?.isLive) && liveRoom?.live && liveRoom.live.store_id === store.id;
+  const endSale = async () => {
+    if (!sale) return;
+    await marketplaceApi.endLiveStream(sale.id);
+    setSale(null);
+    toast('Live terminado');
+  };
   const copyLink = async () => {
     if (await copyText(`${window.location.origin}/en-vivo/${store.slug}`)) { setCopied(true); toast('Enlace de tu tienda copiado'); }
     else toast('No se pudo copiar el enlace. Abre «Ver tienda» y copia la dirección.', 'error');
@@ -66,9 +83,10 @@ export default function VendorHomePage() {
   ];
   return <div className="mx-auto grid max-w-[1600px] gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
     <div className="min-w-0 space-y-4">
-      <section className="vendor-card grid gap-4 p-3 md:grid-cols-[1fr_1fr]" aria-label="Resumen de mi tienda">
+      {sale && <LiveNowCard sale={sale} room={liveRoom} username={store.tiktokUsername ?? null} storeName={store.name} onEnd={endSale} />}
+      <section className={`vendor-card grid gap-4 p-3 ${sale ? '' : 'md:grid-cols-[1fr_1fr]'}`} aria-label="Resumen de mi tienda">
         <div className="flex items-center gap-5"><span className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eeebff] text-[#6248ff] sm:h-28 sm:w-28">{store.logo ? <Image unoptimized width={640} height={640} src={mediaUrl(store.logo)} alt={`Logo de ${store.name}`} className="h-full w-full object-cover" /> : <StoreIcon className="h-11 w-11" strokeWidth={1.4} />}</span><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="break-words text-2xl font-extrabold tracking-tight">{store.name}</h1><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">Tu tienda</span></div><p className="mt-1.5 text-xs text-slate-500">{store.category}</p><p className="mt-2 flex items-start gap-1 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="line-clamp-2">{store.address}</span></p><Link href="/vendor/ajustes" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#e2e5ef] px-3 py-2 text-xs font-semibold"><Pencil className="h-3.5 w-3.5 text-[#6248ff]" />Editar tienda</Link></div></div>
-        <div className="flex flex-col items-start justify-center rounded-2xl bg-black p-4 text-white"><h2 className="text-xl font-extrabold tracking-tight">¡Vende en TikTok Live!</h2><p className="mb-4 mt-2 max-w-xs text-xs leading-5 text-white/80">Prepara tu catálogo y comparte tu tienda durante tus transmisiones.</p><Link href="/vendor/tiktok" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-black hover:bg-slate-100"><TikTokIcon className="h-4 w-4" />{store.tiktokUsername ? 'Administrar TikTok' : 'Conectar mi cuenta'}<ArrowRight className="h-3 w-3" /></Link></div>
+        {!sale && <div className="flex flex-col items-start justify-center rounded-2xl bg-black p-4 text-white"><h2 className="text-xl font-extrabold tracking-tight">¡Vende en TikTok Live!</h2><p className="mb-4 mt-2 max-w-xs text-xs leading-5 text-white/80">Prepara tu catálogo y comparte tu tienda durante tus transmisiones.</p><Link href="/vendor/tiktok" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-black hover:bg-slate-100"><TikTokIcon className="h-4 w-4" />{store.tiktokUsername ? 'Administrar TikTok' : 'Conectar mi cuenta'}<ArrowRight className="h-3 w-3" /></Link></div>}
       </section>
       <div className="grid grid-cols-2 gap-3 2xl:grid-cols-4 lg:grid-cols-4">{metrics.map(({ label, value, detail, icon: Icon }) => <div key={label} className="vendor-card flex flex-col items-start gap-3 p-4 sm:flex-row"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eeebff] text-[#6248ff]"><Icon className="h-5 w-5" strokeWidth={1.8} /></span><div className="min-w-0"><p className="text-[11px] text-slate-500">{label}</p><p className="mt-1 break-words text-[23px] font-extrabold leading-tight tracking-tight tabular-nums">{value}</p><p className="mt-2 text-[10px] text-slate-400">{detail}</p></div></div>)}</div>
       {summaryError && <p role="alert" className="text-xs text-red-600">No pudimos actualizar el resumen. <button className="font-semibold underline" onClick={() => setVersion((v) => v + 1)}>Reintentar</button></p>}
@@ -76,7 +94,7 @@ export default function VendorHomePage() {
       {ordersError ? <div className="vendor-card p-5 text-sm text-red-600" role="alert">No pudimos cargar las estadísticas. <button className="font-bold underline" onClick={reload}>Reintentar</button></div> : orders ? <SalesOverview orders={orders} storeId={store.id} /> : <div className="vendor-card p-5"><ListSkeleton rows={2} /></div>}
     </div>
     <aside className="min-w-0 space-y-4">
-      <section className="vendor-card p-5"><h2 className="mb-3 text-lg font-extrabold tracking-tight">Live de TikTok</h2>{verifiedLive ? <div className="relative overflow-hidden rounded-2xl bg-[#141a31] p-4 text-white">{liveRoom.live?.cover_image_url && <Image unoptimized width={640} height={640} src={liveRoom.live.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />}<div className="relative"><div className="mb-20 flex items-center justify-between"><span className="rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-bold">EN VIVO</span><span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[10px]"><Eye className="h-3 w-3" />{liveRoom.live?.viewer_count.toLocaleString('es-BO')}</span></div><p className="mb-3 text-sm font-bold">{liveRoom.live?.title}</p><a href={liveRoom.live?.live_url} target="_blank" rel="noopener noreferrer" className="btn w-full bg-white !text-xs text-slate-900"><TikTokIcon className="h-4 w-4" />Ir al live</a></div></div> : <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl bg-[#f5f3fb] p-5 text-center"><Radio className="mb-3 h-8 w-8 text-[#9d8cc5]" strokeWidth={1.5} /><p className="text-sm font-bold">{!store.tiktokUsername ? 'Conecta tu TikTok' : liveRoom === undefined ? 'Consultando tu live…' : liveRoom === null ? 'No pudimos comprobar tu live' : 'Sin transmisión verificada'}</p><p className="mb-4 mt-2 text-xs leading-5 text-slate-500">{!store.tiktokUsername ? 'Vincula tu cuenta y prepara los productos que mostrarás.' : 'Tu catálogo sigue disponible para tus clientes.'}</p><Link href="/vendor/tiktok" className="btn btn-primary w-full !min-h-10 !text-xs"><TikTokIcon className="h-4 w-4" />{store.tiktokUsername ? 'Administrar live' : 'Conectar ahora'}</Link></div>}</section>
+      {!sale && <section className="vendor-card p-5"><h2 className="mb-3 text-lg font-extrabold tracking-tight">Live de TikTok</h2>{verifiedLive ? <div className="relative overflow-hidden rounded-2xl bg-[#141a31] p-4 text-white">{liveRoom.live?.cover_image_url && <Image unoptimized width={640} height={640} src={liveRoom.live.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />}<div className="relative"><div className="mb-20 flex items-center justify-between"><span className="rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-bold">EN VIVO</span><span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[10px]"><Eye className="h-3 w-3" />{liveRoom.live?.viewer_count.toLocaleString('es-BO')}</span></div><p className="mb-3 text-sm font-bold">{liveRoom.live?.title}</p><a href={liveRoom.live?.live_url} target="_blank" rel="noopener noreferrer" className="btn w-full bg-white !text-xs text-slate-900"><TikTokIcon className="h-4 w-4" />Ir al live</a></div></div> : <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl bg-[#f5f3fb] p-5 text-center"><Radio className="mb-3 h-8 w-8 text-[#9d8cc5]" strokeWidth={1.5} /><p className="text-sm font-bold">{!store.tiktokUsername ? 'Conecta tu TikTok' : liveRoom === undefined ? 'Consultando tu live…' : liveRoom === null ? 'No pudimos comprobar tu live' : 'Sin transmisión verificada'}</p><p className="mb-4 mt-2 text-xs leading-5 text-slate-500">{!store.tiktokUsername ? 'Vincula tu cuenta y prepara los productos que mostrarás.' : 'Tu catálogo sigue disponible para tus clientes.'}</p><Link href="/vendor/tiktok" className="btn btn-primary w-full !min-h-10 !text-xs"><TikTokIcon className="h-4 w-4" />{store.tiktokUsername ? 'Administrar live' : 'Conectar ahora'}</Link></div>}</section>}
       <section className="vendor-card p-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-base font-extrabold tracking-tight">Pedidos recientes</h2><Link href="/vendor/ventas" className="flex items-center gap-1 text-[11px] font-semibold text-[#5b45fa]">Ver todos<ArrowRight className="h-3.5 w-3.5" /></Link></div>{ordersError ? <p role="alert" className="py-6 text-xs text-red-600">No pudimos cargar los pedidos. <button className="underline" onClick={reload}>Reintentar</button></p> : !orders ? <ListSkeleton rows={3} /> : !recent.length ? <div className="py-8 text-center"><ClipboardList className="mx-auto mb-3 h-7 w-7 text-slate-300" /><p className="text-xs font-semibold">Aquí llegarán tus pedidos</p><p className="mt-2 text-xs text-slate-400">Comparte tu tienda para empezar.</p></div> : <ul className="divide-y divide-[#edf0f6]">{recent.map((o) => {
         const item = o.items.find((i) => i.storeId === store.id);
         const status = ORDER_STATUS[o.status];
