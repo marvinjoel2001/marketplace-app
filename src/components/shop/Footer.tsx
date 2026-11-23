@@ -4,7 +4,7 @@ import { Banknote, QrCode } from 'lucide-react';
 export function Footer() {
   return (
     <footer className="bg-white border-t border-[#EAEAEA] mt-16 text-gray-700 relative z-10 pb-20 md:pb-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-[1680px] mx-auto px-4 sm:px-8 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-xs">
           <div className="col-span-2">
             <div className="flex items-center space-x-2.5 mb-3">

@@ -43,7 +43,7 @@ export default async function HomePage({
   if (catalogue.length === 0) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="max-w-md w-full rounded-[2.5rem] bg-white/90 backdrop-blur-2xl border border-white/80 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8 sm:p-10 text-center">
+        <div className="max-w-md w-full rounded-[2.5rem] bg-white border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-8 sm:p-10 text-center">
           <h1 className="text-2xl font-black tracking-tight text-slate-900">Todavía no hay productos publicados</h1>
           <Link href="/live" className="btn btn-primary mt-6">
             <Radio className="w-4 h-4" />
@@ -71,21 +71,21 @@ export default async function HomePage({
       <BrowseByCategory categories={categories} counts={countByCategory(catalogue)} active={category} />
 
       <section id="catalogo" className="scroll-mt-24">
-        <div className="mb-4 inline-block rounded-2xl bg-white/85 backdrop-blur-xl px-4 py-2 border border-white/80 shadow-sm">
+        <div className="mb-4">
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
             {q ? `Resultados para “${q}”` : activeCategory ? activeCategory.name : 'Todos los productos'}
           </h2>
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-[2rem] bg-white/90 backdrop-blur-2xl border border-white/80 p-8 text-center shadow-card">
+          <div className="rounded-[2rem] bg-white border border-slate-200 p-8 text-center">
             <p className="text-lg font-black text-slate-900">No encontramos productos con esa búsqueda</p>
             <Link href="/" className="btn btn-primary mt-5">
               Ver todos los productos
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-5">
             {visible.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

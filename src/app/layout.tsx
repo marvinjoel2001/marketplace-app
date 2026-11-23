@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
@@ -24,9 +27,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className="min-h-screen flex flex-col text-slate-900 antialiased selection:bg-indigo-500 selection:text-white bg-[url('/background.jpg')] bg-cover bg-center bg-fixed bg-no-repeat relative">
-        {/* Subtle overlay for consistent light tone and optimal text contrast */}
-        <div data-marketplace-backdrop className="fixed inset-0 bg-white/45 pointer-events-none z-0"></div>
+      <body className={`${jakarta.variable} min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-indigo-500 selection:text-white relative`}>
 
         <ToastProvider>
           <AuthProvider>

@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown, Home, LogOut, MapPin, Menu, Radio, Search, ShoppingBag, Store, Tag, User, X } from 'lucide-react';
+import { ChevronDown, Home, LayoutGrid, LogOut, MapPin, Menu, Radio, Search, ShoppingBag, Star, Store, Tag, User, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { marketplaceApi, type Category } from '@/lib/api';
@@ -190,8 +190,8 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <header data-marketplace-nav className="sticky top-0 z-40 bg-white/75 backdrop-blur-2xl border-b border-white/60 shadow-lg shadow-black/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+      <header data-marketplace-nav className="sticky top-0 z-40 bg-white border-b border-slate-100">
+        <div className="max-w-[1680px] mx-auto px-4 sm:px-8 py-3">
           <div className="flex items-center justify-between gap-4 lg:gap-8">
             <div className="flex items-center space-x-3 shrink-0">
               <button
@@ -250,8 +250,8 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Sub-barra de navegación y categorías */}
-        <div data-marketplace-secondary-row className="hidden lg:block border-t border-white/40 bg-white/60 backdrop-blur-xl shadow-xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center text-xs font-semibold text-slate-700">
+        <div data-marketplace-secondary-row className="hidden lg:block border-t border-slate-100 bg-white">
+          <div className="max-w-[1680px] mx-auto px-4 sm:px-8 py-2 flex items-center text-sm font-semibold text-slate-700">
             <nav className="flex items-center space-x-4 xl:space-x-6" aria-label="Secciones">
               <div className="relative" onMouseEnter={() => setCatsOpen(true)} onMouseLeave={() => setCatsOpen(false)}>
                 <button
@@ -286,7 +286,7 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
                 href="/"
                 className={`transition-colors whitespace-nowrap font-bold text-xs relative py-1 ${
                   pathname === '/'
-                    ? 'text-emerald-700 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-emerald-500 after:rounded-full'
+                    ? 'text-[#5B4DF0] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#5B4DF0] after:rounded-full'
                     : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
@@ -305,12 +305,15 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
               </Link>
 
               <Link href="/ofertas" className="hover:text-amber-600 text-slate-700 transition-colors flex items-center space-x-1 whitespace-nowrap font-semibold">
-                <span className="text-amber-500">⚡</span>
+                <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
                 <span>Ofertas</span>
               </Link>
 
               <Link href="/cuenta" className="hover:text-emerald-700 text-slate-700 transition-colors whitespace-nowrap font-semibold">
-                Mis pedidos
+                <span className="inline-flex items-center gap-1.5">
+                  <LayoutGrid className="w-4 h-4 text-slate-500" />
+                  Mis pedidos
+                </span>
               </Link>
             </nav>
           </div>
@@ -349,11 +352,11 @@ export function ShopChrome({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">{children}</main>
+      <main className="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-8 py-6">{children}</main>
       <Footer />
 
       {/* Barra inferior en celulares */}
-      <nav aria-label="Principal" className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-white/60 bg-white/85 backdrop-blur-2xl shadow-[0_-8px_24px_rgba(15,23,42,0.06)] md:hidden">
+      <nav aria-label="Principal" className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-slate-100 bg-white/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(15,23,42,0.06)] md:hidden">
         <ul className="grid grid-cols-5">
           {TABS.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href);
